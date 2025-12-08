@@ -11,23 +11,30 @@ Este repositorio contiene el **Backend RESTful** para un videojuego de Pokémon 
 
 Este proyecto demuestra competencias de desarrollo *backend*:
 
-### 1. 🔐 Seguridad y Autenticación (Fase I)
+### 1. Seguridad y Autenticación (Fase I)
 * **Arquitectura Stateless:** Autenticación basada en **JSON Web Tokens (JWT)**.
 * **Cifrado Robusto:** Contraseñas almacenadas con *hashing* **BCrypt**.
 * **Protección de Rutas:** Filtros de seguridad personalizados (`JwtAuthenticationFilter`) que protegen los *endpoints* de juego.
 * **CORS Configurado:** Listo para integración con Frontend (React/Phaser).
 
-### 2. ⚔️ Motor de Batalla Complejo (Fase II)
+### 2. Motor de Batalla (Fase II)
 * **Fórmula de Daño Real:** Implementación matemática precisa de la fórmula de daño de Pokémon (Gen II/III), incluyendo variables de Nivel, Potencia, Stats, STAB y Aleatoriedad.
 * **Matriz de Tipos:** Sistema de efectividad completo ($x4.0, x2.0, x1.0, x0.5, x0.25, x0.0$) cargado en Base de Datos.
 * **Estados Alterados:** Gestión de estados persistentes (**Quemado, Congelado, Paralizado, Dormido, Envenenado**) y volátiles (**Confusión, Drenadoras**) con lógica de bloqueo de turnos y daño residual.
 
-### 3. 💰 Economía y Transacciones (Fase III)
+### 3. Economía y Transacciones (Fase III)
 * **Tienda e Inventario:** Sistema de compra de objetos (Pociones, Poké Balls).
 * **Transaccionalidad Atómica (`@Transactional`):** Garantía de integridad de datos; si una compra falla, el dinero no se descuenta.
 * **Relaciones M:N:** Gestión eficiente de inventarios mediante tablas intermedias y claves compuestas.
 
-### 4. 🔌 Integración de Datos Maestros
+### 4. Mecánica de Captura y Cierre del Ciclo (Fase IV)
+* **Lógica de Captura (Generación II):** Implementación fiel de la fórmula matemática de Pokémon Oro/Plata.
+* **Variables:** HP Máximo/Actual, Ratio de Captura (PokéAPI), tipo de Poké Ball y Estados Alterados (×2.0 probabilidad en Dormido/Congelado).
+* **Integración Transaccional:** Gestión de inventario en tiempo real: verificación de stock y descuento atómico de ítems.
+* **Integridad:** Reversión automática de la transacción ante fallos del servidor.
+* **Persistencia Dinámica:** Conversión de instancias "salvajes" a propiedad del usuario autenticado mediante actualización de claves foráneas en MySQL. Esta fase conecta los módulos de Combate y Economía, cerrando el ciclo principal de juego .
+
+### 5. Integración de Datos Maestros
 * **Consumo de API Externa:** Carga automática de datos (251 Pokémon y Movimientos) desde la **PokéAPI** al iniciar el servidor mediante `WebClient` reactivo.
 
 ---
