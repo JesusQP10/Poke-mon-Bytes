@@ -35,7 +35,7 @@ El desarrollo *backend* se ha dividido en 4 Fases:
 * **Integridad:** Reversión automática de la transacción ante fallos del servidor.
 * **Persistencia Dinámica:** Conversión de instancias "salvajes" a propiedad del usuario autenticado mediante actualización de claves foráneas en MySQL. Esta fase conecta los módulos de Combate y Economía, cerrando el ciclo principal de juego .
 
-### 5. Integración de Datos Maestros
+### 5. Integración de datos (Fase V)
 * **Consumo de API Externa:** Carga automática de datos (251 Pokémon y Movimientos) desde la **PokéAPI** al iniciar el servidor mediante `WebClient` .
 
 ---
