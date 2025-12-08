@@ -42,7 +42,7 @@ El desarrollo *backend* se ha dividido en 5 Fases:
 ## 📚 Documentación Técnica
 El proyecto cuenta con una documentación exhaustiva dividida por fases de desarrollo. Puedes consultar los documentos originales y diagramas en la siguiente ruta:
 
-👉 **[Acceder a la Carpeta de Documentación]([/Pokemon-backend/Documentación-fases])**
+👉 **[Acceder a la Carpeta de Documentación]([/pokemon-backend/Documentación-fases])**
 
 * **Fase I:** Seguridad y Configuración.
 * **Fase II:** Lógica del Motor de Batalla.
