@@ -10,7 +10,7 @@ Este repositorio contiene el **Backend** para un videojuego de Pokémon en naveg
 
 ## 🚀 Fases Desarrollo:
 
-El desarrollo *backend* se ha dividido en 4 Fases:
+El desarrollo *backend* se ha dividido en 5 Fases:
 
 ### 1. Seguridad y Autenticación (Fase I)
 * **Arquitectura Stateless:** Autenticación basada en **JSON Web Tokens (JWT)**.
