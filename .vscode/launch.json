@@ -2,6 +2,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "PokemonBackendApplication",
+            "request": "launch",
+            "mainClass": "com.proyecto.pokemon_backend.PokemonBackendApplication",
+            "projectName": ""
+        },
+        {
+            "type": "java",
             "name": "Spring Boot-PokemonBackendApplication<pokemon-backend>",
             "request": "launch",
             "cwd": "${workspaceFolder}",
