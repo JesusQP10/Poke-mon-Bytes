@@ -38,6 +38,16 @@ El desarrollo *backend* se ha dividido en 5 Fases:
 ### 5. Integración de datos (Fase V)
 * **Consumo de API Externa:** Carga automática de datos (251 Pokémon y Movimientos) desde la **PokéAPI** al iniciar el servidor mediante `WebClient` .
 
+
+## 📚 Documentación Técnica
+El proyecto cuenta con una documentación exhaustiva dividida por fases de desarrollo. Puedes consultar los documentos originales y diagramas en la siguiente ruta:
+
+👉 **[Acceder a la Carpeta de Documentación](./Documentación-fases)**
+
+* **Fase I:** Seguridad y Configuración.
+* **Fase II:** Lógica del Motor de Batalla.
+* **Fase III:** Sistema Tienda.
+* **Fase IV y V:** Captura y Carga de Datos.
 ---
 
 ## 🛠️ Stack Tecnológico
@@ -70,6 +80,12 @@ com.proyecto.pokemon_backend
     ├── juego/       # Lógica del Juego (Batalla, Tienda, Pokemon)
     └── logica/      # Motor Matemático (Cálculo de Daño)
 ````
+---
+### 📋 Modelo de Datos (ER)
+![Esquema ER](https://github.com/JesusQP10/Poke-mon-Bytes/blob/main/pokemon-backend/Documentaci%C3%B3n-fases/FASES%20I-V.png)
+
+
+---
 
 
 
