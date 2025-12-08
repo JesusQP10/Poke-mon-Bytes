@@ -1,15 +1,16 @@
-# 🎮🕹️ Pokémon Backend API - Proyecto DAW![poka0012](https://github.com/user-attachments/assets/a112bfd7-8c0b-49c1-b2af-1d450fa7316a)
+# 🎮🕹️ Pokémon Bytes - Proyecto DAW Curso 2024/2026![poka0012](https://github.com/user-attachments/assets/a112bfd7-8c0b-49c1-b2af-1d450fa7316a)![poka0012](https://github.com/user-attachments/assets/1b762be8-007d-4b03-a254-1519428a8862)
+
 
 
 ![Java](https://img.shields.io/badge/Java-21-orange) ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-green) ![MySQL](https://img.shields.io/badge/MySQL-8.0-blue) ![JWT](https://img.shields.io/badge/Security-JWT-red)
 
-Este repositorio contiene el **Backend RESTful** para un videojuego de Pokémon en navegador (basado en las mecánicas de la **Generación II: Oro/Plata**). 
+Este repositorio contiene el **Backend** para un videojuego de Pokémon en navegador (basado en las mecánicas de la **Generación II: Oro/Plata**). 
 
 ---
 
-## 🚀 Características Principales
+## 🚀 Fases Desarrollo:
 
-Este proyecto demuestra competencias de desarrollo *backend*:
+El desarrollo *backend* se ha dividido en 4 Fases:
 
 ### 1. Seguridad y Autenticación (Fase I)
 * **Arquitectura Stateless:** Autenticación basada en **JSON Web Tokens (JWT)**.
@@ -35,7 +36,7 @@ Este proyecto demuestra competencias de desarrollo *backend*:
 * **Persistencia Dinámica:** Conversión de instancias "salvajes" a propiedad del usuario autenticado mediante actualización de claves foráneas en MySQL. Esta fase conecta los módulos de Combate y Economía, cerrando el ciclo principal de juego .
 
 ### 5. Integración de Datos Maestros
-* **Consumo de API Externa:** Carga automática de datos (251 Pokémon y Movimientos) desde la **PokéAPI** al iniciar el servidor mediante `WebClient` reactivo.
+* **Consumo de API Externa:** Carga automática de datos (251 Pokémon y Movimientos) desde la **PokéAPI** al iniciar el servidor mediante `WebClient` .
 
 ---
 
@@ -52,7 +53,7 @@ Este proyecto demuestra competencias de desarrollo *backend*:
 
 ## 📂 Estructura del Proyecto
 
-El código sigue una arquitectura en capas (MVC) limpia:
+El código sigue una arquitectura en capas (MVC):
 
 ```text
 com.proyecto.pokemon_backend
