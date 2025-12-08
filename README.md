@@ -39,10 +39,10 @@ El desarrollo *backend* se ha dividido en 5 Fases:
 * **Consumo de API Externa:** Carga automática de datos (251 Pokémon y Movimientos) desde la **PokéAPI** al iniciar el servidor mediante `WebClient` .
 
 
-## 📚 Documentación Técnica
-El proyecto cuenta con una documentación exhaustiva dividida por fases de desarrollo. Puedes consultar los documentos originales y diagramas en la siguiente ruta:
+## 📚 Documentación 
+Consultar los documentos originales y diagramas en la siguiente ruta:
 
-👉 **[Acceder a la Carpeta de Documentación](/pokemon-backend/Documentación-fases)**
+👉 **[Carpeta de Documentación](/pokemon-backend/Documentación-fases)**
 
 * **Fase I:** Seguridad y Configuración.
 * **Fase II:** Lógica del Motor de Batalla.
