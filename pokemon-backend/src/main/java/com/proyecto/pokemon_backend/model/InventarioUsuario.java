@@ -4,6 +4,14 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Entidad Intermedia que gestiona el Inventario (Mochila).
+ * * Resuelve la relación Muchos a Muchos (M:N) entre 'USUARIOS' e 'ITEMS'.
+ * * ¿Por qué una entidad propia en lugar de @ManyToMany directo?
+ * Porque necesitamos un atributo extra: 'cantidad'.
+ * Una lista simple de ítems no nos diría cuántas Pociones tiene el jugador.
+ **/
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -16,13 +24,13 @@ public class InventarioUsuario {
     @Column(nullable = false)
     private Integer cantidad;
 
-    // RELATIONSHIP TO USUARIO
+    // RELACIONES USUARIO
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("usuarioId") 
     @JoinColumn(name = "id_usuario") 
     private Usuario usuario;
 
-    // RELATIONSHIP TO ITEM
+    // RELACIONES ITEM
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("itemId") // 
     @JoinColumn(name = "id_item") // 

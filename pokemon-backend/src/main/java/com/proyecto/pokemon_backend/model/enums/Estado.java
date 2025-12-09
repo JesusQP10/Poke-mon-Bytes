@@ -1,5 +1,13 @@
 package com.proyecto.pokemon_backend.model.enums;
 
+/**
+ * Enumeración que define los Estados Alterados Persistentes .
+ * Estos estados se almacenan en la base de datos (tabla POKEMON_USUARIO) y persisten
+ * después del combate si no son curados (Centro Pokémon o Ítems).
+ * NOTA: Un Pokémon solo puede tener UNO de estos estados a la vez.
+ * Otros estados como "Confusión" o "Drenadoras" son volátiles y se gestionan con booleanos/contadores aparte.
+ */
+
 public enum Estado {
     SALUDABLE,
     QUEMADO, // Atq.Fisico se reduce en un 1/8 (BRN) y pierde 1/16 por turno

@@ -18,56 +18,77 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import static org.springframework.security.config.Customizer.withDefaults;
 
+/**
+ * Clase de Configuración de Seguridad.
+ * * @EnableWebSecurity: Habilita el soporte de seguridad web de Spring.
+ * * Implementa WebMvcConfigurer: Para poder configurar CORS globalmente.
+ * * Define el comportamiento de la autenticación (Login) y la autorización (Permisos de ruta).
+ */
+
 @Configuration 
 @EnableWebSecurity 
 public class SecurityConfig implements WebMvcConfigurer {
 
-    // 1. DEPENDENCIA: Inyección de tu servicio que consulta la BD
+    // 1. DEPENDENCIA: Inyección del servicio que consulta la BD
     private final CustomUserDetailsService userDetailsService;
 
     public SecurityConfig(CustomUserDetailsService userDetailsService) {
         this.userDetailsService = userDetailsService;
     }
 
-    // ----------------------------------------------------
-    // BEANS: MÉTODOS DE AUTENTICACIÓN
+   // ----------------------------------------------------
+    // BEANS DE AUTENTICACIÓN (El "CÓMO" nos identificamos)
     // ----------------------------------------------------
 
-    // 2. Bean para el cifrado de contraseñas (BCrypt)
+    /**
+     * Define el algoritmo de cifrado para las contraseñas.
+     * Usamos BCrypt, que es el estándar actual de la industria.
+     * Incluye "Salting" automático, haciendo que dos contraseñas iguales
+     * tengan hashes diferentes en la BD.
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(); 
     }
 
-    // 3. Bean para exponer el AuthenticationManager (necesario para el Login en AuthController)
+    /**
+     * Expone el AuthenticationManager como un Bean.
+     * Este componente es el "Director" del proceso de login.
+     * Es utilizado en 'AuthController' para verificar usuario/pass.
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
     
-    // 4. Bean que le dice a Spring Security CÓMO autenticar (usa tu servicio de BD y el cifrador)
-    // Dentro de SecurityConfig.java
+    /**
+     * Configura el proveedor de autenticación DAO.
+     * Une:
+     * 1. El servicio de búsqueda de usuarios (userDetailsService).
+     * 2. El codificador de contraseñas (passwordEncoder).
+     * Spring usa esto internamente para validar las credenciales.
+     */
     @Bean
 public DaoAuthenticationProvider authenticationProvider() {
     DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-    provider.setUserDetailsService(userDetailsService); // Carga tu servicio de BD
+    provider.setUserDetailsService(userDetailsService); // Carga servicio de BD
     provider.setPasswordEncoder(passwordEncoder());     // Usa el BCryptPasswordEncoder
     return provider;
     }
 
     // ----------------------------------------------------
-    // FILTRO DE SEGURIDAD Y REGLAS DE ACCESO
+    // FILTRO DE SEGURIDAD (El "QUIÉN" entra y a DÓNDE)
     // ----------------------------------------------------
 
-    // 5. Configuración del filtro de seguridad HTTP
-    // Dentro de SecurityConfig.java
-// Nota: Necesitas inyectar JwtService y CustomUserDetailsService EN EL CONSTRUCTOR
-// para que el filtro pueda acceder a ellos.
-
+    /**
+     * Define la Cadena de Filtros de Seguridad (Security Filter Chain).
+     * Es el "Firewall" de la aplicación. Configura qué peticiones pasan y cuáles no.
+     * @param jwtAuthFilter filtro  que valida el Token.
+     */
 @Bean
     public SecurityFilterChain securityFilterChain(
         HttpSecurity http,
-        JwtAuthenticationFilter jwtAuthFilter // <--- ¡AQUÍ ESTÁ LA CLAVE! Spring lo inyecta como Bean
+        JwtAuthenticationFilter jwtAuthFilter // <--- Spring lo inyecta como Bean
     ) throws Exception {
         http
         // ... (CSRF, CORS, SessionManagement se mantienen)
@@ -90,14 +111,18 @@ public DaoAuthenticationProvider authenticationProvider() {
     return http.build();
 }
     // ----------------------------------------------------
-    // CONFIGURACIÓN DE CORS (PARA INTEGRACIÓN CON REACT)
+    // CONFIGURACIÓN DE CORS (Integración Frontend)
     // ----------------------------------------------------
 
-    // 8. Configuración de CORS
+    /**
+     * Configuración Global de CORS (Cross-Origin Resource Sharing).
+     * Permite que el Frontend (React en puerto 3000) hable con el Backend (puerto 8081).
+     * Sin esto, el navegador bloquearía las peticiones por seguridad.
+     */
     @Override
     public void addCorsMappings(CorsRegistry registry) { 
         registry.addMapping("/**") // Aplica a todos los endpoints
-                .allowedOrigins("http://localhost:3000", "http://127.0.0.1:3000") // Origen de tu Frontend (React)
+                .allowedOrigins("http://localhost:3000", "http://127.0.0.1:3000") // Origen del Frontend (React)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Métodos permitidos
                 .allowedHeaders("*") // Cabeceras permitidas (incluyendo Authorization para JWT)
                 .allowCredentials(true);

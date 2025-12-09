@@ -9,6 +9,14 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Componente de Inicialización de la Matriz de Tipos (Type Chart Seeder).
+ * * Responsabilidad:
+ * Cargar en la base de datos las reglas de efectividad de la Generación II al arrancar el servidor.
+ * Esto convierte la lógica de "Debilidades y Resistencias" en datos consultables por SQL.
+ * * Implementa 'CommandLineRunner' para ejecutarse automáticamente tras el inicio del contexto Spring.
+ */
+
 @Component
 public class TipoInitializer implements CommandLineRunner {
 
@@ -20,12 +28,18 @@ public class TipoInitializer implements CommandLineRunner {
     }
 
     // 1. LISTA TIPOS (17 tipos de Gen II)
+    // Usamos un array estático para mapear índices numéricos a nombres de tipos.
     private static final String[] TIPO_NAMES = {
         "Normal", "Fuego", "Agua", "Planta", "Eléctrico", "Hielo", 
         "Lucha", "Veneno", "Tierra", "Volador", "Psíquico", 
         "Bicho", "Roca", "Fantasma", "Dragón", "Siniestro", 
         "Acero"
     };
+
+    /**
+     * Método principal de ejecución.
+     * Verifica si la tabla TIPOS está vacía para evitar duplicados en reinicios.
+     */
 
     @Override
     public void run(String... args) throws Exception {
@@ -36,10 +50,14 @@ public class TipoInitializer implements CommandLineRunner {
         }
     }
 
+    /**
+     * Define y persiste todas las relaciones de efectividad.
+     * Sigue la tabla oficial de Pokémon Oro/Plata/Cristal.
+     */
     private void loadTipoMatrix() {
         List<Tipo> tipos = new ArrayList<>();
 
-        // 2. Definición de índices
+        // 2. Definición de índices constantes para mejorar la legibilidad del código
         final int NORMAL = 0;
         final int FUEGO = 1;
         final int AGUA = 2;
@@ -60,7 +78,8 @@ public class TipoInitializer implements CommandLineRunner {
         
         // ------------------------------------------------------------------
         // Regla --- ATACANTE -> DEFENSOR : MULTIPLICADOR---
-        // 1. INMUNIDADES (x0.0)
+        // 1. INMUNIDADES (Daño x0.0)
+        // Ejemplo: Los ataques Eléctricos no afectan a los Tierra.
         // ------------------------------------------------------------------
         addImmunity(tipos, ELECTRICO, TIERRA); 
         addImmunity(tipos, NORMAL, FANTASMA); 
@@ -191,7 +210,8 @@ public class TipoInitializer implements CommandLineRunner {
         System.out.println("--- Matriz de Tipos cargada: " + tipos.size() + " entradas creadas. ---");
     }
     
-    // --- MÉTODOS AUXILIARES DE CREACIÓN A NIVEL DE CLASE ---
+    // --- MÉTODOS AUXILIARES (DSL: Domain Specific Language) ---
+    // Estos métodos hacen que el código de arriba sea legible como "reglas" y no como código.
     
     // x2.0 (Súper Efectivo)
     private void addDebility(List<Tipo> tipos, int atacanteIdx, int defensorIdx) {

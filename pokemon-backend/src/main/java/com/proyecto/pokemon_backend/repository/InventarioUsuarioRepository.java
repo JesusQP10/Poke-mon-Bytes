@@ -9,7 +9,13 @@ import java.util.Optional;
 
 import com.proyecto.pokemon_backend.model.Item;
 
-
+/**
+ * Repositorio para la gestión del Inventario (Tabla Intermedia M:N).
+ * NOTA :
+ * A diferencia de los otros repositorios, este NO utiliza un tipo simple (Long/Integer)
+ * como ID. Utiliza la clase 'InventarioId', que es una Clave Compuesta (@Embeddable).
+ * Esto permite gestionar la relación "Usuario tiene Ítem" con atributos extra (Cantidad).
+ */
 
 public interface InventarioUsuarioRepository extends JpaRepository<InventarioUsuario, InventarioId> {
 

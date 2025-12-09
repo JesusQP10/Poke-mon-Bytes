@@ -8,6 +8,16 @@ import jakarta.persistence.Table;
 import lombok.Data; 
 import lombok.NoArgsConstructor;
 
+/**
+ * Entidad que modela la Matriz de Efectividad (Tabla de Tipos).
+ * * Mapea la tabla 'TIPOS' en la base de datos.
+ * * Importancia Arquitectónica:
+ * Convierte la lógica de "Debilidades y Resistencias" en datos consultables.
+ * En lugar de tener miles de 'if-else' anidados , 
+ * el sistema consulta esta tabla para saber cuánto daño hace un tipo a otro.
+ * Esto permite re-balancear el juego tocando solo la base de datos.
+ */
+
 @Entity
 @Table(name = "TIPOS")
 @Data // Incluye getters, setters, toString, etc.

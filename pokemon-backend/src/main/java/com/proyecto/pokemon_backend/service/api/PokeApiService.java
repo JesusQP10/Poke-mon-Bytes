@@ -7,6 +7,14 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import java.util.Map;
 
+/**
+ * Servicio Cliente HTTP para la comunicación con la PokéAPI externa.
+ * Implementa el patrón "Reactive Client" usando Spring WebFlux (WebClient).
+ * A diferencia de RestTemplate (bloqueante), WebClient permite realizar 
+ * cientos de peticiones simultáneas sin detener el hilo principal del servidor,
+ * lo cual es crucial para la carga masiva de datos (Data Seeding) al inicio.
+ */
+
 @Service
 public class PokeApiService {
     private final WebClient webClient;
@@ -26,6 +34,16 @@ public class PokeApiService {
             .exchangeStrategies(strategies) // Aplicar el nuevo límite de buffer
             .build();
     }
+
+    // --- MÉTODOS DE EXTRACCIÓN (GET) ---
+    // Todos devuelven 'Mono<T>', caja que puede contener el resultado de la petición o un error,
+    // pero que no bloquea el programa mientras espera la respuesta de Internet.
+    // La petición no se ejecuta hasta que alguien se "suscribe" a este Mono (en DataLoader).
+
+    /**
+     * Obtiene los datos base de un Pokémon (Stats, Tipos, Sprites).
+     * Endpoint: /pokemon/{name}
+     */
 
     // Método para obtner los detalles de un Pokémon
     public Mono<Map<String, Object>> getPokemonDetails(String name) {

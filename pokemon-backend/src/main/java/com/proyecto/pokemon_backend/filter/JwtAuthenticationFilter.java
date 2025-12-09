@@ -15,6 +15,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Filtro de Seguridad que intercepta CADA petición HTTP entrante.
+ * * Extiende OncePerRequestFilter: Garantiza una única ejecución por petición.
+ * * Función Principal:
+ * 1. Buscar el header "Authorization".
+ * 2. Extraer y validar el JWT.
+ * 3. Si es válido, cargar al usuario en el SecurityContextHolder.
+ * * Esto convierte la API en Stateless: No hay sesiones de servidor, la identidad
+ * viaja en el token en cada request.
+ */
+
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -26,6 +37,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
     }
+
+    /**
+     * Lógica interna del filtro.
+     * @param request La petición HTTP entrante.
+     * @param response La respuesta que se enviará.
+     * @param filterChain La cadena de filtros restantes.
+     */
 
     @Override
     protected void doFilterInternal(
@@ -78,6 +96,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         
         // 6. Continúa la cadena de filtros para que la petición llegue al controlador
+        // Es obligatorio llamar a esto, si no, la petición se quedaría atascada aquí y nunca llegaría al Controller.
         filterChain.doFilter(request, response); 
     }
 }

@@ -12,12 +12,25 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Controlador REST para la Gestión de Identidad (Autenticación y Registro).
+ * * Expone los endpoints públicos que permiten a los usuarios obtener sus credenciales (Token JWT).
+ * * Arquitectura:
+ * Cliente (JSON) -> AuthController -> AuthenticationManager -> AuthService -> JWTService
+ */
+
 @RestController
 // URL base de la clase: /api/v1/auth
 @RequestMapping("/api/v1/auth") 
 public class AuthController {
 
-    // Inyección de campos de clase (Final)
+    // --- DEPENDENCIAS CLAVE ---
+    
+    /**
+     * Componente central de Spring Security.
+     * Es el encargado demanejar la verificación de usuario/contraseña.
+     * Delega internamente en nuestro 'CustomUserDetailsService' y 'PasswordEncoder'.
+     */
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService; 
     private final AuthService authService; 
@@ -29,7 +42,17 @@ public class AuthController {
         this.authenticationManager = authenticationManager; 
     }
 
-    // Endpoint 1: POST http://localhost:8081/api/v1/auth/register
+    // -------------------------------------------------------------------------
+    // ENDPOINT DE REGISTRO
+    // -------------------------------------------------------------------------
+
+    /**
+     * Crea una nueva cuenta de usuario en el sistema.
+     * Endpoint: POST /api/v1/auth/register
+     * @param registroRequest DTO con username y password en texto plano.
+     * @return ResponseEntity indicando éxito (201 Created) o fallo (409 Conflict).
+     */
+
     @PostMapping("/register") // Mapea el método POST a la ruta /register
     public ResponseEntity<?> registerUser(@RequestBody RegistroRequest registroRequest) {
         try {
@@ -48,7 +71,20 @@ public class AuthController {
         }
     }
 
-    // Endpoint 2: POST http://localhost:8081/api/v1/auth/login
+    // -------------------------------------------------------------------------
+    // ENDPOINT DE LOGIN
+    // -------------------------------------------------------------------------
+
+    /**
+     * Autentica al usuario y genera un Token JWT.
+     * Endpoint: POST /api/v1/auth/login
+     * * Flujo:
+     * 1. Recibe credenciales.
+     * 2. Intenta autenticar con Spring Security.
+     * 3. Si tiene éxito, genera el Token firmado.
+     * @param loginRequest DTO con username y password.
+     * @return El Token JWT en formato String (200 OK) o error (401 Unauthorized).
+     */
     @PostMapping("/login")
     public ResponseEntity<String> authenticateAndGetToken(
         @RequestBody RegistroRequest loginRequest // Parámetros del cuerpo de la petición

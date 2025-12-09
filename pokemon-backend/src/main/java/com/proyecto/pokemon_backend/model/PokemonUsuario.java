@@ -6,6 +6,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.List;
 
+/**
+ * Entidad Transaccional que representa una instancia única de un Pokémon capturado.
+ * * Mapea la tabla 'POKEMON_USUARIO'.
+ * * Concepto Clave: Separación "Especie vs Instancia".
+ * - PokedexMaestra: Define qué es un Charizard (Tipos, Stats Base).
+ * - PokemonUsuario: Define a ESTE Charizard específico (Nivel 50, 120 HP actuales, Quemado).
+ * * Esta es la entidad que se modifica tras cada turno de combate (UPDATE constante).
+ */
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -18,8 +27,11 @@ public class PokemonUsuario {
     @Column(name = "id_pokemon_usuario")
     private Long id;
 
-    // Relación N:1 (Muchos Pokemon pueden pertenecer a un Usuario)
-    // Asumimos que Usuario tiene un longID
+    /**
+     * ID del Entrenador (Propietario).
+     * Relación N:1 lógica. Almacenamos el ID directamente para optimizar la carga
+     * y evitar traer todos los datos del Usuario en cada consulta de batalla.
+     */
     @Column(name = "id_usuario", nullable = false)
     private Long usuarioId;
 

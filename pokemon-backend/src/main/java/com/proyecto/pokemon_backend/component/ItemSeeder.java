@@ -11,6 +11,14 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Componente de Carga Inicial para la Tienda (Seeder).
+ * * Responsabilidad:
+ * Poblar la tabla 'ITEMS' al arrancar la aplicación, descargando los datos oficiales
+ * (precio, nombre) de la PokéAPI y asignándoles lógica interna del juego.
+ * * Implementa 'CommandLineRunner' para ejecutarse automáticamente tras el inicio del contexto Spring.
+ */
+
 @Component
 public class ItemSeeder implements CommandLineRunner {
 
@@ -51,7 +59,11 @@ public class ItemSeeder implements CommandLineRunner {
         }
     }
 
-    // Mapeo: Convierte el JSON de la API en tu entidad Java
+    // --- LÓGICA DE TRANSFORMACIÓN (ETL) ---
+
+    /**
+     * Convierte el Map dinámico (JSON) de la API en una Entidad fuertemente tipada.
+     */
     private Item mapApiToItemEntity(Map<String, Object> details) {
         Item item = new Item();
         
@@ -69,7 +81,10 @@ public class ItemSeeder implements CommandLineRunner {
         return item;
     }
 
-    // Diccionario de efectos para tu motor de juego
+    /**
+     * Diccionario de traducción: API Name -> Game Engine Code.
+     * Este método define qué hace realmente cada objeto dentro de 'BatallaService'.
+     */
     private String determinarEfecto(String apiName) {
         switch (apiName) {
             case "potion": return "HEAL_20";

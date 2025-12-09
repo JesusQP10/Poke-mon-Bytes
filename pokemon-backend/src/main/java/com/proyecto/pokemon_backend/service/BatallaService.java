@@ -22,6 +22,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; 
 import java.util.Optional;
 
+/**
+ * Servicio Principal del Motor de Batalla.
+ * maneja la interacción entre:
+ * 1. La Persistencia (Repositorios).
+ * 2. La Lógica Matemática (CalculoService).
+ * 3. La Lógica de Tipos (TipoService).
+ * Su responsabilidad es mantener la integridad del estado de la batalla y 
+ * aplicar los cambios de manera transaccional.
+ */
+
 @Service
 public class BatallaService {
 
@@ -52,10 +62,13 @@ public class BatallaService {
     }
 
     /**
-     * Ejecuta el turno de ataque, calculando el daño, el multiplicador final (x4,x2,x1,0.5,x0.25)
-     * y actualizando el HP del Pokémon defensor en la Base de Datos.
-     * @param request DTO que contiene todos los parámetros de entrada del Frontend.
-     * @return DTO TurnoResponse con los resultados para el cliente.
+     * CORE DEL JUEGO: Ejecuta un turno completo de combate.
+     * @Transactional: CRÍTICO. Garantiza la atomicidad (ACID).
+     * Si ocurre cualquier error durante el cálculo (ej. fallo de red, error matemático),
+     * la base de datos hace ROLLBACK y el HP del Pokémon vuelve a su estado original,
+     * evitando partidas corruptas.
+     * @param request DTO con los IDs de los Pokémons y el movimiento elegido.
+     * @return DTO con el resultado visual para el cliente (Daño, mensajes, estado).
      */
 
      @Transactional // Asegura que HP se actualice o se revierta en caso de fallo.
@@ -71,8 +84,9 @@ public class BatallaService {
         PokedexMaestra defensorMaestro = pokedexMasterRepository.findById(defensor.getPokedexId())
                 .orElseThrow(() -> new RuntimeException("Pokedex Maestra del defensor no encontrada."));
         
-        // -- Fase I Verificación Estado PRE-TURNO --
-        // Comprobamos que el atacante pueda moverse( Parálisis, sueño, confuso o congelado)
+        // -- FASE I: VERIFICACIÓN DE ESTADO (Pre-Turno) --
+        // Antes de atacar, verificamos si el Pokémon puede moverse.
+        // Estados como Congelado, Dormido o Paralizado pueden cancelar el turno.
         
         String mensajeBloqueo = verificarEstadoPreTurno(atacante);
         if (mensajeBloqueo != null){
@@ -91,9 +105,10 @@ public class BatallaService {
                 .build();
         }
 
-        // Fase II Cálculo de Daño 
+        // -- FASE II: CÁLCULO DE DAÑO --
         
-        // A. Obtener el Multiplicador (Lógica de la Matriz de Tipos)
+        // A. Consultar Matriz de Tipos (Lógica Relacional)
+        // Delegamos en TipoService para saber si es x2.0, x0.5, etc.
         double multEfectividad = tipoService.calcularEfectividad(
             request.getTipoAtaque(), 
             defensorMaestro.getTipo_1(), 
@@ -131,7 +146,8 @@ public class BatallaService {
         boolean defensorDerrotado = (nuevoHp == 0);
         String mensajeEfectividad = tipoService.obtenerMensajeEfectividad(multEfectividad);
 
-        // -- Fase III Daño Residual y Efectos Post-Turno --
+        // -- FASE III: EFECTOS POST-TURNO (Residuales) --
+        // Veneno, Quemadura, Drenadoras... se aplican al final de la ronda.
         String msgResidualDefensor = aplicarEfectosPostTurno(defensor);
         String msgResidualAtacante = aplicarEfectosPostTurno(atacante);
 
@@ -156,9 +172,13 @@ public class BatallaService {
     }
 
     // --------------------------------------------------------------------------
-    // MÉTODOS PRIVADOS DE LÓGICA DE ESTADOS
+    // LÓGICA DE ESTADOS ALTERADOS
     // --------------------------------------------------------------------------
 
+    /**
+     * Verifica si un estado impide el movimiento.
+     * Incluye lógica de probabilidad (RNG) para descongelarse o despertar.
+     */
     private String verificarEstadoPreTurno(PokemonUsuario pkm){
         // 1.Congelado (10% probabilidad de descongelarse)
         if (pkm.getEstado() == Estado.CONGELADO){
@@ -246,7 +266,14 @@ public class BatallaService {
     
     }
 
-    // Método para la captura de Pokémon
+    // --------------------------------------------------------------------------
+    // MECÁNICA DE CAPTURA
+    // --------------------------------------------------------------------------
+
+    /**
+     * Gestiona el intento de capturar un Pokémon salvaje.
+     * Integra Inventario (Economía) y Combate (Cálculo de probabilidad).
+     */
 
     @Transactional
     public String intentarCaptura(String username, CapturaRequest request){

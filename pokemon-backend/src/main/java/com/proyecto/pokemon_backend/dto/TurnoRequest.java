@@ -4,8 +4,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO para la peticion POST /api/V1/batalla/turno
- * Contiene los parámetros necesarios para realizar un turno en la batalla.
+ * DTO (Data Transfer Object) para la solicitud de un Turno de Combate.
+ * * Actúa como contrato de entrada para el endpoint 'POST /api/v1/batalla/turno'.
+ * * Su responsabilidad es encapsular todos los parámetros variables necesarios
+ * para que el 'CalculoService' pueda aplicar la fórmula de daño de la Gen II.
+ * Al recibir estos datos ya procesados (o listos para procesar), desacoplamos
+ * la vista de la lógica matemática.
  */
 
 @Data

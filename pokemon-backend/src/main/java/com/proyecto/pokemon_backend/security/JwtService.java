@@ -14,6 +14,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Servicio de Utilidad para JSON Web Tokens (JWT).
+ * Se encarga de toda la lógica criptográfica: generar, firmar, decodificar y validar tokens.
+ * Utiliza la librería 'io.jsonwebtoken' (JJWT) en su versión moderna (0.12.x).
+ * Este servicio permite que la aplicación sea STATELESS: no guardamos sesiones en memoria,
+ * confiamos en la firma digital del token.
+ */
+
 @Service
 public class JwtService {
 
@@ -21,16 +29,32 @@ public class JwtService {
     @Value("${jwt.secret.key}")
     private String secretKey;
     
-    // Duración del token: 24 horas (en milisegundos)
+    // Duración del token: 24 horas.
+    // Si el usuario no se loguea en un día, tendrá que volver a hacerlo.
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; 
 
     // --- Métodos de Generación del Token ---
+
+    /**
+     * Genera un token nuevo para un usuario autenticado.
+     * @param userDetails Los datos del usuario (username, roles...).
+     * @return String La cadena JWT completa (Header.Payload.Signature).
+     */
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, userDetails.getUsername());
     }
 
+
+    /**
+     * Construye el JWT paso a paso.
+     * 1. Claims: Datos del payload.
+     * 2. Subject: El propietario del token (username).
+     * 3. IssuedAt: Fecha de creación (ahora).
+     * 4. Expiration: Fecha de caducidad (ahora + 24h).
+     * 5. SignWith: Firma digital usando HMAC-SHA con nuestra clave secreta.
+     */
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
                 .claims(claims)
@@ -48,16 +72,30 @@ public class JwtService {
     
     // --- Métodos de Validación y Extracción del Token ---
 
+    /**
+     * Extrae el nombre de usuario (Subject) oculto en el token.
+     */
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
+
+    /**
+     * Método genérico para extraer cualquier dato del Payload.
+     * Utiliza programación funcional (Function resolver) para flexibilidad.
+     */
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
     
-    // Método CRÍTICO: Usa parserBuilder() (requiere JWT 0.12.5)
+    /**
+     * MÉTODO : Parsea el token para leer su contenido.
+     * NOTA : Implementa la sintaxis de JJWT 0.12.5+.
+     * Las versiones antiguas usaban 'parser().setSigningKey().parseClaimsJws()'.
+     * La nueva versión requiere el patrón Builder (.build()) y usa 'getPayload()' en lugar de 'getBody()'.
+     * Esto verifica automáticamente la firma digital; si la firma no coincide, lanza una Excepción.
+     */
     private Claims extractAllClaims(String token) {
     // Usamos el patrón moderno para parsear
     return Jwts.parser()

@@ -15,6 +15,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Componente de Carga Inicial de Datos (Data Seeding).
+ * * Implementa 'CommandLineRunner':
+ * Spring Boot ejecutará el método 'run' automáticamente justo después de levantar el servidor.
+ * * Objetivo:
+ * Poblar la base de datos (MySQL) con la información oficial de Pokémon y Movimientos
+ * descargándola desde la PokéAPI externa.
+ */
+
 @Component
 public class DataLoader implements CommandLineRunner {
 
@@ -44,7 +53,10 @@ public class DataLoader implements CommandLineRunner {
 
             Flux.range(1, POKEMON_LIMIT)
                 .flatMap(id -> 
-                    // 
+                    // Para cada ID, lanzamos DOS peticiones HTTP simultáneas:
+                    // 1. Datos de combate (Stats, Tipos)
+                    // 2. Datos de especie (Ratio de captura)
+                    // 'Mono.zip' espera a que ambas terminen y combina los resultados.
                     Mono.zip(
                         apiService.getPokemonDetails(String.valueOf(id)), // T1: Datos base (Stats)
                         apiService.getPokemonSpecies(String.valueOf(id))  // T2: Datos especie (Capture Rate)
@@ -53,7 +65,7 @@ public class DataLoader implements CommandLineRunner {
                         return Mono.empty();
                     }), 5 // Concurrencia controlada
                 )
-                
+                // Transformación: Convertimos los JSONs en nuestra entidad JPA
                 .map(tuple -> mapCombinedDataToEntity(tuple.getT1(), tuple.getT2()))
                 .buffer(20)
                 .doOnNext(pokedexRepository::saveAll)
@@ -75,9 +87,11 @@ public class DataLoader implements CommandLineRunner {
         }
     }
     
-    // --- MAPPERS ---
+    // --- MÉTODOS DE MAPEO (ETL: Extract, Transform, Load) ---
 
-    // <--- Este método recibe DOS mapas (details y species)
+    /**
+     * Fusiona los datos de dos fuentes JSON (Detalles y Especies) en una única entidad PokedexMaestra.
+    **/
     private PokedexMaestra mapCombinedDataToEntity(Map<String, Object> details, Map<String, Object> species) {
         PokedexMaestra pkm = new PokedexMaestra();
         
@@ -86,7 +100,8 @@ public class DataLoader implements CommandLineRunner {
         pkm.setNombre((String) details.get("name"));
         pkm.setXp_base((Integer) details.get("base_experience"));
         
-        // Stats
+        // Mapeo complejo de Stats:
+        // La API devuelve una lista, nosotros la convertimos a un Mapa para acceso rápido.
         List<Map<String, Object>> statsList = (List<Map<String, Object>>) details.get("stats");
         Map<String, Integer> statsMap = statsList.stream().collect(Collectors.toMap(
                 stat -> (String) ((Map<String, Object>) stat.get("stat")).get("name"),
