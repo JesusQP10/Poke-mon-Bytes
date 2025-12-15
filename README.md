@@ -1,16 +1,16 @@
-# 🎮🕹️ Pokémon Bytes - Proyecto DAW Curso 2024/2026![poka0012](https://github.com/user-attachments/assets/a112bfd7-8c0b-49c1-b2af-1d450fa7316a)![poka0012](https://github.com/user-attachments/assets/1b762be8-007d-4b03-a254-1519428a8862)
+# 🎮🕹️ Pokémon Bytes - Core Battle Engine![poka0012](https://github.com/user-attachments/assets/a112bfd7-8c0b-49c1-b2af-1d450fa7316a)![poka0012](https://github.com/user-attachments/assets/1b762be8-007d-4b03-a254-1519428a8862)
 
 
 
 ![Java](https://img.shields.io/badge/Java-21-orange) ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-green) ![MySQL](https://img.shields.io/badge/MySQL-8.0-blue) ![JWT](https://img.shields.io/badge/Security-JWT-red)
 
-Este repositorio contiene el **Backend** para un videojuego de Pokémon en navegador (basado en las mecánicas de la **Generación II: Oro/Plata**). 
+> **Arquitectura backend para simulación de RPG basada en mecánicas Gen-II**
 
 ---
 
 ## 🚀 Fases Desarrollo:
 
-El desarrollo *backend* se ha dividido en 5 Fases:
+El desarrollo se estructura en 5 fases:
 
 ### 1. Seguridad y Autenticación (Fase I)
 * **Arquitectura Stateless:** Autenticación basada en **JSON Web Tokens (JWT)**.
@@ -81,9 +81,8 @@ com.proyecto.pokemon_backend
     └── logica/      # Motor Matemático (Cálculo de Daño)
 ````
 ---
-### 📋 Diagrama de Arquitectura Modular
-<img src="pokemon-backend/Documentación-fases/Diagramas/Diagrama de Arquitectura Modular del Backend.png"  width="">
 
 
----
+
+
 
