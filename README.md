@@ -14,12 +14,12 @@ El desarrollo se estructura en 5 fases:
 
 ### 1. Seguridad y Autenticación (Fase I)
 * **Arquitectura Stateless:** Autenticación basada en **JSON Web Tokens (JWT)**.
-* **Cifrado Robusto:** Contraseñas almacenadas con *hashing* **BCrypt**.
+* **Cifrado :** Contraseñas almacenadas con *hashing* **BCrypt**.
 * **Protección de Rutas:** Filtros de seguridad personalizados (`JwtAuthenticationFilter`) que protegen los *endpoints* de juego.
 * **CORS Configurado:** Listo para integración con Frontend (React/Phaser).
 
 ### 2. Motor de Batalla (Fase II)
-* **Fórmula de Daño Real:** Implementación matemática precisa de la fórmula de daño de Pokémon (Gen II/III), incluyendo variables de Nivel, Potencia, Stats, STAB y Aleatoriedad.
+* **Fórmula de Daño Real:** Implementación matemática de la fórmula de daño de Pokémon (Gen II/III), incluyendo variables de Nivel, Potencia, Stats, STAB y Aleatoriedad.
 * **Matriz de Tipos:** Sistema de efectividad completo ($x4.0, x2.0, x1.0, x0.5, x0.25, x0.0$) cargado en Base de Datos.
 * **Estados Alterados:** Gestión de estados persistentes (**Quemado, Congelado, Paralizado, Dormido, Envenenado**) y volátiles (**Confusión, Drenadoras**) con lógica de bloqueo de turnos y daño residual.
 
