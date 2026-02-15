@@ -4,13 +4,13 @@
 
 ![Java](https://img.shields.io/badge/Java-21-orange) ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-green) ![MySQL](https://img.shields.io/badge/MySQL-8.0-blue) ![JWT](https://img.shields.io/badge/Security-JWT-red)
 
-> **Arquitectura backend para simulación de RPG basada en mecánicas Gen-II**
+> **Arquitectura para simulación de RPG basada en mecánicas Gen-II**
 
 ---
 
-## 🚀 Fases Desarrollo:
+## 🚀 Fases Desarrollo Backend:
 
-El desarrollo se estructura en 5 fases:
+El desarrollo del backend se estructura en 5 fases:
 
 ### 1. Seguridad y Autenticación (Fase I)
 * **Arquitectura Stateless:** Autenticación basada en **JSON Web Tokens (JWT)**.
@@ -66,7 +66,7 @@ Consultar los documentos originales y diagramas en la siguiente ruta:
 El código sigue una arquitectura en capas (MVC):
 
 ```text
-com.proyecto.pokemon_backend
+pokemon-backend
 ├── config/          # Configuración de Seguridad (CORS, CSRF, Beans)
 ├── component/       # Cargadores de Datos (DataSeeders, PokéAPI Loader)
 ├── controller/      # API REST (Endpoints HTTP)
@@ -79,6 +79,31 @@ com.proyecto.pokemon_backend
     ├── api/         # Cliente HTTP para PokéAPI
     ├── juego/       # Lógica del Juego (Batalla, Tienda, Pokemon)
     └── logica/      # Motor Matemático (Cálculo de Daño)
+
+pokemon-frontend
+├── src/
+│   ├── assets/
+│   │   ├── game/
+│   │   │   ├── audio/              # Música (BGM) y efectos
+│   │   │   ├── opening/            # Assets de la Intro 
+│   │   │   ├── overworld/          # Sprites y Tilesets
+│   │   │   └── title/              # Pantalla de título 
+│   │   └── ui/
+│   │       └── sprites/            # Sprites de interfaz (GameBoy frames)
+│   ├── components/
+│   │   ├── game/                   # Lógica visual del juego 
+│   │   ├── layout/                 # Estructura de la página
+│   │   └── shared/                 # Componentes reutilizables
+│   ├── config/                     # Configuraciones estáticas (Teclas, Constantes)
+│   ├── hooks/                      # Custom Hooks de React
+│   ├── pages/                      # Vistas principales (Login, Home, Juego)
+│   ├── router/                     # Configuración de rutas (React Router)
+│   ├── services/                   # Comunicación con API (Axios)
+│   ├── store/                      # Estado Global (Zustand)
+│   └── utils/                      # Funciones auxiliares
+├── index.html
+├── package.json
+└── vite.config.js
 ````
 ---
 
