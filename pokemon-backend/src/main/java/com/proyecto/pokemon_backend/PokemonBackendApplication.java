@@ -4,11 +4,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-import com.proyecto.pokemon_backend.component.TipoInitializer;
-import com.proyecto.pokemon_backend.repository.TipoRepository;
+import com.proyecto.pokemon_backend.component.InicializadorTipos;
+import com.proyecto.pokemon_backend.repository.RepositorioTipo;
 
 /**
- * Clase Principal de la aplicación Pokemon Bytes.
+ * Clase Principal de la aplicación .
  * * La anotación @SpringBootApplication es una combinación de:
  * 1. @Configuration: Permite definir Beans en esta clase.
  * 2. @EnableAutoConfiguration: Spring configura automáticamente la BD, Seguridad, etc. basándose en las librerías (.jar) detectadas.
@@ -19,7 +19,7 @@ import com.proyecto.pokemon_backend.repository.TipoRepository;
 public class PokemonBackendApplication {
     /**
      * Método principal que arranca el motor de Spring Boot.
-     * Inicia el servidor Tomcat embebido (por defecto en puerto 8081 según configuración)
+     * Inicia el servidor Tomcat embebido (por defecto en puerto 8081)
      * y levanta el contexto de la aplicación.
      */
 
@@ -31,20 +31,22 @@ public class PokemonBackendApplication {
     // -------------------------------------------------------------------------
 
     /**
-     * Definición explícita del Bean 'TipoInitializer'.
-     * * Este método asegura que Spring cree una instancia de nuestra clase TipoInitializer
+     * Definición explícita del Bean 'InicializadorTipos'.
+     * * Este método asegura que Spring cree una instancia de nuestra clase InicializadorTipos
      * al arrancar el servidor. Su objetivo es cargar la Matriz de Tipos (Agua vence a Fuego, etc.)
      * en la base de datos si esta se encuentra vacía.
-     * * @param tipoRepository Repositorio inyectado automáticamente por Spring (Inyección de Dependencias).
+     * * @param tipoRepository Repositorio inyectado automáticamente por Spring .
      * Es necesario para que el Initializer pueda guardar los datos en MySQL.
-     * @return Una nueva instancia de TipoInitializer lista para ejecutarse.
+     * @return Una nueva instancia de InicializadorTipos lista para ejecutarse.
      */
 
 	// 1. FORZAMOS EL BEAN DE INICIALIZACIÓN AQUI
     @Bean
-    public TipoInitializer tipoInitializer(TipoRepository tipoRepository) {
+    // Aquí preparo datos necesarios al arrancar la app.
+    public InicializadorTipos inicializadorTipos(RepositorioTipo tipoRepository) {
         // Spring ahora sabe que debe crear el Inicializador pasándole el Repositorio.
-        return new TipoInitializer(tipoRepository);
+        return new InicializadorTipos(tipoRepository);
     }
 
 }
+

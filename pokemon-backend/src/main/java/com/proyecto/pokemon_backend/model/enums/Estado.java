@@ -4,7 +4,6 @@ package com.proyecto.pokemon_backend.model.enums;
  * Enumeración que define los Estados Alterados Persistentes .
  * Estos estados se almacenan en la base de datos (tabla POKEMON_USUARIO) y persisten
  * después del combate si no son curados (Centro Pokémon o Ítems).
- * NOTA: Un Pokémon solo puede tener UNO de estos estados a la vez.
  * Otros estados como "Confusión" o "Drenadoras" son volátiles y se gestionan con booleanos/contadores aparte.
  */
 
@@ -17,3 +16,4 @@ public enum Estado {
     CONGELADO, // No puede atacar hasta que se descongele (25% de probabilidad de descongelarse cada turno) (FRZ)
     GRAVE_ENVENENADO // Perdida progresiva de PS cada turno (1/16, 2/16, 3/16, etc.) (TOX)
 }
+

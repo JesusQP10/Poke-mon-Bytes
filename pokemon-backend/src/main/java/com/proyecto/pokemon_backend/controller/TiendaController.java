@@ -1,6 +1,6 @@
 package com.proyecto.pokemon_backend.controller;
 
-import com.proyecto.pokemon_backend.dto.CompraRequest;
+import com.proyecto.pokemon_backend.dto.SolicitudCompra;
 import com.proyecto.pokemon_backend.service.TiendaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,6 +21,7 @@ public class TiendaController {
 
     private final TiendaService tiendaService;
 
+    // Este metodo se encarga de TiendaController.
     public TiendaController(TiendaService tiendaService){
         this.tiendaService = tiendaService;
     }
@@ -29,13 +30,14 @@ public class TiendaController {
      * Endpoint para procesar una compra de ítems.
      * URI: POST /api/v1/tienda/comprar
      * Seguridad:
-     * Este método asume que el usuario ya está autenticado (gracias a JwtAuthenticationFilter).
+     * Este método asume que el usuario ya está autenticado (gracias a FiltroAutenticacionJwt).
      * @param request DTO que contiene qué quiere comprar el usuario (ID Item + Cantidad).
      * @return ResponseEntity con el resultado de la transacción o el error de negocio.
      */
 
     @PostMapping("/comprar")
-    public ResponseEntity<String> comprarItem(@RequestBody CompraRequest request){
+    // Este metodo se encarga de comprarItem.
+    public ResponseEntity<String> comprarItem(@RequestBody SolicitudCompra request){
         try{
             // 1. EXTRACCIÓN SEGURA DE IDENTIDAD
             // No pedimos el ID de usuario en el JSON (eso sería inseguro).
@@ -55,3 +57,4 @@ public class TiendaController {
     }
     
 }
+

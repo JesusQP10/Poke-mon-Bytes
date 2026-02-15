@@ -23,8 +23,10 @@ public class InventarioId implements Serializable {
     private Long usuarioId; 
     private Integer itemId; 
 
+    // Este metodo se encarga de InventarioId.
     public InventarioId(Long usuarioId, Integer itemId) {
         this.usuarioId = usuarioId;
         this.itemId = itemId;
     }
 }
+

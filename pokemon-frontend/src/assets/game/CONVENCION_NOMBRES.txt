@@ -1,0 +1,9 @@
+﻿CONVENCION DE NOMBRES 
+
+
+<escena>_<entidad>_<animacion>_<frame>.png
+
+Ejemplos:
+opening_oak_idle_01.png
+opening_marill_bounce_02.png
+overworld_player_walk_down_03.png

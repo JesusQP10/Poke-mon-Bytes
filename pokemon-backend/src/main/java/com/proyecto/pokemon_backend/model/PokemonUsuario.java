@@ -69,7 +69,6 @@ public class PokemonUsuario {
     @Column (name = "velocidad_stat", nullable = false)
     private Integer velocidadStat;
 
-
     // -- Campos de Estado --
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false)
@@ -88,3 +87,4 @@ public class PokemonUsuario {
     private Boolean tieneDrenadoras = false;
     
 }
+

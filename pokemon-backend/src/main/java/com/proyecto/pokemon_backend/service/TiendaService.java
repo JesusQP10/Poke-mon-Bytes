@@ -1,13 +1,13 @@
 package com.proyecto.pokemon_backend.service;
 
-import com.proyecto.pokemon_backend.dto.CompraRequest;
+import com.proyecto.pokemon_backend.dto.SolicitudCompra;
 import com.proyecto.pokemon_backend.model.InventarioId;
 import com.proyecto.pokemon_backend.model.InventarioUsuario;
 import com.proyecto.pokemon_backend.model.Item;
 import com.proyecto.pokemon_backend.model.Usuario;
-import com.proyecto.pokemon_backend.repository.InventarioUsuarioRepository;
-import com.proyecto.pokemon_backend.repository.ItemRepository;
-import com.proyecto.pokemon_backend.repository.UserRepository;
+import com.proyecto.pokemon_backend.repository.RepositorioInventarioUsuario;
+import com.proyecto.pokemon_backend.repository.RepositorioObjeto;
+import com.proyecto.pokemon_backend.repository.RepositorioUsuario;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,13 +21,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TiendaService {
 
-    private final UserRepository userRepository;
-    private final ItemRepository itemRepository;
-    private final InventarioUsuarioRepository inventarioRepository;
+    private final RepositorioUsuario userRepository;
+    private final RepositorioObjeto itemRepository;
+    private final RepositorioInventarioUsuario inventarioRepository;
 
-    public TiendaService(UserRepository userRepository, 
-                         ItemRepository itemRepository, 
-                         InventarioUsuarioRepository inventarioRepository) {
+    public TiendaService(RepositorioUsuario userRepository, 
+                         RepositorioObjeto itemRepository, 
+                         RepositorioInventarioUsuario inventarioRepository) {
         this.userRepository = userRepository;
         this.itemRepository = itemRepository;
         this.inventarioRepository = inventarioRepository;
@@ -44,7 +44,8 @@ public class TiendaService {
      * @return Mensaje de éxito con el saldo restante.
      */
     @Transactional // CRÍTICO: Si algo falla, se revierten todos los cambios (dinero e inventario)
-    public String comprarItem(String username, CompraRequest request) {
+    // Este metodo se encarga de comprarItem.
+    public String comprarItem(String username, SolicitudCompra request) {
         
         // --- 1. VALIDACIONES PREVIAS (Reglas de Negocio) ---
 
@@ -67,13 +68,13 @@ public class TiendaService {
 
        // --- 2. EJECUCIÓN DE LA TRANSACCIÓN ---
 
-        // Paso A: Transacción Económica (Restar dinero)
+        // Paso A: Restar dinero
 
         // Modificamos la entidad Usuario en memoria y la marcamos para guardado
         usuario.setDinero(usuario.getDinero() - costoTotal);
         userRepository.save(usuario);
 
-        // Paso B: Actualizar Inventario (Gestión de relación M:N)
+        // Paso B: Actualizar Inventario (M:N)
         // Buscamos si ya tiene este ítem en la mochila
         InventarioId inventarioId = new InventarioId(usuario.getIdUsuario(), item.getIdItem());
         
@@ -88,3 +89,4 @@ public class TiendaService {
                              request.getCantidad(), item.getNombre(), usuario.getDinero());
     }
 }
+

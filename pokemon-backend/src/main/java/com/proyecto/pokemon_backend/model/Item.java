@@ -39,3 +39,4 @@ public class Item {
     private String efecto;
     
 }
+

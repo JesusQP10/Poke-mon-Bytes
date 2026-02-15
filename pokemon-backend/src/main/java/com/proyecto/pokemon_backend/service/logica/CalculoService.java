@@ -4,10 +4,10 @@ import org.springframework.stereotype.Service;
 
 import com.proyecto.pokemon_backend.model.enums.Estado;
 
-import java.util.concurrent.ThreadLocalRandom; // Para el factor de Aleatoriedad
+import java.util.concurrent.ThreadLocalRandom; // Para Aleatoriedad
 
 /**
- * Servicio que contiene todas las fórmulas matemáticas puras necesarias
+ * Servicio que contiene todas las fórmulas matemáticas necesarias
  * para simular el combate (Daño, Experiencia, Precisión).
  */
 @Service
@@ -31,6 +31,11 @@ public class CalculoService {
     public int calcularDaño(int nivelAtacante, int ataqueStat, int defensaStat, 
                             int potenciaMovimiento, double multiplicadorTipo, 
                             boolean esMismoTipo, Estado estadoAtacante, boolean esFisico) {
+        // Inmunidad de tipo: daño 0 exacto.
+        if (multiplicadorTipo <= 0) {
+            return 0;
+        }
+
         // Validación de división por cero
         if (defensaStat <= 0) {
             return 1;
@@ -70,6 +75,22 @@ public class CalculoService {
 
         // Retorno (Daño mímimo asegurado en 1)
         return Math.max(1, (int) Math.floor(damageFinal));
+    }
+
+    // Alias en ASCII para evitar identificadores con acento en llamadas nuevas.
+    public int calcularDanio(int nivelAtacante, int ataqueStat, int defensaStat,
+                             int potenciaMovimiento, double multiplicadorTipo,
+                             boolean esMismoTipo, Estado estadoAtacante, boolean esFisico) {
+        return calcularDaño(
+            nivelAtacante,
+            ataqueStat,
+            defensaStat,
+            potenciaMovimiento,
+            multiplicadorTipo,
+            esMismoTipo,
+            estadoAtacante,
+            esFisico
+        );
     }
 
     // ------------------------------------------------------------------
@@ -124,7 +145,7 @@ public class CalculoService {
      *  La captura de un Pokémon se realiza mediante una comparación de dos valores, ay b, donde:
      *      - a > b -> la bola se agita una vez ( 4 Veces -> CAPTURA)
      *      - a < b -> No se captura
-     *  -Formula valor a= (((3* HP max -2* HP actual )* rate * ball) /(3 * HP max)) * estado
+     *  -Fórmula valor a= (((3* HP max -2* HP actual )* rate * ball) /(3 * HP max)) * estado
      *     - HP max = Número de puntos de salud totales del Pokémon.
            - HP actual = Número de puntos de salud que tiene en ese momento.
            - Rate = Ratio de captura del Pokémon (ver lista de Pokémon según ratio de captura).
@@ -136,7 +157,7 @@ public class CalculoService {
                 - quemado: 1.5
                 - envenenado: 1.5
                 - sin problemas de estado: 1.
-        - Formula valor b :
+        - Fórmula valor b :
             - Si a es menor que 255, el juego necesita determinar si la Poké Ball se agita y si finalmente atrapa al Pokémon.
             - Para ello calcula b. El valor b es un número de 16-bits (0 a 65535) que actúa como un umbral para cuatro comprobaciones aleatorias. La fórmula se aproxima a la raíz cuarta de a.
             - Para simplificar el código, debido a la dificultad, se generará mediante Math.random un nº aleatorio entre [0,255]
@@ -175,3 +196,4 @@ public class CalculoService {
     }
 
 }
+

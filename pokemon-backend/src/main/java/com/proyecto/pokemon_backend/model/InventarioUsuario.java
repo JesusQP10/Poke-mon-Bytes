@@ -36,6 +36,7 @@ public class InventarioUsuario {
     @JoinColumn(name = "id_item") // 
     private Item item;
 
+    // Este metodo se encarga de InventarioUsuario.
     public InventarioUsuario(Usuario usuario, Item item, Integer cantidad) {
         this.usuario = usuario;
         this.item = item;
@@ -43,3 +44,4 @@ public class InventarioUsuario {
         this.id = new InventarioId(usuario.getIdUsuario(), item.getIdItem());
     }
 }
+

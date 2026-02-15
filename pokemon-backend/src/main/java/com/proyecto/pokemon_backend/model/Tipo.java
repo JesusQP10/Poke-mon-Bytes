@@ -37,3 +37,4 @@ public class Tipo {
     // Multiplicador de daño (0.0, 0.5, 1.0, 2.0)
     private Double multiplicador; 
 }
+

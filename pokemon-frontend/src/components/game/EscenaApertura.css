@@ -1,0 +1,347 @@
+.op-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: 10px 92px 42px;
+  background: #5d5d5d;
+  font-family: "Press Start 2P", monospace;
+  image-rendering: pixelated;
+}
+
+.op-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5px;
+  color: #ffffff;
+  letter-spacing: 0.08em;
+  background: #3f3f3f;
+  text-transform: uppercase;
+}
+
+.op-viewport {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #d4d8c8 0%, #bfc5b3 100%);
+}
+
+.op-cast-wrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.op-oak-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.op-oak {
+  width: auto;
+  height: 84px;
+  image-rendering: pixelated;
+  animation: opOakBob 1.4s ease-in-out infinite;
+}
+
+.op-marill-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  transform: translate(26px, 8px) scale(0.86);
+  transition:
+    opacity 180ms steps(3),
+    transform 220ms steps(4);
+}
+
+.op-marill-wrap--show {
+  opacity: 1;
+  transform: translate(26px, 0) scale(1);
+}
+
+.op-marill {
+  width: 42px;
+  height: auto;
+  image-rendering: pixelated;
+  animation: opMarillBob 0.9s ease-in-out infinite;
+}
+
+.op-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.05) 0 1px,
+    rgba(0, 0, 0, 0) 1px 2px
+  );
+}
+
+.op-name-layout {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 44px;
+  gap: 4px;
+  align-items: end;
+  padding: 4px;
+}
+
+.op-name-layout--input {
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.op-name-frame {
+  width: 100%;
+  min-height: 76px;
+  border: 2px solid #111111;
+  background:
+    radial-gradient(circle at 4px 4px, #ff2d2d 0 1px, #ffffff 1px 2px, transparent 2px),
+    radial-gradient(circle at calc(100% - 4px) 4px, #ff2d2d 0 1px, #ffffff 1px 2px, transparent 2px),
+    radial-gradient(circle at 4px calc(100% - 4px), #ff2d2d 0 1px, #ffffff 1px 2px, transparent 2px),
+    radial-gradient(circle at calc(100% - 4px) calc(100% - 4px), #ff2d2d 0 1px, #ffffff 1px 2px, transparent 2px),
+    #f2f3ee;
+  box-shadow:
+    inset 0 0 0 1px #ffffff,
+    inset 0 0 0 2px #111111;
+  padding: 7px 5px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.op-name-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 5px;
+  line-height: 1.3;
+  color: #1d1d1d;
+  text-transform: uppercase;
+}
+
+.op-name-option--selected {
+  color: #0d0d0d;
+  text-shadow: 1px 0 0 #0d0d0d;
+}
+
+.op-name-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.op-name-current-frame {
+  border: 2px solid #111111;
+  background: #f2f3ee;
+  box-shadow:
+    inset 0 0 0 1px #ffffff,
+    inset 0 0 0 2px #111111;
+  padding: 2px 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.op-name-current-label {
+  font-size: 4px;
+  letter-spacing: 0.08em;
+  color: #131313;
+}
+
+.op-name-current-value {
+  font-size: 5px;
+  color: #111111;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.op-keyboard-frame {
+  border: 2px solid #111111;
+  background: #f2f3ee;
+  box-shadow:
+    inset 0 0 0 1px #ffffff,
+    inset 0 0 0 2px #111111;
+  padding: 1px;
+  min-height: 0;
+}
+
+.op-keyboard-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 1px;
+}
+
+.op-key {
+  border: 1px solid #111111;
+  background: #e6e8e1;
+  color: #0f0f0f;
+  font-family: "Press Start 2P", monospace;
+  font-size: 3px;
+  line-height: 1;
+  height: 8px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.op-key--action {
+  background: #d8ddd2;
+}
+
+.op-key--selected {
+  background: #111111;
+  color: #f2f3ee;
+}
+
+.op-name-cursor {
+  width: 5px;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.op-player-wrap {
+  width: 44px;
+  height: 82px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.op-player {
+  width: auto;
+  height: 72px;
+  image-rendering: pixelated;
+  animation: opPlayerBob 1.4s ease-in-out infinite;
+}
+
+.op-player-wrap--input {
+  height: 100%;
+}
+
+.op-player--input {
+  height: 50px;
+}
+
+.op-dialog {
+  position: relative;
+  border: 2px solid #111111;
+  background:
+    radial-gradient(circle at 4px 4px, #ff2d2d 0 1px, #ffffff 1px 2px, transparent 2px),
+    radial-gradient(circle at calc(100% - 4px) 4px, #ff2d2d 0 1px, #ffffff 1px 2px, transparent 2px),
+    radial-gradient(circle at 4px calc(100% - 4px), #ff2d2d 0 1px, #ffffff 1px 2px, transparent 2px),
+    radial-gradient(circle at calc(100% - 4px) calc(100% - 4px), #ff2d2d 0 1px, #ffffff 1px 2px, transparent 2px),
+    #f2f3ee;
+  box-shadow:
+    inset 0 0 0 1px #ffffff,
+    inset 0 0 0 2px #111111;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 6px 3px;
+  gap: 2px;
+}
+
+.op-title {
+  font-size: 5px;
+  color: #101010;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.op-text {
+  margin: 0;
+  font-size: 5px;
+  color: #222222;
+  line-height: 1.5;
+}
+
+.op-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.op-btn {
+  border: 1px solid #111111;
+  background: #e7e8e3;
+  color: #111111;
+  font-family: "Press Start 2P", monospace;
+  font-size: 4px;
+  letter-spacing: 0.08em;
+  padding: 1px 3px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.op-btn--primary {
+  background: #111111;
+  color: #f2f3ee;
+}
+
+.op-btn--disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.op-progress {
+  font-size: 4px;
+  color: #3b3b3b;
+  letter-spacing: 0.08em;
+}
+
+@keyframes opOakBob {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes opPlayerBob {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes opMarillBob {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+

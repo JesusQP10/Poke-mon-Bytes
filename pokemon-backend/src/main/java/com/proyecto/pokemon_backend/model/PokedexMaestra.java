@@ -21,7 +21,6 @@ public class PokedexMaestra {
 
     /**
      * Número de la Pokédex Nacional.
-     * * NOTA: No usamos @GeneratedValue (Auto Increment) porque queremos
      * preservar los IDs oficiales (ej: 1 = Bulbasaur, 25 = Pikachu).
      * Esto facilita la integración con APIs externas y el uso de sprites por ID.
      */
@@ -58,3 +57,4 @@ public class PokedexMaestra {
     // La realación con la clave foranea se gestiona en MySQL directamente
     
 }
+

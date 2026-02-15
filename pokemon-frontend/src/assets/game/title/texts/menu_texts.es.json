@@ -1,0 +1,8 @@
+﻿{
+  "no_save": ["NUEVA PARTIDA", "OPCIONES"],
+  "with_save": ["CONTINUAR", "NUEVA PARTIDA", "OPCIONES"],
+  "description": {
+    "no_save": "Se muestra cuando no existe partida guardada.",
+    "with_save": "Se muestra cuando existe una partida guardada."
+  }
+}

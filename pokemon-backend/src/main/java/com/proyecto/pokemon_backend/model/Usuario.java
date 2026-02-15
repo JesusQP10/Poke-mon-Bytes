@@ -18,7 +18,6 @@ import java.util.List;
  * * Mapea la tabla 'USUARIOS' en MySQL.
  */
 
-
 @Entity
 @Table(name = "USUARIOS") // Mapea a la tabla USUARIOS en MySQL
 @Data 
@@ -56,16 +55,19 @@ public class Usuario implements UserDetails {
      * y compararla con la que introduce el usuario en el formulario.
      */
     @Override
+    // Devuelvo este dato para reutilizarlo en otras partes.
     public String getPassword() {
      return passwordHash; // Debe devolver el hash cifrado de la BD
     }
     @Override
+    // Devuelvo este dato para reutilizarlo en otras partes.
     public String getUsername() {
         return username; 
     }
     
     // Los ususarios no tienen roles complejos por ahora
     @Override
+    // Devuelvo este dato para reutilizarlo en otras partes.
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(); //Lista vacía de roles por ahora
     }
@@ -74,25 +76,28 @@ public class Usuario implements UserDetails {
     // Spring Security verifica estos booleanos antes de dejar entrar al usuario.
     // Los dejamos en 'true' para simplificar (la cuenta nunca caduca ni se bloquea).
     @Override
+    // Este metodo se encarga de isAccountNonExpired.
     public boolean isAccountNonExpired() {
         return true;
     }
 
     @Override
+    // Este metodo se encarga de isAccountNonLocked.
     public boolean isAccountNonLocked() {
         return true;
     }
 
     @Override
+    // Este metodo se encarga de isCredentialsNonExpired.
     public boolean isCredentialsNonExpired() {
         return true;
     }
 
     @Override
+    // Este metodo se encarga de isEnabled.
     public boolean isEnabled() {
         return true;
     }
 
-
-
 }
+

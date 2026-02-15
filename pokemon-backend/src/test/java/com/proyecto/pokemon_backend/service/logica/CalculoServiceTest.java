@@ -134,7 +134,7 @@ void testVerificaImpacto() {
         }
     }
     
-    // Rango esperado: entre 40% (400) y 60% (600) para un muestreo de 1000.
+    // Rango esperado: entre 40% (400) y 60% (600) para una muestra de 1000.
     int limiteInferior = 400; 
     int limiteSuperior = 600;
 
@@ -145,3 +145,4 @@ void testVerificaImpacto() {
                "La precisión del 50% debe caer entre 40% y 60% para ser estadísticamente válida.");
     }
 }
+

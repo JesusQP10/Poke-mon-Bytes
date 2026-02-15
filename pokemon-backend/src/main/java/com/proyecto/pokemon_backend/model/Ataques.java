@@ -52,3 +52,4 @@ public class Ataques {
     @Column(name = "pp_base", nullable = false)
     private Integer ppBase;
 }
+

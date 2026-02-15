@@ -1,0 +1,335 @@
+﻿PLAN PARTE 1 - POKEMON ORO (REPLICA EXACTA)
+
+Fecha de referencia: 2026-02-13
+
+==================================================
+1) OBJETIVO DE ESTA PARTE
+==================================================
+Construir la primera seccion jugable desde:
+- PRESS START en la intro (Ho-Oh)
+hasta:
+- llegar a la casa del Senor Pokemon (Route 30)
+
+Meta de calidad:
+- Sensacion visual, ritmo, UI, movimiento y eventos lo mas fieles posible a Pokemon Oro.
+
+Importante:
+- Parte 1 NO incluye todo el juego.
+- Parte 1 SI deja listo el motor y pipeline para escalar al resto.
+
+
+==================================================
+2) ALCANCE FUNCIONAL (QUE SI ENTRA)
+==================================================
+Fase de flujo canon de inicio:
+1. Title Screen (Ho-Oh) + PRESS START
+2. Menu principal (NUEVA PARTIDA / CARGA o CONTINUE si existe save / OPCIONES)
+3. Si se elige NUEVA PARTIDA: Intro de Oak
+4. Seleccion de hora (clock)
+5. Spawn en habitacion del jugador
+6. Conversacion con mama
+7. Ir al laboratorio de Elm
+8. Dialogo de Elm + eleccion de starter
+9. Salir de New Bark
+10. Ruta hacia Cherrygrove
+11. Cherrygrove (minimo funcional para pasar)
+12. Route 30 hacia casa de Mr. Pokemon
+13. Llegada a la casa del Senor Pokemon
+
+Opcional dentro de Parte 1 (si hay tiempo):
+- Conversacion completa dentro de la casa (Mr Pokemon + Oak + Pokedex + Egg).
+
+
+==================================================
+3) ALCANCE TECNICO (MOTOR Y SISTEMAS MINIMOS)
+==================================================
+Motor base en Phaser:
+- SceneManager (Title, Intro, Overworld, UIOverlay)
+- AssetLoader por escena
+- Sistema de input (A/B/Start/Select + d-pad)
+- Escalado pixel-perfect
+
+Overworld:
+- Movimiento 4 direcciones por tile
+- Colisiones
+- Warps (puertas, escaleras, transiciones entre mapas)
+- Camera follow + limites del mapa
+- Interaccion con tiles y NPCs (tecla A)
+
+Sistema de eventos:
+- Script engine por comandos simples (showText, moveNPC, setFlag, ifFlag, warp, giveItem)
+- Flags persistentes por partida
+
+UI:
+- Text box estilo GBC
+- Menu de opcion (SI/NO)
+- Dialogos con paginacion
+
+Combate minimo para Parte 1:
+- Trigger de encuentros salvajes en hierba
+- Transicion a batalla
+- Resultado de batalla y retorno al overworld
+
+Persistencia:
+- Save/Load con estado minimo (mapa, posicion, direccion, flags, reloj, starter)
+
+
+==================================================
+4) RECURSOS NECESARIOS (QUE NECESITO DE TI)
+==================================================
+
+4.1 GRAFICOS - IMPRESCINDIBLES
+A) TITLE + INTRO
+- Logo y elementos de title (si aplica)
+- Sprites de Ho-Oh para intro title
+- Frames de Opening/Oak
+- Frames de Marill
+- Frames de protagonista intro
+
+B) OVERWORLD BASE
+- Tileset exteriores Johto (suelo, agua, arboles, casas, vallas, etc.)
+- Tileset interiores (casa jugador, casa mama, lab Elm, casa Mr Pokemon)
+- Sprites overworld:
+  - jugador (caminar up/down/left/right)
+  - mama
+  - Elm
+  - asistente de Elm
+  - NPC bloqueador inicial (si aplica)
+  - NPCs minimos de Cherrygrove/Route 30 necesarios
+
+C) POKEMON MINIMO PARA PARTE 1
+- Back sprites de starter (Cyndaquil, Totodile, Chikorita)
+- Front sprites de starter
+- Front sprites de encuentros tempranos (ej: Pidgey, Rattata, Sentret, Hoothoot)
+- Iconos o mini sprites si se usan en UI temprana
+
+D) UI GBC
+- Marco de caja de texto
+- Cursor/flecha
+- Fuente bitmap o atlas de fuente
+- Ventanas simples de menu
+
+
+4.2 AUDIO - IMPRESCINDIBLE
+- BGM Title
+- BGM Intro/Oak
+- BGM New Bark Town
+- BGM Elm Lab
+- BGM Route/Cherrygrove
+- BGM Wild Battle
+- SFX UI (cursor, aceptar, cancelar)
+- SFX overworld (paso, choque, puerta)
+- SFX batalla basicos (inicio, golpe, victoria)
+
+
+4.3 DATOS - IMPRESCINDIBLE
+- Textos de dialogo (version espanola deseada)
+- Orden exacto de eventos canon de inicio
+- Encuentros salvajes por zona/hora (al menos Route 29 y Route 30)
+- Tabla minima de stats/moves para starters y pokemon tempranos
+
+
+==================================================
+5) COMO DEBES ENTREGARME LOS RECURSOS
+==================================================
+Regla simple:
+- Si el sheet esta limpio y en rejilla regular: NO recortar manualmente.
+- Si el sheet es collage irregular (como el de Oak que mostraste): SI recortar frames utiles.
+
+Formato recomendado por packs:
+
+pokemon-frontend/src/assets/game/
+  opening/
+    frames/
+    raw/
+    notes.txt
+  overworld/
+    tilesets/
+    chars/
+    maps/
+  battle/
+    pokemon/
+    ui/
+  audio/
+    bgm/
+    sfx/
+
+
+5.1 PARA SHEETS IRREGULARES (TU CASO ACTUAL)
+Entregar en frames recortados PNG:
+- opening_oak_01.png ... opening_oak_N.png
+- opening_marill_01.png ... opening_marill_N.png
+- opening_player_01.png ... opening_player_N.png
+
+Y un archivo notes.txt con:
+- que animacion representa cada grupo
+- orden de frames
+- fps aproximado (ej: 6, 8, 10)
+
+Ejemplo de notas:
+- oak_idle: opening_oak_01..04, loop, fps 8
+- marill_bounce: opening_marill_01..03, loop, fps 6
+
+
+5.2 CONVENCION DE NOMBRES
+Usar siempre:
+<escena>_<entidad>_<animacion>_<frame>.png
+
+Ejemplo:
+opening_oak_idle_01.png
+opening_oak_idle_02.png
+
+
+5.3 REGLAS DE CALIDAD DE IMAGEN
+- PNG
+- Fondo transparente cuando aplique
+- Sin reescalar
+- Sin suavizado
+- Mantener pixel art original
+- Todos los frames de una misma animacion con mismo ancho/alto
+
+
+==================================================
+6) PROGRAMAS/HERRAMIENTAS NECESARIAS
+==================================================
+Para ti (preparacion de recursos):
+- Aseprite o Krita (recorte y limpieza de frames)
+- Tiled (mapas)
+- Audacity (corte basico audio)
+
+Para desarrollo:
+- Node.js LTS + npm
+- Phaser 3
+- Vite
+- Git
+
+Opcional recomendado:
+- TexturePacker (si luego pasamos a atlas)
+- FFmpeg (conversion de audio)
+
+
+==================================================
+7) MAPAS MINIMOS DE PARTE 1
+==================================================
+Mapas imprescindibles:
+- Player Bedroom
+- Player House 1F
+- New Bark Town
+- Elm Lab
+- Route 29
+- Cherrygrove City (minimo transitable)
+- Route 30 (hasta casa Mr Pokemon)
+- Mr Pokemon House interior
+
+Para cada mapa necesito:
+- tilemap
+- capa de colision
+- warps
+- NPC spawn
+- triggers de evento
+
+
+==================================================
+8) LISTA DE EVENTOS A IMPLEMENTAR (ORDEN)
+==================================================
+E01: PRESS START desde title
+E02: Mostrar menu principal (Nueva Partida / Carga-Continue / Opciones)
+E03: Ruta NUEVA PARTIDA -> Intro Oak completa
+E04: Seleccion de hora
+E05: Spawn en habitacion
+E06: Dialogo con mama
+E07: Trigger de Elm (ir al laboratorio)
+E08: Dialogo en laboratorio + eleccion de starter
+E09: Salida de New Bark desbloqueada
+E10: Movimiento por Route 29 (encuentros salvajes activos)
+E11: Paso por Cherrygrove
+E12: Route 30 hasta casa Mr Pokemon
+E13: Trigger de llegada a casa Mr Pokemon
+
+
+==================================================
+9) BACKEND NECESARIO PARA PARTE 1
+==================================================
+APIs minimas:
+- GET /game/state
+- POST /game/save
+- POST /game/flags
+- POST /game/starter
+
+Modelo Save minimo:
+- userId
+- mapId
+- x, y, direction
+- currentScene
+- clock (hour, minute, day)
+- starter
+- party
+- inventory basico
+- flags (json)
+- updatedAt
+
+Regla clave:
+- El frontend ejecuta el runtime.
+- El backend persiste estado y valida acciones sensibles.
+
+
+==================================================
+10) CRITERIOS DE TERMINADO (DEFINITION OF DONE)
+==================================================
+Parte 1 esta completada cuando:
+- Se puede empezar en title y pulsar start
+- Aparece menu principal y funciona Nueva Partida / Carga-Continue / Opciones
+- Intro Oak se reproduce sin glitches
+- Se configura hora
+- Jugador puede moverse en mapa inicial
+- Evento con mama funciona
+- Evento con Elm + starter funciona
+- Se llega caminando hasta casa Mr Pokemon
+- Guardar/cargar mantiene posicion y progreso
+- No hay bloqueos criticos en el flujo canon
+
+
+==================================================
+11) RIESGOS Y MITIGACION
+==================================================
+Riesgo: recursos inconsistentes (tamanos y nombres distintos)
+Mitigacion: convencion estricta de nombres y packs por escena
+
+Riesgo: scope demasiado grande
+Mitigacion: cerrar Parte 1 sin abrir funcionalidades avanzadas
+
+Riesgo: desajuste con canon
+Mitigacion: test de paridad por evento y revision de dialogos
+
+
+==================================================
+12) PLAN DE EJECUCION RECOMENDADO
+==================================================
+Paso A (recursos):
+- Recibir y ordenar assets de opening + overworld inicial
+
+Paso B (runtime):
+- Montar Phaser y SceneManager en /game
+
+Paso C (vertical slice):
+- Implementar title -> opening -> clock -> room -> mom -> elm -> starter
+
+Paso D (ruta):
+- Route 29 + Cherrygrove + Route 30 + casa Mr Pokemon
+
+Paso E (QA):
+- Test funcional de flujo completo Parte 1
+- Ajustes de timing, input, colision y dialogos
+
+
+==================================================
+13) QUE ME PUEDES DAR YA MISMO PARA ARRANCAR
+==================================================
+Pack minimo para iniciar sin bloquearse:
+1. Frames recortados de opening (Oak/Marill/Player)
+2. Tileset exterior base Johto
+3. Mapa New Bark + Elm Lab (aunque sea version inicial)
+4. Sprite del jugador overworld
+5. Dialogos de inicio en texto plano
+
+Con solo esos 5 puntos ya podemos arrancar implementacion real.
