@@ -1,88 +1,84 @@
-# 🎮🕹️ Pokémon Bytes - Core Battle Engine![poka0012](https://github.com/user-attachments/assets/a112bfd7-8c0b-49c1-b2af-1d450fa7316a)![poka0012](https://github.com/user-attachments/assets/1b762be8-007d-4b03-a254-1519428a8862)
+# 🎮🕹️ Pokémon Bytes
 
+![poka0012](https://github.com/user-attachments/assets/a112bfd7-8c0b-49c1-b2af-1d450fa7316a)
+![poka0012](https://github.com/user-attachments/assets/1b762be8-007d-4b03-a254-1519428a8862)
 
+![Java](https://img.shields.io/badge/Java-21-orange?style=flat&logo=openjdk)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-green?style=flat&logo=springboot)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-blue?style=flat&logo=mysql)
+![JWT](https://img.shields.io/badge/Security-JWT-red?style=flat&logo=jsonwebtokens)
 
-![Java](https://img.shields.io/badge/Java-21-orange) ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-green) ![MySQL](https://img.shields.io/badge/MySQL-8.0-blue) ![JWT](https://img.shields.io/badge/Security-JWT-red)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-Bundler-646CFF?style=flat&logo=vite)
+![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat&logo=tailwindcss)
+![Zustand](https://img.shields.io/badge/State-Zustand-orange?style=flat)
 
-> **Arquitectura backend para simulación de RPG basada en mecánicas Gen-II**
+> **Arquitectura para la simulación de RPG basada en mecánicas Gen-II (Pokémon Oro/Plata) corriendo nativamente en el navegador.**
 
 ---
 
-## 🚀 Fases Desarrollo:
+## 🚀 Arquitectura del Proyecto
 
-El desarrollo se estructura en 5 fases:
+El sistema se divide en dos grandes bloques desacoplados: una **API REST (Backend)** robusta que gestiona la lógica de negocio y una **SPA (Frontend)** moderna que recrea la experiencia visual de la Game Boy Color.
 
-### 1. Seguridad y Autenticación (Fase I)
-* **Arquitectura Stateless:** Autenticación basada en **JSON Web Tokens (JWT)**.
-* **Cifrado :** Contraseñas almacenadas con *hashing* **BCrypt**.
-* **Protección de Rutas:** Filtros de seguridad personalizados (`JwtAuthenticationFilter`) que protegen los *endpoints* de juego.
-* **CORS Configurado:** Listo para integración con Frontend (React/Phaser).
+### 🧠 Backend (Spring Boot Core)
+El servidor gestiona la persistencia, seguridad y cálculos matemáticos en 5 fases:
 
-### 2. Motor de Batalla (Fase II)
-* **Fórmula de Daño Real:** Implementación matemática de la fórmula de daño de Pokémon (Gen II/III), incluyendo variables de Nivel, Potencia, Stats, STAB y Aleatoriedad.
-* **Matriz de Tipos:** Sistema de efectividad completo ($x4.0, x2.0, x1.0, x0.5, x0.25, x0.0$) cargado en Base de Datos.
-* **Estados Alterados:** Gestión de estados persistentes (**Quemado, Congelado, Paralizado, Dormido, Envenenado**) y volátiles (**Confusión, Drenadoras**) con lógica de bloqueo de turnos y daño residual.
+1.  **Seguridad y Autenticación (Fase I):** Arquitectura Stateless con **JWT**, cifrado **BCrypt** y protección de rutas mediante `JwtAuthenticationFilter`.
+2.  **Motor de Batalla (Fase II):** Implementación de fórmulas de daño reales (Gen II), matriz de tipos ($x4.0$ a $x0.0$) y gestión de estados alterados persistentes.
+3.  **Economía (Fase III):** Sistema transaccional atómico (`@Transactional`) para Tienda e Inventario, garantizando la integridad en compras.
+4.  **Mecánica de Captura (Fase IV):** Algoritmos de probabilidad fieles a Pokémon Oro, gestión de stock de Pokéballs y persistencia dinámica de nuevas capturas.
+5.  **Data Seeding (Fase V):** Consumo reactivo de la **PokéAPI** mediante `WebClient` para poblar la base de datos automáticamente.
 
-### 3. Economía y Transacciones (Fase III)
-* **Tienda e Inventario:** Sistema de compra de objetos (Pociones, Poké Balls).
-* **Transaccionalidad Atómica (`@Transactional`):** Garantía de integridad de datos; si una compra falla, el dinero no se descuenta.
-* **Relaciones M:N:** Gestión eficiente de inventarios mediante tablas intermedias y claves compuestas.
+### 🎨 Frontend (React + Vite)
+El cliente web se centra en la fidelidad visual y la experiencia de usuario:
 
-### 4. Mecánica de Captura y Cierre del Ciclo (Fase IV)
-* **Lógica de Captura (Generación II):** Implementación fiel de la fórmula matemática de Pokémon Oro/Plata.
-* **Variables:** HP Máximo/Actual, Ratio de Captura (PokéAPI), tipo de Poké Ball y Estados Alterados (×2.0 probabilidad en Dormido/Congelado).
-* **Integración Transaccional:** Gestión de inventario en tiempo real: verificación de stock y descuento atómico de ítems.
-* **Integridad:** Reversión automática de la transacción ante fallos del servidor.
-* **Persistencia Dinámica:** Conversión de instancias "salvajes" a propiedad del usuario autenticado mediante actualización de claves foráneas en MySQL. Esta fase conecta los módulos de Combate y Economía, cerrando el ciclo principal de juego .
+* **Pixel Art:** Renderizado *pixel-perfect* con escalado de enteros para evitar distorsión en pantallas HD.
+* **Estética Game Boy Color:** Sistema de diseño basado en **Tailwind CSS** que recrea la paleta de colores original y el hardware físico mediante CSS.
+* **Gestión de Estado:** Implementación de **Zustand** para manejar la sesión del usuario (persistencia local) y el estado del juego (equipo, dinero).
+* **Animaciones:** Cinemáticas (Intro Profesor Oak) gestionadas con **Framer Motion**.
+* **Abstracción de Controles:** Sistema de input agnóstico que permite jugar con Teclado (WASD/Flechas) mapeado a botones de consola (A/B/Start).
 
-### 5. Integración de datos (Fase V)
-* **Consumo de API Externa:** Carga automática de datos (251 Pokémon y Movimientos) desde la **PokéAPI** al iniciar el servidor mediante `WebClient` .
-
-
-## 📚 Documentación 
-Consultar los documentos originales y diagramas en la siguiente ruta:
-
-👉 **[Carpeta de Documentación](/pokemon-backend/Documentación-fases)**
-
-* **Fase I:** Seguridad y Configuración.
-* **Fase II:** Lógica del Motor de Batalla.
-* **Fase III:** Sistema Tienda.
-* **Fase IV y V:** Captura y Carga de Datos.
 ---
 
 ## 🛠️ Stack Tecnológico
 
+### 🔙 Backend
 * **Lenguaje:** Java 21 (JDK 21)
 * **Framework:** Spring Boot 3.5.x
 * **Base de Datos:** MySQL 8.0
-* **ORM:** Hibernate / Spring Data JPA
-* **Seguridad:** Spring Security 6 + JJWT (0.12.5)
+* **Seguridad:** Spring Security 6 + JJWT
 * **Herramientas:** Maven, Lombok, Postman
+
+### 🔜 Frontend
+* **Core:** React 19 + Vite
+* **Estilos:** Tailwind CSS + CSS Modules
+* **Estado:** Zustand (con Middleware Persist)
+* **HTTP Client:** Axios (con Interceptores JWT)
+* **Motion:** Framer Motion v12
 
 ---
 
 ## 📂 Estructura del Proyecto
 
-El código sigue una arquitectura en capas (MVC):
+El repositorio sigue una estructura de monorepo lógico separado en carpetas raíz:
 
 ```text
-com.proyecto.pokemon_backend
-├── config/          # Configuración de Seguridad (CORS, CSRF, Beans)
-├── component/       # Cargadores de Datos (DataSeeders, PokéAPI Loader)
-├── controller/      # API REST (Endpoints HTTP)
-├── dto/             # Objetos de Transferencia de Datos (Request/Response)
-├── filter/          # Filtros HTTP (JWT Validation)
-├── model/           # Entidades JPA (Tablas MySQL)
-├── repository/      # Interfaces de Acceso a Datos (DAO)
-├── security/        # Lógica de JWT (Generación y Validación)
-└── service/         # Lógica de Negocio
-    ├── api/         # Cliente HTTP para PokéAPI
-    ├── juego/       # Lógica del Juego (Batalla, Tienda, Pokemon)
-    └── logica/      # Motor Matemático (Cálculo de Daño)
-````
----
-
-
-
-
-
+root/
+├── pokemon-backend/         # Servidor Spring Boot (API REST)
+│   ├── config/              # Seguridad (CORS, CSRF)
+│   ├── controller/          # Endpoints HTTP
+│   ├── model/               # Entidades JPA (MySQL)
+│   ├── security/            # Lógica JWT
+│   └── service/             # Motor de Batalla y Lógica Matemática
+│
+└── pokemon-frontend/        # Cliente React (SPA)
+    ├── src/
+    │   ├── assets/          # Sprites, Audio y Tilesets
+    │   ├── components/      # UI (PantallaJuego, EscenaApertura)
+    │   ├── config/          # Mapeo de Teclas (Input System)
+    │   ├── pages/           # Vistas (Login, GameBoy Shell)
+    │   ├── services/        # Conexión con API (Axios)
+    │   └── store/           # Estado Global (Zustand)
+    ├── package.json
+    └── vite.config.js
