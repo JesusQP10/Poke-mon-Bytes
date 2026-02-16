@@ -283,7 +283,7 @@ const EscenaApertura = ({ onContinue }) => {
   return (
     <div className="op-root">
       <div className="op-header">
-        {mode === "dialog" ? "Professor Oak" : mode === "nameSelect" ? "Choose Name" : "Introduce tu nombre"}
+        {mode === "dialog" ? "Professor Oak" : mode === "nameSelect" ? "Elige tu nombre" : "Introduce tu nombre"}
       </div>
 
       <div className="op-viewport">
