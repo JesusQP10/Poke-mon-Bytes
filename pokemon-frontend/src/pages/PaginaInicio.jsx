@@ -91,12 +91,9 @@ const POKEBALLS_SCREEN = [
   { s: 60, b: "40px", l: "-10px", o: 0.05 },
 ];
 
-const META_TAGS = ["GEN II", "JOHTO", "ONLINE", "PIXEL"];
+const META_TAGS = ["GEN II", "JOHTO", "WEB", "GBC"];
 
 const SCREEN_NEWS = [
-  "JOHTO NETWORK ONLINE",
-  "WILD ENCOUNTERS ACTIVOS",
-  "GYM CHALLENGE DISPONIBLE",
   "PROF. ELM TE ESTA ESPERANDO",
 ];
 
