@@ -57,8 +57,24 @@ El cliente web se centra en la fidelidad visual y la experiencia de usuario:
 * **HTTP Client:** Axios (con Interceptores JWT)
 * **Motion:** Framer Motion v12
 
+
 ---
 
+## 📸 Galería del Proyecto
+
+
+| Landing Page & Portada | Pantalla de Título Original |
+|:---:|:---:|
+| ![Landing](docs/screenshots/landing.png) | ![Título](docs/screenshots/titulo.png) |
+| *Página de inicio con la "carcasa" de GBC.* | *Recreación pixel de la intro de Oro.* |
+
+| Cinemática de Introducción | Sistema de Entrada de Nombre |
+|:---:|:---:|
+| ![Profesor Oak](docs/screenshots/oak.png) | ![Name Input](docs/screenshots/nombre.png) |
+| *Diálogo narrativo  Profesor Oak.* | *Teclado en pantalla y sprite del jugador.* |
+
+---
+---
 ## 📂 Estructura del Proyecto
 
 El repositorio sigue una estructura de monorepo lógico separado en carpetas raíz:
