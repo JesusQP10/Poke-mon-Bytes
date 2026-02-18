@@ -30,7 +30,7 @@ const PantallaJuego = ({ onStart }) => {
   const [phase, setPhase] = useState("title");
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  // Detectamos si hay partida guardada para mostrar CONTINUE o no.
+  // Detectar si hay partida guardada para mostrar CONTINUE .
   const hasSave = useMemo(() => {
     if (typeof window === "undefined") return false;
 
@@ -50,7 +50,7 @@ const PantallaJuego = ({ onStart }) => {
   const menuOptions = hasSave ? menuTexts.with_save : menuTexts.no_save;
 
   useEffect(() => {
-    // Montamos la música y el desbloqueo por interacción del usuario.
+    // música y el desbloqueo por interacción del usuario.
     const audio = new Audio(titleTheme);
     audio.loop = true;
     audio.preload = "auto";
