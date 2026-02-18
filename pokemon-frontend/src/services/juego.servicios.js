@@ -2,7 +2,7 @@ import api from './api';
 
 export const gameService = {
   // Obtener estado completo del jugador
-  // Respuesta esperada: { starter: null | {...}, team: [], badges: [], money: 3000, ... }
+  
   getPlayerState: async () => {
     const response = await api.get('/api/v1/juego/estado');
     return response.data;
