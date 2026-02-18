@@ -4,7 +4,7 @@ import PaginaAcceso from "../pages/PaginaAcceso";
 import PaginaRegistro from "../pages/PaginaRegistro";
 import PaginaJuego from "../pages/PaginaJuego";
 
-// Esta función la uso aquí para manejar EnrutadorAplicacion.
+// manejar EnrutadorAplicacion.
 export const EnrutadorAplicacion = () => {
   return (
     <Routes>
