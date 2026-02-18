@@ -4,7 +4,7 @@ const hostname = typeof window !== "undefined" ? window.location.hostname : "loc
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${hostname}:8081`;
 const API_URL = `${API_BASE_URL}/auth`;
 
-// Aquí preparo el envío de datos del formulario.
+// Preparo el envío de datos del formulario.
 const registrar = (username, password) => {
   return axios.post(`${API_URL}/registrar`, {
     username,
@@ -12,7 +12,7 @@ const registrar = (username, password) => {
   });
 };
 
-// Aquí preparo el envío de datos del formulario.
+
 const iniciarSesion = (username, password) => {
   return axios
     .post(`${API_URL}/iniciarSesion`, {
@@ -27,7 +27,7 @@ const iniciarSesion = (username, password) => {
     });
 };
 
-// Esta función la uso aquí para manejar cerrarSesion.
+// cerrarSesion.
 const cerrarSesion = () => {
   localStorage.removeItem("user");
 };
