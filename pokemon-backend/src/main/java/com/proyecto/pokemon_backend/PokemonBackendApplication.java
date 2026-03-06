@@ -42,7 +42,7 @@ public class PokemonBackendApplication {
 
 	// 1. FORZAMOS EL BEAN DE INICIALIZACIÓN AQUI
     @Bean
-    // Aquí preparo datos necesarios al arrancar la app.
+    
     public InicializadorTipos inicializadorTipos(RepositorioTipo tipoRepository) {
         // Spring ahora sabe que debe crear el Inicializador pasándole el Repositorio.
         return new InicializadorTipos(tipoRepository);
