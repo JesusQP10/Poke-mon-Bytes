@@ -1,6 +1,6 @@
 # 🎮🕹️ Pokémon Bytes
 
-![poka0012](https://github.com/user-attachments/assets/a112bfd7-8c0b-49c1-b2af-1d450fa7316a)
+
 ![poka0012](https://github.com/user-attachments/assets/1b762be8-007d-4b03-a254-1519428a8862)
 
 ![Java](https://img.shields.io/badge/Java-21-orange?style=flat&logo=openjdk)
