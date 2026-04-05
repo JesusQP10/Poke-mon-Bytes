@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Claude Code
+.claude/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Java / Maven
+target/
+*.jar
+*.class
+*.war
+
+#Packages

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import PantallaJuego from "../components/game/PantallaJuego";
 import EscenaApertura from "../components/game/EscenaApertura";
+import CanvasPhaser from "../components/game/CanvasPhaser";
 
 // Manejar PaginaJuego.
 const PaginaJuego = () => {
@@ -8,7 +9,7 @@ const PaginaJuego = () => {
   const [scene, setScene] = useState("title");
 
   useEffect(() => {
-    // Si el jugador pulsa algo, lo gestiono aquí.
+    // Si el jugador pulsa algo
     const manejarRedimension = () => {
       const maxScaleW = window.innerWidth / 160;
       const maxScaleH = window.innerHeight / 144;
@@ -46,10 +47,14 @@ const PaginaJuego = () => {
           overflow: "hidden",
         }}
       >
-        {scene === "title" ? (
+        {scene === "title" && (
           <PantallaJuego onStart={() => setScene("opening")} />
-        ) : (
-          <EscenaApertura onContinue={() => setScene("title")} />
+        )}
+        {scene === "opening" && (
+          <EscenaApertura onContinue={() => setScene("overworld")} />
+        )}
+        {(scene === "overworld" || scene === "battle") && (
+          <CanvasPhaser onCambioPantalla={setScene} />
         )}
       </div>
 
