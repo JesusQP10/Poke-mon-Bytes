@@ -27,4 +27,18 @@ target/
 *.class
 *.war
 
-#Packages
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Spring Boot
+*.pid
+HELP.md
+
+# Test reports
+/test-results/
+/coverage/
