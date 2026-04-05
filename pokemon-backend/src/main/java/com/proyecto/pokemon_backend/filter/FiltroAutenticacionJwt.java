@@ -66,7 +66,7 @@ public class FiltroAutenticacionJwt extends OncePerRequestFilter {
         
         // CRÍTICO: Asegúrate de que ServicioJwt.extraerNombreUsuario está implementado y funciona
         try {
-             username = jwtService.extraerNombreUsuario(jwt);
+            username = jwtService.extraerNombreUsuario(jwt);
         } catch (Exception e) {
             // Si el token es inválido (expirado, firma mala, etc.), Spring manejará el 401 más tarde
             filterChain.doFilter(request, response);

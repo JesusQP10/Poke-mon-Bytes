@@ -4,7 +4,6 @@ import com.proyecto.pokemon_backend.model.enums.Estado;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.List;
 
 /**
  * Entidad Transaccional que representa una instancia única de un Pokémon capturado.
