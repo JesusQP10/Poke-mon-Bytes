@@ -1,44 +1,18 @@
-# Dependencies
-node_modules/
 
-# Claude Code
+# Ignorar la carpeta de configuración de Claude
 .claude/
+# Ignorar la carpeta de tilesets completa
+JesusQP10 pokegold master gfx-tilesets/
 
-# Environment variables
-.env
-.env.local
-.env.*.local
+# Archivos comunes a ignorar en carpetas de assets/gráficos
+# Archivos de proyectos de edición de imágenes
+*.psd
+*.kra
+*.xcf
+*.aseprite
 
-# OS
+# Archivos temporales o de sistema
+*.bak
+*.tmp
 .DS_Store
 Thumbs.db
-
-# IDE
-.idea/
-.vscode/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-
-# Java / Maven
-target/
-*.jar
-*.class
-*.war
-
-# Build output
-dist/
-build/
-
-# Logs
-*.log
-npm-debug.log*
-
-# Spring Boot
-*.pid
-HELP.md
-
-# Test reports
-/test-results/
-/coverage/

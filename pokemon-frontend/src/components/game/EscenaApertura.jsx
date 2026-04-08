@@ -10,6 +10,7 @@ import {
   esTeclaDerecha,
   esTeclaArriba,
 } from "../../config/controlesJuego";
+import { usarJuegoStore } from "../../store/usarJuegoStore";
 import "./EscenaApertura.css";
 
 const OPENING_LINES = [
@@ -112,6 +113,7 @@ const EscenaApertura = ({ onContinue }) => {
       setKeyboardIndex(0);
       return;
     }
+    usarJuegoStore.getState().setNuevaPartida(selectedName);
     onContinue?.(selectedName);
   };
 
@@ -143,6 +145,7 @@ const EscenaApertura = ({ onContinue }) => {
       if (!finalName) {
         return;
       }
+      usarJuegoStore.getState().setNuevaPartida(finalName);
       onContinue?.(finalName);
       return;
     }

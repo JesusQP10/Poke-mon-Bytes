@@ -11,9 +11,13 @@ export const usarJuegoStore = create((set) => ({
   error: null,
 
   // Posición en el mundo
-  mapaActual: 'new-bark-town',
-  posX: 5,
-  posY: 5,
+  mapaActual: 'player-house',
+  posX: 3,
+  posY: 3,
+
+  // Nueva partida
+  esNuevaPartida: false,
+  nombreJugador: '',
 
   // Setear estado desde backend
   setPlayerState: (data) => set({
@@ -36,6 +40,16 @@ export const usarJuegoStore = create((set) => ({
 
   // Actualizar posición (llamado desde Phaser al moverse o guardar)
   setPosition: (posX, posY, mapaActual) => set({ posX, posY, mapaActual }),
+
+  // Activar/desactivar flag de nueva partida
+  setNuevaPartida: (nombre) => set({
+    esNuevaPartida: true,
+    nombreJugador: nombre,
+    mapaActual: 'player-house',
+    posX: 3,
+    posY: 3,
+  }),
+  clearNuevaPartida: () => set({ esNuevaPartida: false }),
 
   // Estados de carga/error
   setLoading: (loading) => set({ loading }),
