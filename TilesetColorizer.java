@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+// Clase para colorizar los tilesets (aspecto GBC)
 public class TilesetColorizer {
 
     private static final String SRC = "c:/Users/jesus/OneDrive/Documentos/Escritorio/Pokémon Bytes/JesusQP10 pokegold master gfx-tilesets";
