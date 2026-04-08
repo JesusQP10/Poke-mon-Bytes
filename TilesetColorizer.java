@@ -26,7 +26,6 @@ public class TilesetColorizer {
     //  85            → color 2
     //   0 (negro)    → color 3 (más oscuro)
     private static final Map<Integer, Integer> GRIS_A_IDX = new HashMap<>();
-
     static {
         GRIS_A_IDX.put(255, 0);
         GRIS_A_IDX.put(170, 1);
@@ -120,9 +119,9 @@ public class TilesetColorizer {
 
             for (int py = 0; py < 8; py++) {
                 for (int px = 0; px < 8; px++) {
-                    // Obtener el valor de gris del píxel (solo un componente, ya que es escala de grises)
+                    // Obtener el valor de gris del píxel 
                     int pixel = img.getRGB(tx + px, ty + py);
-                    int grayValue = (pixel >> 16) & 0xFF; // Red component, assuming R=G=B for grayscale
+                    int grayValue = (pixel >> 16) & 0xFF; // Red component
 
                     Integer cidx = GRIS_A_IDX.get(grayValue);
                     if (cidx == null) {
@@ -134,7 +133,7 @@ public class TilesetColorizer {
                     int g = rgb[1];
                     int b = rgb[2];
 
-                    // Color 0 (lightest background) → transparente para permitir capas
+                    // Color 0 → transparente para permitir capas
                     int a = (cidx == 0) ? 0 : 255;
 
                     int argb = (a << 24) | (r << 16) | (g << 8) | b;
