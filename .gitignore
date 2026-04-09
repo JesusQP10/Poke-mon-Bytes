@@ -1,5 +1,5 @@
 
-# ========== IDE & Editor ==========
+# ========== IDE ==========
 .vscode/
 !.vscode/extensions.json
 .idea/
@@ -69,7 +69,7 @@ tmp_*
 .claude/
 JesusQP10 pokegold master gfx-tilesets/
 
-# ========== Java/Spring Gradle ignored patterns ==========
+# ========== Java/Spring Gradle ==========
 !**/src/main/**/target/
 !**/src/test/**/target/
 !**/src/main/**/build/

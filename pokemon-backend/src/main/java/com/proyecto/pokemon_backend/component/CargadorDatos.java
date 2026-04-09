@@ -9,7 +9,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2; 
 
 import java.util.List;
 import java.util.Map;
@@ -36,8 +35,8 @@ public class CargadorDatos implements CommandLineRunner {
     private static final int MOVES_LIMIT = 251;   
 
     public CargadorDatos(RepositorioPokedexMaestra pokedexRepository, 
-                      RepositorioAtaques ataquesRepository, 
-                      ServicioPokeApi apiService) {
+                    RepositorioAtaques ataquesRepository, 
+                    ServicioPokeApi apiService) {
         this.pokedexRepository = pokedexRepository;
         this.ataquesRepository = ataquesRepository;
         this.apiService = apiService;

@@ -26,8 +26,8 @@ public class TiendaService {
     private final RepositorioInventarioUsuario inventarioRepository;
 
     public TiendaService(RepositorioUsuario userRepository, 
-                         RepositorioObjeto itemRepository, 
-                         RepositorioInventarioUsuario inventarioRepository) {
+                        RepositorioObjeto itemRepository, 
+                        RepositorioInventarioUsuario inventarioRepository) {
         this.userRepository = userRepository;
         this.itemRepository = itemRepository;
         this.inventarioRepository = inventarioRepository;
