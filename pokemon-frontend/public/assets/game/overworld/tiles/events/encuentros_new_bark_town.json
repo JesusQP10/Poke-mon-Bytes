@@ -1,9 +1,10 @@
 {
-  "mapa": "new-bark-town",
   "hierba_alta": {
     "pokemon": [
-      { "id": 163, "nombre": "Hoothoot", "nivelMin": 2, "nivelMax": 4, "tasa": 45 },
-      { "id": 191, "nombre": "Sunkern",  "nivelMin": 2, "nivelMax": 4, "tasa": 55 }
+      { "id": 19,  "nombre": "Rattata",  "tasa": 30, "nivelMin": 2, "nivelMax": 4 },
+      { "id": 16,  "nombre": "Pidgey",   "tasa": 25, "nivelMin": 2, "nivelMax": 4 },
+      { "id": 163, "nombre": "Hoothoot", "tasa": 20, "nivelMin": 2, "nivelMax": 4 },
+      { "id": 161, "nombre": "Sentret",  "tasa": 25, "nivelMin": 2, "nivelMax": 4 }
     ]
   }
 }

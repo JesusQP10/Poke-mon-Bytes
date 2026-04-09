@@ -1,17 +1,16 @@
 import axios from 'axios';
 import { usarAutenticacionStore } from '../store/usarAutenticacionStore';
 
-const hostname = typeof window !== "undefined" ? window.location.hostname : "localhost";
+const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || `http://${hostname}:8081`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
 });
 
+// Adjuntar el token JWT en cada petición
 api.interceptors.request.use(
   (config) => {
     const token = usarAutenticacionStore.getState().token;
@@ -23,5 +22,18 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-export default api;
+// Si el token expira (401), cerrar sesión y redirigir al login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      usarAutenticacionStore.getState().cerrarSesion();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/iniciarSesion';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
+export default api;

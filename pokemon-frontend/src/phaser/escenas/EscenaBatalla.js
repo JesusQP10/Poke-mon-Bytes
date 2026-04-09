@@ -37,7 +37,7 @@ export default class EscenaBatalla extends Phaser.Scene {
       if (equipo && equipo.length > 0) {
         this._pokemonJugador = equipo[0];
         this._movimientosJugador = await PuenteApi.getMovimientos(
-          this._pokemonJugador.id
+          this._pokemonJugador.pokemonUsuarioId ?? this._pokemonJugador.id
         );
       }
     } catch (e) {
