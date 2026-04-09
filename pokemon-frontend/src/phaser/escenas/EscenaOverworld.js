@@ -8,9 +8,10 @@ const TAM_TILE = 16;
 
 // Configuración de cada mapa: posición inicial nueva partida, BGM, interiores...
 const CONFIG_MAPAS = {
-  'player-house': { esInterior: true,  posXInicio: 3, posYInicio: 3, bgm: null },
-  'new-bark-town': { esInterior: false, posXInicio: 5, posYInicio: 5, bgm: 'bgm-overworld' },
-  'elm-lab':       { esInterior: true,  posXInicio: 5, posYInicio: 8, bgm: null },
+  'player-house':   { esInterior: true,  posXInicio: 5, posYInicio: 7, bgm: null },
+  'players-house':  { esInterior: true,  posXInicio: 5, posYInicio: 2, bgm: null },
+  'new-bark-town':  { esInterior: false, posXInicio: 5, posYInicio: 5, bgm: 'bgm-overworld' },
+  'elm-lab':        { esInterior: true,  posXInicio: 5, posYInicio: 8, bgm: null },
 };
 
 export default class EscenaOverworld extends Phaser.Scene {
@@ -185,6 +186,7 @@ export default class EscenaOverworld extends Phaser.Scene {
   // El nombre en Tiled debe coincidir exactamente con el primer argumento.
   static TILESETS_POR_MAPA = {
     'player-house':  [['players_room', 'players_room']],
+    'players-house': [['house', 'house']],
     'new-bark-town': [['johto', 'johto'], ['johto_modern', 'johto_modern'], ['house', 'house']],
     'elm-lab':       [['lab', 'lab']],
   };
@@ -268,7 +270,8 @@ export default class EscenaOverworld extends Phaser.Scene {
     const dialogo = obj.properties?.find(p => p.name === 'dialogo')?.value;
     if (!dialogo) return;
 
-    const lineas = dialogo.split('|');
+    const nombreJugador = usarJuegoStore.getState().nombreJugador || 'Tú';
+    const lineas = dialogo.replace('[JUGADOR]', nombreJugador).split('|');
     this.input.keyboard.on('keydown-Z', () => {
       if (this._dialogo?.activo || this._introActiva) return;
       const dist = Phaser.Math.Distance.Between(this._jugador.x, this._jugador.y, npc.x, npc.y);

@@ -61,10 +61,15 @@ export default class EscenaPreload extends Phaser.Scene {
     );
 
     // ── Tilemaps (JSON exportados desde Tiled) ────────────────────────────
-    // Habitación del jugador
+    // Habitación del jugador (planta alta)
     this.load.tilemapTiledJSON(
       'player-house',
       '/assets/game/overworld/tiles/exports/player_house.json'
+    );
+    // Planta baja de la casa del jugador
+    this.load.tilemapTiledJSON(
+      'players-house',
+      '/assets/game/overworld/tiles/exports/players_house.json'
     );
     // New Bark Town (exterior)
     this.load.tilemapTiledJSON(

@@ -54,6 +54,7 @@ lerna-debug.log*
 .DS_Store
 Thumbs.db
 
+
 # ========== Temporary & Backup Files ==========
 *.bak
 *.tmp
@@ -68,6 +69,9 @@ tmp_*
 # ========== Project Specific ==========
 .claude/
 JesusQP10 pokegold master gfx-tilesets/
+Pokemon-gen-2-style-tilemap-main/
+pokemon-frontend/node_modules/
+pokemon-frontend/dist/
 
 # ========== Secrets & Environment ==========
 # NUNCA commitear credenciales reales

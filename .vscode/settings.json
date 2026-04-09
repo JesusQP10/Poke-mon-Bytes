@@ -8,7 +8,10 @@
         "tw\\.\\w+`([^`]*)"
     ],
     "kiroAgent.configureMCP": "Disabled",
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "files.associations": {
+        "pokemon-frontend/public/**/*.tsx": "xml"
+    }
 }
 
 
