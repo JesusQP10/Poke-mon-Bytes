@@ -31,13 +31,13 @@ public class CalculoServiceTest {
         boolean esMismoTipo = false; // No STAB
 
         // WHEN: Ejecutamos el cálculo
-        int daño = calculoService.calcularDaño(nivelAtacante, ataqueStat, defensaStat, potenciaMovimiento, multiplicadorTipo, esMismoTipo, null, false);
+        int daño = calculoService.calcularDanio(nivelAtacante, ataqueStat, defensaStat, potenciaMovimiento, multiplicadorTipo, esMismoTipo, null, false);
         // THEN: El daño teórico exacto es 10.
         // Verificamos que el daño está en el rango esperado (8-10) del juego, si random=1.0.
         // Si la fórmula es correcta, el daño máximo debe ser 10.
         System.out.println("Danio calculado para Pikachu Nv10: " + daño);
         assertTrue(daño >= 7 && daño <= 9, 
-                   "El daño de Pikachu Nv10 (Placaje) debe caer entre 7 y 9. Resultado: " + daño);
+                "El daño de Pikachu Nv10 (Placaje) debe caer entre 7 y 9. Resultado: " + daño);
         
 
     }
@@ -55,11 +55,11 @@ public class CalculoServiceTest {
         boolean esMismoTipo = true; // STAB (x1.5)
 
         // WHEN: Ejecutamos el cálculo
-        int daño = calculoService.calcularDaño(nivelAtacante, ataqueStat, defensaStat, potenciaMovimiento, multiplicadorTipo, esMismoTipo, null, false);
+        int daño = calculoService.calcularDanio(nivelAtacante, ataqueStat, defensaStat, potenciaMovimiento, multiplicadorTipo, esMismoTipo, null, false);
         // Rango de los resultados esperados 110-129
         System.out.println("Danio calculado para escenario x2 + STAB: " + daño);
         assertTrue(daño >= 110 && daño <= 131,
-                   "El daño con x4.0 + STAB debe estar entre 110 y 129. Resultado: " + daño);
+                "El daño con x4.0 + STAB debe estar entre 110 y 129. Resultado: " + daño);
         
 
     }

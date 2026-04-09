@@ -1,41 +1,35 @@
 package com.proyecto.pokemon_backend.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO (Data Transfer Object) para la solicitud de un Turno de Combate.
- * * Actúa como contrato de entrada para el endpoint 'POST /api/v1/batalla/turno'.
- * * Su responsabilidad es encapsular todos los parámetros variables necesarios
- * para que el 'CalculoService' pueda aplicar la fórmula de daño de la Gen II.
+ * Parámetros de entrada para un turno de combate.
+ *
+ * El servidor carga todos los stats desde la BD usando los IDs — el cliente
+ * no envía stats ni multiplicadores para evitar manipulación.
  */
-
 @Data
 @NoArgsConstructor
 public class SolicitudTurno {
 
-    // --- Identificadores de Persistencia (Instancias de POKEMON_USUARIO)---
-    // Serán usados por BatallaService para cargar el estado dinámico( Nivel, HP,...) de la Base de Datos
+    @NotNull(message = "atacanteId es obligatorio.")
     private Long atacanteId;
+
+    @NotNull(message = "defensorId es obligatorio.")
     private Long defensorId;
+
+    /**
+     * ID del movimiento a usar (de la tabla ATAQUES).
+     * Si es null, se usa el primer movimiento con PP disponible.
+     */
     private Long movimientoId;
 
-    // --- Parámetros de la Fórmula de Daño ---
-
-    // Nivel del Pokémon Atacante
-    private Integer nivelAtacante;
-    // Potencia del Movimiento usado por el Atacante
-    private Integer potenciaMovimiento;
-    // Tipo de ataque
+    // --- Campos legacy (compatibilidad con clientes anteriores) ---
+    // Ignorados si movimientoId está presente.
     private String tipoAtaque;
-    // --- STATS Físicas/Especiales ---
-    private Integer ataqueStat; // Ataque o Ataque Especial del Atacante
-    private Integer defensaStat; // Defensa o Defensa Especial del Defensor
-
-    // --- Modificadores ---
+    private Integer potenciaMovimiento;
     private Boolean esEspecial;
     private Boolean esMismoTipo;
-
-    
 }
-

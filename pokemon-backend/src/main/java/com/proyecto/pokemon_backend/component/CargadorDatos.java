@@ -15,148 +15,122 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Componente de Carga Inicial de Datos (Data Seeding).
- * * Implementa 'CommandLineRunner':
- * Spring Boot ejecutará el método 'run' automáticamente justo después de levantar el servidor.
- * * Objetivo:
- * Poblar la base de datos (MySQL) con la información oficial de Pokémon y Movimientos
- * descargándola desde la PokéAPI externa.
+ * Carga inicial de Pokédex y movimientos desde la PokéAPI al arrancar.
+ *
+ * Solo se ejecuta si la tabla está incompleta, evitando re-descargas innecesarias.
+ * Usa WebFlux con concurrencia controlada (5 peticiones simultáneas) para no
+ * saturar la PokéAPI.
  */
-
 @Component
 public class CargadorDatos implements CommandLineRunner {
 
-    private final RepositorioPokedexMaestra pokedexRepository;
-    private final RepositorioAtaques ataquesRepository;
+    private static final int LIMITE_GEN_II = 251;
+
+    private final RepositorioPokedexMaestra pokedexRepo;
+    private final RepositorioAtaques ataquesRepo;
     private final ServicioPokeApi apiService;
 
-    // LÍMITES DE LA GENERACIÓN II
-    private static final int POKEMON_LIMIT = 251; 
-    private static final int MOVES_LIMIT = 251;   
-
-    public CargadorDatos(RepositorioPokedexMaestra pokedexRepository, 
-                    RepositorioAtaques ataquesRepository, 
-                    ServicioPokeApi apiService) {
-        this.pokedexRepository = pokedexRepository;
-        this.ataquesRepository = ataquesRepository;
+    public CargadorDatos(
+        RepositorioPokedexMaestra pokedexRepo,
+        RepositorioAtaques ataquesRepo,
+        ServicioPokeApi apiService
+    ) {
+        this.pokedexRepo = pokedexRepo;
+        this.ataquesRepo = ataquesRepo;
         this.apiService = apiService;
     }
 
     @Override
-    // Este metodo se encarga de run.
-    public void run(String... args) throws Exception {
-        
-        // 1. CARGA DE POKÉDEX 
-        if (pokedexRepository.count() < POKEMON_LIMIT) {
-            System.out.println("--- INICIANDO CARGA DE POKÉDEX (CON RATIO DE CAPTURA) ---");
-            System.out.println("Descargando datos combinados (Detalles + Especies)...");
-
-            Flux.range(1, POKEMON_LIMIT)
-                .flatMap(id -> 
-                    // Para cada ID, lanzamos DOS peticiones HTTP simultáneas:
-                    // 1. Datos de combate (Stats, Tipos)
-                    // 2. Datos de especie (Ratio de captura)
-                    // 'Mono.zip' espera a que ambas terminen y combina los resultados.
-                    Mono.zip(
-                        apiService.obtenerDetallesPokemon(String.valueOf(id)), // T1: Datos base (Stats)
-                        apiService.obtenerEspeciePokemon(String.valueOf(id))  // T2: Datos especie (Capture Rate)
-                    ).onErrorResume(e -> {
-                        System.err.println("Error cargando ID " + id + ": " + e.getMessage());
-                        return Mono.empty();
-                    }), 5 // Concurrencia controlada
-                )
-                // Transformación: Convertimos los JSONs en nuestra entidad JPA
-                .map(tuple -> mapearDatosCombinadosAEntidad(tuple.getT1(), tuple.getT2()))
-                .buffer(20)
-                .doOnNext(pokedexRepository::saveAll)
-                .blockLast();
-                
-            System.out.println("--- POKÉDEX ACTUALIZADA (" + pokedexRepository.count() + " registros) ---");
-        }
-
-        // 2. CARGA DE ATAQUES 
-        if (ataquesRepository.count() < MOVES_LIMIT) {
-            System.out.println("--- INICIANDO CARGA DE ATAQUES ---");
-            Flux.range(1, MOVES_LIMIT)
-                .flatMap(id -> apiService.obtenerDetallesMovimiento(String.valueOf(id)).onErrorResume(e -> Mono.empty()), 5)
-                .map(this::mapearDetallesApiAAtaqueEntidad)
-                .buffer(20)
-                .doOnNext(ataquesRepository::saveAll)
-                .blockLast();
-            System.out.println("--- ATAQUES CARGADOS ---");
-        }
+    public void run(String... args) {
+        cargarPokedex();
+        cargarAtaques();
     }
-    
-    // --- MÉTODOS DE MAPEO (ETL: Extract, Transform, Load) ---
 
-    /**
-     * Fusiona los datos de dos fuentes JSON (Detalles y Especies) en una única entidad PokedexMaestra.
-    **/
-    private PokedexMaestra mapearDatosCombinadosAEntidad(Map<String, Object> details, Map<String, Object> species) {
+    private void cargarPokedex() {
+        if (pokedexRepo.count() >= LIMITE_GEN_II) return;
+
+        System.out.println("--- Descargando Pokédex Gen II (251 Pokémon) ---");
+
+        Flux.range(1, LIMITE_GEN_II)
+            .flatMap(id -> Mono.zip(
+                apiService.obtenerDetallesPokemon(String.valueOf(id)),
+                apiService.obtenerEspeciePokemon(String.valueOf(id))
+            ).onErrorResume(e -> {
+                System.err.println("Error cargando Pokémon #" + id + ": " + e.getMessage());
+                return Mono.empty();
+            }), 5)
+            .map(tuple -> mapearPokemon(tuple.getT1(), tuple.getT2()))
+            .buffer(20)
+            .doOnNext(pokedexRepo::saveAll)
+            .blockLast();
+
+        System.out.println("--- Pokédex lista: " + pokedexRepo.count() + " registros ---");
+    }
+
+    private void cargarAtaques() {
+        if (ataquesRepo.count() >= LIMITE_GEN_II) return;
+
+        System.out.println("--- Descargando movimientos Gen II ---");
+
+        Flux.range(1, LIMITE_GEN_II)
+            .flatMap(id -> apiService.obtenerDetallesMovimiento(String.valueOf(id))
+                .onErrorResume(e -> Mono.empty()), 5)
+            .map(this::mapearAtaque)
+            .buffer(20)
+            .doOnNext(ataquesRepo::saveAll)
+            .blockLast();
+
+        System.out.println("--- Movimientos cargados: " + ataquesRepo.count() + " registros ---");
+    }
+
+    @SuppressWarnings("unchecked")
+    private PokedexMaestra mapearPokemon(Map<String, Object> detalles, Map<String, Object> especie) {
         PokedexMaestra pkm = new PokedexMaestra();
-        
-        // Datos básicos (mapa 'details')
-        pkm.setId_pokedex((Integer) details.get("id"));
-        pkm.setNombre((String) details.get("name"));
-        pkm.setXp_base((Integer) details.get("base_experience"));
-        
-        // Mapeo complejo de Stats:
-        // La API devuelve una lista, nosotros la convertimos a un Mapa para acceso rápido.
-        List<Map<String, Object>> statsList = (List<Map<String, Object>>) details.get("stats");
-        Map<String, Integer> statsMap = statsList.stream().collect(Collectors.toMap(
-                stat -> (String) ((Map<String, Object>) stat.get("stat")).get("name"),
-                stat -> (Integer) stat.get("base_stat")
+
+        pkm.setId_pokedex((Integer) detalles.get("id"));
+        pkm.setNombre((String) detalles.get("name"));
+        pkm.setXp_base((Integer) detalles.get("base_experience"));
+
+        // Stats
+        List<Map<String, Object>> statsList = (List<Map<String, Object>>) detalles.get("stats");
+        Map<String, Integer> stats = statsList.stream().collect(Collectors.toMap(
+            s -> (String) ((Map<String, Object>) s.get("stat")).get("name"),
+            s -> (Integer) s.get("base_stat")
         ));
-        
-        pkm.setStat_base_hp(statsMap.get("hp"));
-        pkm.setStat_base_ataque(statsMap.get("attack"));
-        pkm.setStat_base_defensa(statsMap.get("defense"));
-        pkm.setStat_base_atq_especial(statsMap.getOrDefault("special-attack", statsMap.get("special")));
-        pkm.setStat_base_def_especial(statsMap.getOrDefault("special-defense", statsMap.get("special")));
-        pkm.setStat_base_velocidad(statsMap.get("speed"));
+
+        pkm.setStat_base_hp(stats.get("hp"));
+        pkm.setStat_base_ataque(stats.get("attack"));
+        pkm.setStat_base_defensa(stats.get("defense"));
+        pkm.setStat_base_atq_especial(stats.getOrDefault("special-attack", stats.get("special")));
+        pkm.setStat_base_def_especial(stats.getOrDefault("special-defense", stats.get("special")));
+        pkm.setStat_base_velocidad(stats.get("speed"));
 
         // Tipos
-        List<Map<String, Object>> types = (List<Map<String, Object>>) details.get("types");
-        pkm.setTipo_1((String) ((Map<String, Object>) types.get(0).get("type")).get("name"));
-        if (types.size() > 1) {
-            pkm.setTipo_2((String) ((Map<String, Object>) types.get(1).get("type")).get("name"));
-        } else {
-             pkm.setTipo_2(null);
-        }
-        
-        // <--- Extracción del Ratio de Captura ( mapa 'species')
-        if (species != null && species.containsKey("capture_rate")) {
-            pkm.setRatioCaptura((Integer) species.get("capture_rate"));
-        } else {
-            pkm.setRatioCaptura(45); // Valor por defecto 
-        }
+        List<Map<String, Object>> tipos = (List<Map<String, Object>>) detalles.get("types");
+        pkm.setTipo_1((String) ((Map<String, Object>) tipos.get(0).get("type")).get("name"));
+        pkm.setTipo_2(tipos.size() > 1
+            ? (String) ((Map<String, Object>) tipos.get(1).get("type")).get("name")
+            : null);
+
+        // Ratio de captura
+        pkm.setRatioCaptura(especie != null && especie.containsKey("capture_rate")
+            ? (Integer) especie.get("capture_rate")
+            : 45);
 
         pkm.setId_evolucion(null);
         return pkm;
     }
-    
-    // Mapper de Ataques 
-    private Ataques mapearDetallesApiAAtaqueEntidad(Map<String, Object> details) {
+
+    @SuppressWarnings("unchecked")
+    private Ataques mapearAtaque(Map<String, Object> detalles) {
         Ataques ataque = new Ataques();
-        ataque.setIdAtaque((Integer) details.get("id"));
-        ataque.setNombre((String) details.get("name"));
-        
-        Integer power = (Integer) details.get("power");
-        ataque.setPotencia(power != null ? power : 0); 
-
-        Integer accuracy = (Integer) details.get("accuracy");
-        ataque.setPrecisionBase(accuracy != null ? accuracy : 100); 
-
-        Integer pp = (Integer) details.get("pp");
-        ataque.setPpBase(pp != null ? pp : 0);
-        
-        Map<String, Object> typeMap = (Map<String, Object>) details.get("type");
-        ataque.setTipo((String) typeMap.get("name"));
-        
-        Map<String, Object> damageClassMap = (Map<String, Object>) details.get("damage_class");
-        ataque.setCategoria((String) damageClassMap.get("name"));
-
+        ataque.setIdAtaque((Integer) detalles.get("id"));
+        ataque.setNombre((String) detalles.get("name"));
+        ataque.setPotencia(detalles.get("power") != null ? (Integer) detalles.get("power") : 0);
+        ataque.setPrecisionBase(detalles.get("accuracy") != null ? (Integer) detalles.get("accuracy") : 100);
+        ataque.setPpBase(detalles.get("pp") != null ? (Integer) detalles.get("pp") : 0);
+        ataque.setTipo((String) ((Map<String, Object>) detalles.get("type")).get("name"));
+        ataque.setCategoria((String) ((Map<String, Object>) detalles.get("damage_class")).get("name"));
         return ataque;
     }
 }
-

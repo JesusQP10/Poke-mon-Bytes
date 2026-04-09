@@ -15,6 +15,13 @@ export const usarJuegoStore = create((set) => ({
   posX: 3,
   posY: 3,
 
+  // Reloj
+  reloj: {
+    hora: 12,
+    minutos: 0,
+    diaSemana: 0,
+  },
+
   // Nueva partida
   esNuevaPartida: false,
   nombreJugador: '',
@@ -42,13 +49,21 @@ export const usarJuegoStore = create((set) => ({
   setPosition: (posX, posY, mapaActual) => set({ posX, posY, mapaActual }),
 
   // Activar/desactivar flag de nueva partida
-  setNuevaPartida: (nombre) => set({
-    esNuevaPartida: true,
-    nombreJugador: nombre,
-    mapaActual: 'player-house',
-    posX: 3,
-    posY: 3,
-  }),
+  setNuevaPartida: (nombre) => {
+    const fechaActual = new Date();
+    set({
+      esNuevaPartida: true,
+      nombreJugador: nombre,
+      mapaActual: 'player-house',
+      posX: 3,
+      posY: 3,
+      reloj: {
+        hora: fechaActual.getHours(),
+        minutos: fechaActual.getMinutes(),
+        diaSemana: fechaActual.getDay(), // 0 = Domingo, 1 = Lunes...
+      }
+    });
+  },
   clearNuevaPartida: () => set({ esNuevaPartida: false }),
 
   // Estados de carga/error

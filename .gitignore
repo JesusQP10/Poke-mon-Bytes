@@ -69,6 +69,13 @@ tmp_*
 .claude/
 JesusQP10 pokegold master gfx-tilesets/
 
+# ========== Secrets & Environment ==========
+# NUNCA commitear credenciales reales
+pokemon-backend/src/main/resources/application-local.properties
+*.env
+.env
+.env.*
+
 # ========== Java/Spring Gradle ==========
 !**/src/main/**/target/
 !**/src/test/**/target/

@@ -2,14 +2,13 @@ package com.proyecto.pokemon_backend.config;
 
 import com.proyecto.pokemon_backend.filter.FiltroAutenticacionJwt;
 import com.proyecto.pokemon_backend.service.ServicioDetallesUsuario;
-import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,32 +17,25 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
 public class ConfiguracionSeguridad {
 
-    // Filtro JWT + servicio de usuarios para iniciarSesion/autenticación.
     private final FiltroAutenticacionJwt jwtAuthFilter;
     private final ServicioDetallesUsuario userDetailsService;
 
-    // Este metodo se encarga de ConfiguracionSeguridad.
     public ConfiguracionSeguridad(FiltroAutenticacionJwt jwtAuthFilter, ServicioDetallesUsuario userDetailsService) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
     }
 
     @Bean
-    // Este metodo se encarga de cadenaFiltroSeguridad.
     public SecurityFilterChain cadenaFiltroSeguridad(HttpSecurity http) throws Exception {
-        // Regla general de seguridad:
-        // - Sin sesiones (API stateless)
-        // - Auth con JWT
-        // - Rutas publicas para auth
-        // - Resto protegido
         http
-            .csrf(csrf -> csrf.disable())
+            .csrf(csrf -> csrf.disable()) // CSRF deshabilitado: API stateless con JWT, no hay cookies de sesión
             .cors(cors -> cors.configurationSource(request -> {
-                // Permitimos peticiones desde localhost y red local para desarrollo.
                 CorsConfiguration config = new CorsConfiguration();
                 config.setAllowedOriginPatterns(List.of(
                     "http://localhost:*",
@@ -66,9 +58,6 @@ public class ConfiguracionSeguridad {
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/v1/juego/**").authenticated()
-                .requestMatchers("/api/v1/batalla/**").authenticated()
-                .requestMatchers("/api/v1/tienda/**").authenticated()
                 .anyRequest().authenticated()
             );
 
@@ -76,26 +65,20 @@ public class ConfiguracionSeguridad {
     }
 
     @Bean
-    // Este metodo se encarga de codificadorContrasena.
     public PasswordEncoder codificadorContrasena() {
-        // BCrypt para guardar contrasenas de forma segura.
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    // Esta parte controla autenticación y seguridad.
     public AuthenticationManager gestorAutenticacion(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
     @Bean
-    // Esta parte controla autenticación y seguridad.
-    public DaoAuthenticationProvider proveedorAutenticacion() {
-        // Une "como buscar usuario" + "como comprobar password".
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+    @SuppressWarnings("deprecation")
+    public AuthenticationProvider proveedorAutenticacion() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(codificadorContrasena());
         provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(codificadorContrasena());
         return provider;
     }
 }
-

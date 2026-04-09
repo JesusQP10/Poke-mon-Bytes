@@ -1,32 +1,19 @@
 package com.proyecto.pokemon_backend.dto;
-import lombok.Data;
 
-/**
- * DTO (Data Transfer Object) para la captura de credenciales.
- * * Mapea el cuerpo de las peticiones JSON enviadas a los endpoints de autenticación:
- * - POST /api/v1/auth/registrar
- * - POST /api/v1/auth/iniciarSesion
- * * Su función es encapsular los datos de entrada (raw data) antes de que sean
- * procesados por la lógica de negocio o convertidos a entidades JPA.
- */
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class SolicitudRegistro {
 
-    /**
-     * El nombre de usuario solicitado por el cliente.
-     * En el servicio de registro, se verificará que no exista previamente.
-     */
-
+    @NotBlank(message = "El nombre de usuario es obligatorio.")
+    @Size(min = 3, max = 30, message = "El nombre de usuario debe tener entre 3 y 30 caracteres.")
     private String username;
 
-    /**
-     * La contraseña en texto plano.
-     * Este campo solo vive temporalmente en la memoria durante la petición.
-     * Nunca se guarda en la base de datos tal cual. El 'ServicioAutenticacion' se encargará
-     * de transformarlo en un Hash (BCrypt) inmediatamente.
-     */
-
+    @NotBlank(message = "La contraseña es obligatoria.")
+    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres.")
     private String password;
 }
-

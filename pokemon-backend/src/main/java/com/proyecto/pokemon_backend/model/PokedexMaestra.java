@@ -5,36 +5,32 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Entidad Maestra que representa el catálogo de especies Pokémon (Datos estáticos).
- * * Mapea la tabla 'POKEDEX_MAESTRA'.
- * * Diferencia clave con PokemonUsuario:
- * - PokemonUsuario: Es la instancia concreta (Mi Pikachu de Nivel 5 con 20 HP).
- * - PokedexMaestra: Es la definición de la especie (Todos los Pikachu tienen 35 HP base y son Eléctricos).
- * * Esta tabla se carga automáticamente al inicio desde la PokeAPI (Data Seeding).
+ * Catálogo estático de especies Pokémon (datos de solo lectura).
+ *
+ * Se carga al arrancar desde la PokéAPI mediante CargadorDatos.
+ * No se modifica durante el juego — es la "plantilla" de cada especie.
+ *
+ * Diferencia con PokemonUsuario:
+ *   PokedexMaestra  → "Todos los Charizard tienen 78 HP base y son Fuego/Volador."
+ *   PokemonUsuario  → "Mi Charizard tiene nivel 50, 120 HP actuales y está quemado."
  */
-
 @Entity
 @Data
 @Table(name = "POKEDEX_MAESTRA")
 @NoArgsConstructor
 public class PokedexMaestra {
 
-    /**
-     * Número de la Pokédex Nacional.
-     * preservar los IDs oficiales (ej: 1 = Bulbasaur, 25 = Pikachu).
-     * Esto facilita la integración con APIs externas y el uso de sprites por ID.
-     */
+    /** Número de la Pokédex Nacional. Coincide con el ID oficial para facilitar integración con sprites y APIs. */
     @Id
-    private Integer id_pokedex; // Clave primaria, mapeada al INT en MySQL
+    private Integer id_pokedex;
+
     private String nombre;
-    // --- Sistema de Tipos ---
-    // Usados por 'TipoService' para calcular la matriz de efectividad.
+
+    // --- Tipos (usados por TipoService para calcular efectividad) ---
     private String tipo_1;
     private String tipo_2;
 
-    // --- Estadísticas Base (Gen II) ---
-    // Estos valores NO son los stats finales del Pokémon, sino la base
-    // matemática que usa 'CalculoService' junto con el Nivel para determinar el poder real.
+    // --- Stats base Gen II ---
     private Integer stat_base_hp;
     private Integer stat_base_ataque;
     private Integer stat_base_defensa;
@@ -43,18 +39,15 @@ public class PokedexMaestra {
     private Integer stat_base_def_especial;
 
     private Integer xp_base;
-    private Integer id_evolucion;  //Clave foránea 
+
+    /** FK a la especie de evolución (gestionada directamente en MySQL). */
+    private Integer id_evolucion;
 
     /**
-     * Ratio de Captura (0 - 255).
-     * * Variable FUNDAMENTAL para la Fase IV (Mecánica de Captura).
-     * Cuanto más alto el número, más fácil de capturar.
-     * (ej: Pidgey = 255, Mewtwo = 3).
+     * Ratio de captura oficial (0-255).
+     * Cuanto mayor, más fácil de capturar. Ej: Pidgey=255, Mewtwo=3.
+     * Usado por CalculoService.calcularCaptura().
      */
     @Column(name = "ratio_captura")
-    private Integer ratioCaptura; // 0-255
-
-    // La realación con la clave foranea se gestiona en MySQL directamente
-    
+    private Integer ratioCaptura;
 }
-

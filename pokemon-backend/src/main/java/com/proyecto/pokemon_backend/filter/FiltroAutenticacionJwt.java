@@ -6,6 +6,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,87 +17,65 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Filtro de Seguridad que intercepta CADA petición HTTP entrante.
- * * Extiende OncePerRequestFilter: Garantiza una única ejecución por petición.
- * * Función Principal:
- * 1. Buscar el header "Authorization".
- * 2. Extraer y validar el JWT.
- * 3. Si es válido, cargar al usuario en el SecurityContextHolder.
- * * Esto convierte la API en Stateless: No hay sesiones de servidor, la identidad
- * viaja en el token en cada request.
+ * Filtro JWT que intercepta cada petición HTTP.
+ *
+ * Flujo:
+ *   1. Extrae el token del header "Authorization: Bearer <token>".
+ *   2. Valida la firma y la expiración.
+ *   3. Si es válido, carga el usuario y lo registra en el SecurityContext.
+ *   4. Pasa la petición al siguiente filtro de la cadena.
+ *
+ * Si el token es inválido o no existe, la petición continúa sin autenticar
+ * y Spring Security devolverá 401 si el endpoint lo requiere.
  */
-
 @Component
 public class FiltroAutenticacionJwt extends OncePerRequestFilter {
 
     private final ServicioJwt jwtService;
     private final ServicioDetallesUsuario userDetailsService;
 
-    // Inyección de dependencias por constructor
     public FiltroAutenticacionJwt(ServicioJwt jwtService, ServicioDetallesUsuario userDetailsService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
     }
 
-    /**
-     * Lógica interna del filtro.
-     * @param request La petición HTTP entrante.
-     * @param response La respuesta que se enviará.
-     * @param filterChain La cadena de filtros restantes.
-     */
-
     @Override
     protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException {
+        @NonNull HttpServletRequest request,
+        @NonNull HttpServletResponse response,
+        @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization"); 
-        final String jwt;
-        final String username;
+        String authHeader = request.getHeader("Authorization");
 
-        // 1. Si no hay token o no empieza por "Bearer ", pasamos al siguiente filtro
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response); 
-            return;
-        }
-
-        // 2. Extraer el Token y el username
-        jwt = authHeader.substring(7); // Saltamos "Bearer "
-        
-        // CRÍTICO: Asegúrate de que ServicioJwt.extraerNombreUsuario está implementado y funciona
-        try {
-            username = jwtService.extraerNombreUsuario(jwt);
-        } catch (Exception e) {
-            // Si el token es inválido (expirado, firma mala, etc.), Spring manejará el 401 más tarde
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 3. Si el usuario existe y NO está autenticado actualmente
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            
-            UserDetails userDetails = this.userDetailsService.cargarUsuarioPorNombreUsuario(username);
+        String token = authHeader.substring(7);
+        String username;
 
-            // 4. Validar el Token
-            if (jwtService.esTokenValido(jwt, userDetails)) {
-                
-                // 5. Autenticar al usuario en el contexto de Spring Security
+        try {
+            username = jwtService.extraerNombreUsuario(token);
+        } catch (Exception e) {
+            // Token malformado o expirado — Spring Security manejará el 401
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+            if (jwtService.esTokenValido(token, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null, // La contraseña ya no es necesaria aquí
-                        userDetails.getAuthorities()
+                    userDetails, null, userDetails.getAuthorities()
                 );
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-                SecurityContextHolder.getContext().setAuthentication(authToken); 
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
-        
-        // 6. Continúa la cadena de filtros para que la petición llegue al controlador
-        // Es obligatorio llamar a esto, si no, la petición se quedaría atascada aquí y nunca llegaría al Controller.
-        filterChain.doFilter(request, response); 
+
+        filterChain.doFilter(request, response);
     }
 }
-

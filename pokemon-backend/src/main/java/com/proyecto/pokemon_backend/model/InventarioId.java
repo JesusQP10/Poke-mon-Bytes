@@ -3,30 +3,25 @@ package com.proyecto.pokemon_backend.model;
 import jakarta.persistence.Embeddable;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.io.Serializable;
 
 /**
- * Clase que define la Clave Primaria Compuesta para la tabla intermedia 'INVENTARIO_USUARIO'.
- * @Embeddable: Indica a JPA que esta clase no es una entidad por sí misma, 
- * sino un componente que se incrustará dentro de otra entidad (@EmbeddedId).
- * Implementa 'Serializable': Requisito obligatorio de Hibernate para las clases 
- * que actúan como identificadores compuestos (PK), permitiendo su serialización 
- * en caché o transferencia de red.
+ * Clave primaria compuesta para INVENTARIO_USUARIO.
+ *
+ * Serializable es obligatorio para claves compuestas en Hibernate
+ * (necesario para caché de segundo nivel y serialización de sesión).
  */
-
 @Embeddable
 @Data
 @NoArgsConstructor
 public class InventarioId implements Serializable {
-    
-    
-    private Long usuarioId; 
-    private Integer itemId; 
 
-    // Este metodo se encarga de InventarioId.
+    private Long usuarioId;
+    private Integer itemId;
+
     public InventarioId(Long usuarioId, Integer itemId) {
         this.usuarioId = usuarioId;
         this.itemId = itemId;
     }
 }
-
