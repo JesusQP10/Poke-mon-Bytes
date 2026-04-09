@@ -1,18 +1,76 @@
 
-# Ignorar la carpeta de configuración de Claude
-.claude/
-# Ignorar la carpeta de tilesets completa
-JesusQP10 pokegold master gfx-tilesets/
+# ========== IDE & Editor ==========
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.iws
+*.iml
+*.ipr
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Archivos comunes a ignorar en carpetas de assets/gráficos
-# Archivos de proyectos de edición de imágenes
+# ========== Build & Dependencies ==========
+# Backend (Java/Maven)
+target/
+build/
+.mvn/wrapper/maven-wrapper.jar
+dist/
+
+# Frontend (Node)
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# ========== IDE Specific ==========
+# STS (Spring Tool Suite)
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
+
+# ========== Logs ==========
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ========== System Files ==========
+.DS_Store
+Thumbs.db
+
+# ========== Temporary & Backup Files ==========
+*.bak
+*.tmp
+tmp_*
+
+# ========== Image Editing Files ==========
 *.psd
 *.kra
 *.xcf
 *.aseprite
 
-# Archivos temporales o de sistema
-*.bak
-*.tmp
-.DS_Store
-Thumbs.db
+# ========== Project Specific ==========
+.claude/
+JesusQP10 pokegold master gfx-tilesets/
+
+# ========== Java/Spring Gradle ignored patterns ==========
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
