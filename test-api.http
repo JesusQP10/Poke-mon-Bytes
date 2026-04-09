@@ -1,0 +1,62 @@
+@token = eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJBc2giLCJpYXQiOjE3NzU3NDA5NTEsImV4cCI6MTc3NTgyNzM1MX0.cwCEw_8Zsrz8OeuJLiGnTpFzA-IlHj3M0r1fIyfcRR2oYhXj9hCMhIGU4JDHmQtwoAZyigFNGS_zPqg26sgmQQ
+
+### Registrar usuario
+POST http://localhost:8081/auth/registrar
+Content-Type: application/json
+
+{
+  "username": "ash",
+  "password": "pikachu123"
+}
+
+###
+
+### Login
+POST http://localhost:8081/auth/iniciarSesion
+Content-Type: application/json
+
+{
+  "username": "ash",
+  "password": "pikachu123"
+}
+
+###
+
+### Estado del juego
+GET http://localhost:8081/api/v1/juego/estado
+Authorization: Bearer {{token}}
+
+###
+
+### Elegir starter (152=Chikorita, 155=Cyndaquil, 158=Totodile)
+POST http://localhost:8081/api/v1/juego/starter
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "starterId": 155
+}
+
+###
+
+### Ver equipo
+GET http://localhost:8081/api/v1/juego/equipo
+Authorization: Bearer {{token}}
+
+###
+
+### Ver movimientos de un Pokémon (reemplaza 1 por el pokemonUsuarioId)
+GET http://localhost:8081/api/v1/batalla/movimientos/1
+Authorization: Bearer {{token}}
+
+###
+
+### Comprar item (1=Potion)
+POST http://localhost:8081/api/v1/tienda/comprar
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "itemId": 1,
+  "cantidad": 3
+}
