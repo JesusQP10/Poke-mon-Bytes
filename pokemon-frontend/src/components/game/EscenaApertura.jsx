@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import oakSprite from "../../assets/game/opening/frames/oak/opening_oak_idle_01.png";
 import marillSprite from "../../assets/game/opening/frames/marill/opening_marill_idle_01.png";
 import playerSprite from "../../assets/game/overworld/sprites/player/pixilart_drawing.png";
@@ -73,6 +73,12 @@ const EscenaApertura = ({ onContinue }) => {
   const [customName, setCustomName] = useState("");
   const [keyboardIndex, setKeyboardIndex] = useState(0);
 
+  // Refs para acceder al estado actual sin stale closure
+  const stateRef = useRef({ lineIndex, mode, nameIndex, customName, keyboardIndex });
+  useEffect(() => {
+    stateRef.current = { lineIndex, mode, nameIndex, customName, keyboardIndex };
+  }, [lineIndex, mode, nameIndex, customName, keyboardIndex]);
+
   const currentLine = OPENING_LINES[lineIndex];
   const isLastLine = lineIndex === OPENING_LINES.length - 1;
   const showMarill = lineIndex >= 4;
@@ -80,21 +86,22 @@ const EscenaApertura = ({ onContinue }) => {
   const selectedKeyboardKey = useMemo(() => NAME_KEYBOARD_KEYS[keyboardIndex], [keyboardIndex]);
 
   // Si el jugador pulsa algo, se gestiona aquí.
-  const manejarSiguienteDialogo = () => {
+  const manejarSiguienteDialogo = useCallback(() => {
+    const isLastLine = stateRef.current.lineIndex === OPENING_LINES.length - 1;
     if (isLastLine) {
       setMode("nameSelect");
       return;
     }
     setLineIndex((prev) => prev + 1);
-  };
+  }, []);
 
   
-  const manejarAtrasDialogo = () => {
-    if (lineIndex === 0) {
+  const manejarAtrasDialogo = useCallback(() => {
+    if (stateRef.current.lineIndex === 0) {
       return;
     }
     setLineIndex((prev) => prev - 1);
-  };
+  }, []);
 
   
   const manejarNombreArriba = () => {
@@ -107,7 +114,8 @@ const EscenaApertura = ({ onContinue }) => {
   };
 
   
-  const manejarAceptarSeleccionNombre = () => {
+  const manejarAceptarSeleccionNombre = useCallback(() => {
+    const selectedName = NAME_OPTIONS[stateRef.current.nameIndex];
     if (selectedName === "Nuevo nombre") {
       setMode("nameInput");
       setKeyboardIndex(0);
@@ -115,7 +123,7 @@ const EscenaApertura = ({ onContinue }) => {
     }
     usarJuegoStore.getState().setNuevaPartida(selectedName);
     onContinue?.(selectedName);
-  };
+  }, [onContinue]);
 
   
   const manejarAtrasSeleccionNombre = () => {
@@ -123,17 +131,20 @@ const EscenaApertura = ({ onContinue }) => {
   };
 
  
-  const manejarMovimientoTeclado = (rowDelta, colDelta) => {
-    const currentRow = Math.floor(keyboardIndex / KEYBOARD_COLUMNS);
-    const currentCol = keyboardIndex % KEYBOARD_COLUMNS;
-    const nextRow = (currentRow + rowDelta + KEYBOARD_ROWS) % KEYBOARD_ROWS;
-    const nextCol = (currentCol + colDelta + KEYBOARD_COLUMNS) % KEYBOARD_COLUMNS;
-    setKeyboardIndex(nextRow * KEYBOARD_COLUMNS + nextCol);
-  };
+  const manejarMovimientoTeclado = useCallback((rowDelta, colDelta) => {
+    console.log(`[DEBUG] manejarMovimientoTeclado llamado: rowDelta=${rowDelta}, colDelta=${colDelta}`);
+    setKeyboardIndex((prevIndex) => {
+      const currentRow = Math.floor(prevIndex / KEYBOARD_COLUMNS);
+      const currentCol = prevIndex % KEYBOARD_COLUMNS;
+      const nextRow = (currentRow + rowDelta + KEYBOARD_ROWS) % KEYBOARD_ROWS;
+      const nextCol = (currentCol + colDelta + KEYBOARD_COLUMNS) % KEYBOARD_COLUMNS;
+      return nextRow * KEYBOARD_COLUMNS + nextCol;
+    });
+  }, []);
 
   
-  const manejarAceptarTeclado = (keyOverride) => {
-    const key = keyOverride ?? selectedKeyboardKey;
+  const manejarAceptarTeclado = useCallback((keyOverride) => {
+    const key = keyOverride ?? NAME_KEYBOARD_KEYS[stateRef.current.keyboardIndex];
 
     if (key === "DEL") {
       setCustomName((prev) => prev.slice(0, -1));
@@ -141,7 +152,7 @@ const EscenaApertura = ({ onContinue }) => {
     }
 
     if (key === "OK") {
-      const finalName = customName.trim();
+      const finalName = stateRef.current.customName.trim();
       if (!finalName) {
         return;
       }
@@ -156,12 +167,12 @@ const EscenaApertura = ({ onContinue }) => {
       }
       return `${prev}${key}`;
     });
-  };
+  }, [onContinue]);
 
   
-  const manejarAtrasTeclado = () => {
+  const manejarAtrasTeclado = useCallback(() => {
     setMode("nameSelect");
-  };
+  }, []);
 
   useEffect(() => {
     // Teclas que el jugador pulsa.
@@ -217,7 +228,18 @@ const EscenaApertura = ({ onContinue }) => {
 
     document.addEventListener("keydown", alPulsarTecla);
     return () => document.removeEventListener("keydown", alPulsarTecla);
-  }, [mode, lineIndex, keyboardIndex, customName, nameIndex]);
+  }, [
+  mode,
+  manejarSiguienteDialogo,
+  manejarAtrasDialogo,
+  manejarNombreArriba,
+  manejarNombreAbajo,
+  manejarAceptarSeleccionNombre,
+  manejarAtrasSeleccionNombre,
+  manejarMovimientoTeclado,
+  manejarAceptarTeclado,
+  manejarAtrasTeclado,
+]);
 
   // Manejar renderizarPanelSeleccionNombre.
   const renderizarPanelSeleccionNombre = () => (

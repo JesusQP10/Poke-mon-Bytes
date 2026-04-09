@@ -6,7 +6,8 @@
         "tw=\"([^\"]*)",
         "tw={\"([^\"}]*)",
         "tw\\.\\w+`([^`]*)"
-    ]
+    ],
+    "kiroAgent.configureMCP": "Disabled"
 }
 
 
