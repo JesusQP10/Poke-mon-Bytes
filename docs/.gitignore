@@ -1,0 +1,9 @@
+# Archivos temporales de Tiled
+*.tmx~
+*.tmx.bak
+
+# Archivos temporales de edición
+*.tmp
+*~
+.DS_Store
+Thumbs.db

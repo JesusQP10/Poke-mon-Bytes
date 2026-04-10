@@ -81,6 +81,13 @@ El repositorio sigue una estructura de monorepo lógico separado en carpetas ra�
 
 ```text
 root/
+├── docs/                    # Documentación y assets de diseño
+│   ├── dev/                 # Notas de desarrollo
+│   ├── planning/            # Planificación del proyecto
+│   ├── screenshots/         # Capturas de pantalla
+│   ├── tiled/               # Mapas fuente (Tiled Editor)
+│   └── api-tests.http       # Tests de la API REST
+│
 ├── pokemon-backend/         # Servidor Spring Boot (API REST)
 │   ├── config/              # Seguridad (CORS, CSRF)
 │   ├── controller/          # Endpoints HTTP
@@ -94,6 +101,7 @@ root/
     │   ├── components/      # UI (PantallaJuego, EscenaApertura)
     │   ├── config/          # Mapeo de Teclas (Input System)
     │   ├── pages/           # Vistas (Login, GameBoy Shell)
+    │   ├── phaser/          # Motor de juego Phaser
     │   ├── services/        # Conexión con API (Axios)
     │   └── store/           # Estado Global (Zustand)
     ├── package.json

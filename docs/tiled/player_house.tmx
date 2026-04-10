@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="10" height="9" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="5">
+ <editorsettings>
+  <export target="../pokemon-frontend/public/assets/game/overworld/tiles/exports/player_house.json" format="json"/>
+ </editorsettings>
+ <tileset firstgid="1" source="../pokemon-frontend/public/assets/game/overworld/tiles/sheets/new_bark_town.tsx"/>
+ <layer id="1" name="suelo" width="10" height="9">
+  <data encoding="csv">
+444,444,444,444,444,444,444,444,444,444,
+444,444,444,444,444,444,444,444,444,444,
+444,444,444,444,444,444,444,444,444,444,
+444,444,444,444,444,444,444,444,444,444,
+444,444,444,444,444,444,444,444,444,444,
+444,444,444,444,444,444,444,444,444,444,
+444,444,444,444,444,444,444,444,444,444,
+444,444,444,444,444,444,444,444,444,444,
+444,444,444,444,444,444,444,444,444,444
+</data>
+ </layer>
+ <layer id="2" name="decoracion_bajo" width="10" height="9">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,115,
+310,310,310,310,310,310,181,181,0,182,
+310,310,310,310,310,310,382,382,0,0,
+310,310,310,310,310,310,382,382,0,0,
+310,310,310,310,310,310,382,382,0,0,
+310,310,310,310,310,310,382,382,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <layer id="3" name="colisiones" width="10" height="9">
+  <data encoding="csv">
+108,109,110,111,112,113,114,111,114,0,
+175,176,177,178,179,180,181,181,181,0,
+0,0,244,245,246,247,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,380,381,0,0,0,0,
+0,0,0,0,447,448,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <layer id="4" name="decoracion_alto" width="10" height="9">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,
+0,0,177,178,179,180,0,0,0,0,
+0,0,244,245,246,247,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,380,381,0,0,0,0,
+0,0,0,0,447,448,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="7" name="eventos">
+  <object id="1" name="warp_players_house" x="144" y="16" width="16" height="16">
+   <properties>
+    <property name="destino" value="players-house"/>
+    <property name="posX" type="int" value="144"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>
