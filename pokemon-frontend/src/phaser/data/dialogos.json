@@ -1,0 +1,62 @@
+{
+  "intro": {
+    "madre_inicial": [
+      "¡[JUGADOR]!",
+      "¡El Prof. Elm quiere\nverte! ¡Date prisa!"
+    ],
+    "madre_pokegear": [
+      "¡[JUGADOR]!",
+      "Nuestro vecino, el PROF. ELM,\nte estaba buscando.",
+      "Dijo que quería pedirte\nun favor.",
+      "¡Ah! Casi lo olvido.",
+      "Tu POKÉGEAR ha vuelto\ndel taller de reparaciones.",
+      "¡Aquí tienes!"
+    ]
+  },
+  "elm_lab": {
+    "elm_bienvenida": [
+      "¡[JUGADOR]! Justo a tiempo.",
+      "Estoy investigando los Pokémon\nde la región Johto.",
+      "¿Me harías un favor?\nNecesito que lleves uno\nde mis Pokémon.",
+      "Están en la mesa. Elige el que más te guste."
+    ],
+    "ayudante_pocion": [
+      "¡Espera! El Prof. Elm me\npidió que te diera esto.",
+      "¡Has recibido una POCIÓN!"
+    ],
+    "confirmar_chikorita": [
+      "¿Quieres elegir a CHIKORITA?"
+    ],
+    "confirmar_cyndaquil": [
+      "¿Quieres elegir a CYNDAQUIL?"
+    ],
+    "confirmar_totodile": [
+      "¿Quieres elegir a TOTODILE?"
+    ],
+    "obtener_starter": [
+      "¡[JUGADOR] obtuvo a [POKEMON]!",
+      "¡Buena elección!\nCuida bien de [POKEMON]."
+    ]
+  },
+  "npcs": {
+    "entrenador_generico_1": [
+      "¿Tú eres [JUGADOR]?",
+      "El Prof. Elm me habló de ti.",
+      "Yo también tengo un Pokémon.",
+      "¡Algún día seré el mejor!",
+      "¡Nos vemos!"
+    ],
+    "entrenador_generico_2": [
+      "¡Hola! ¿Eres nuevo por aquí?",
+      "¡Bienvenido a Johto!"
+    ]
+  },
+  "sistema": {
+    "guardar_exito": [
+      "Partida guardada correctamente."
+    ],
+    "guardar_error": [
+      "Error al guardar la partida."
+    ]
+  }
+}
