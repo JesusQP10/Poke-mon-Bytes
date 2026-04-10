@@ -18,7 +18,7 @@ export const usarAutenticacionStore = create(
         estaAutenticado: true
       }),
 
-      // Acción para Salir (Logout)
+      // Acción para Salir 
       cerrarSesion: () => set({
         user: null,
         token: null,

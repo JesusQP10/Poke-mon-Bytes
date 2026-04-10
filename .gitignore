@@ -1,7 +1,6 @@
 
 # ========== IDE ==========
 .vscode/
-!.vscode/extensions.json
 .idea/
 *.iws
 *.iml
@@ -11,6 +10,8 @@
 *.njsproj
 *.sln
 *.sw?
+.kiro
+pokemon-backend\.github
 
 # ========== Build & Dependencies ==========
 # Backend (Java/Maven)
@@ -85,3 +86,21 @@ pokemon-backend/src/main/resources/application-local.properties
 !**/src/test/**/target/
 !**/src/main/**/build/
 !**/src/test/**/build/
+
+# ========== Generated Files ==========
+# Mapas JSON generados automáticamente desde Tiled
+pokemon-frontend/public/assets/game/overworld/tiles/exports/*.json
+
+# ========== Tiled Map Editor ==========
+# Archivos de configuración de tilesets (se regeneran desde Tiled)
+*.tsx
+
+# ========== Refactorización (Opcional) ==========
+# Descomentar si NO quieres commitear la refactorización
+# pokemon-frontend/src/phaser/config/
+# pokemon-frontend/src/phaser/managers/
+# pokemon-frontend/src/phaser/data/
+# pokemon-frontend/src/phaser/utils/
+# pokemon-frontend/src/store/slices/
+# pokemon-frontend/src/store/usarJuegoStoreRefactorizado.js
+# pokemon-frontend/src/utils/
