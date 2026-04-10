@@ -11,9 +11,9 @@ export const usarJuegoStore = create((set) => ({
   error: null,
 
   // Posición en el mundo
-  mapaActual: 'player-house',
-  posX: 3,
-  posY: 3,
+  mapaActual: 'player-room',
+  posX: 5,
+  posY: 7,
 
   // Reloj
   reloj: {
@@ -25,6 +25,14 @@ export const usarJuegoStore = create((set) => ({
   // Nueva partida
   esNuevaPartida: false,
   nombreJugador: '',
+
+  // Flags de estado narrativo
+  pokegearEntregado: false,
+  starterElegido: false,
+  pocionEntregada: false,
+
+  // Inventario
+  inventario: [],
 
   // Setear estado desde backend
   setPlayerState: (data) => set({
@@ -45,6 +53,18 @@ export const usarJuegoStore = create((set) => ({
     team: [starter],
   }),
 
+  // Setters narrativos
+  setPokegearEntregado: () => set({ pokegearEntregado: true }),
+  setStarterElegido: (starter) => set({
+    starterElegido: true,
+    starter,
+    team: [starter],
+  }),
+  setPocionEntregada: () => set({ pocionEntregada: true }),
+  addInventario: (item) => set((state) => ({
+    inventario: [...state.inventario, item],
+  })),
+
   // Actualizar posición (llamado desde Phaser al moverse o guardar)
   setPosition: (posX, posY, mapaActual) => set({ posX, posY, mapaActual }),
 
@@ -54,9 +74,9 @@ export const usarJuegoStore = create((set) => ({
     set({
       esNuevaPartida: true,
       nombreJugador: nombre,
-      mapaActual: 'player-house',
-      posX: 3,
-      posY: 3,
+      mapaActual: 'player-room',
+      posX: 5,  // Usar la posición de inicio del mapa según CONFIG_MAPAS
+      posY: 7,  // Usar la posición de inicio del mapa según CONFIG_MAPAS
       reloj: {
         hora: fechaActual.getHours(),
         minutos: fechaActual.getMinutes(),

@@ -3,15 +3,28 @@ import Jugador, { crearTecladoJugador, normalizarTeclado } from '../entidades/Ju
 import SistemaEncuentros from '../sistemas/SistemaEncuentros';
 import SistemaDialogo from '../sistemas/SistemaDialogo';
 import { usarJuegoStore } from '../../store/usarJuegoStore';
+import SistemaSecuencias from '../sistemas/SistemaSecuencias';
+import UISeleccionStarter, { STARTERS } from '../ui/UISeleccionStarter';
 
 const TAM_TILE = 16;
 
-// Configuración de cada mapa: posición inicial nueva partida, BGM, interiores...
+// Configuración de mapas: qué tileset usa cada uno
+const TILESET_POR_MAPA = {
+  'player-room': 'new_bark_town',
+  'player-house': 'new_bark_town',
+  'new-bark-town': 'new_bark_town',
+  'elm-lab': 'new_bark_town',
+  'ruta-29': 'ruta_29_bg',
+};
+
+// Configuración de cada mapa: posición inicial, si es interior, BGM
 const CONFIG_MAPAS = {
-  'player-house':   { esInterior: true,  posXInicio: 5, posYInicio: 7, bgm: null },
-  'players-house':  { esInterior: true,  posXInicio: 5, posYInicio: 2, bgm: null },
-  'new-bark-town':  { esInterior: false, posXInicio: 5, posYInicio: 5, bgm: 'bgm-overworld' },
-  'elm-lab':        { esInterior: true,  posXInicio: 5, posYInicio: 8, bgm: null },
+  'player-room': { esInterior: true, posXInicio: 5, posYInicio: 7, bgm: 'bgm-new-bark-town' },
+  'player-house': { esInterior: true, posXInicio: 5, posYInicio: 5, bgm: 'bgm-new-bark-town' },
+  'new-bark-town': { esInterior: false, posXInicio: 5, posYInicio: 5, bgm: 'bgm-new-bark-town' },
+  'elm-lab': { esInterior: true, posXInicio: 5, posYInicio: 8, bgm: 'bgm-elm-lab' },
+  'elm_lab': { esInterior: true, posXInicio: 5, posYInicio: 8, bgm: 'bgm-elm-lab' },
+  'ruta-29': { esInterior: false, posXInicio: 19, posYInicio: 9, bgm: 'bgm-overworld' },
 };
 
 export default class EscenaOverworld extends Phaser.Scene {
@@ -25,25 +38,49 @@ export default class EscenaOverworld extends Phaser.Scene {
   }
 
   create() {
+    this._introActiva = false;
     const store = usarJuegoStore.getState();
     const mapa = store.mapaActual;
     const esNuevaPartida = store.esNuevaPartida;
-    const configMapa = CONFIG_MAPAS[mapa] ?? CONFIG_MAPAS['player-house'];
+    const configMapa = CONFIG_MAPAS[mapa] ?? CONFIG_MAPAS['player-room'];
 
-    // Posición: nueva partida → inicio del mapa; continuación → posición guardada
     const tileX = esNuevaPartida ? configMapa.posXInicio : (store.posX ?? configMapa.posXInicio);
     const tileY = esNuevaPartida ? configMapa.posYInicio : (store.posY ?? configMapa.posYInicio);
 
-    const tieneAssets = this.cache.tilemap.exists(mapa);
+    // Verificar si el tilemap existe en cache
+    let tieneAssets = this.cache.tilemap.exists(mapa);
+    
+    // Si no existe, intentar buscarlo con diferentes variaciones
+    if (!tieneAssets) {
+      const variaciones = [mapa, mapa.replace('-', '_'), mapa.replace('_', '-')];
+      for (const key of variaciones) {
+        if (this.cache.tilemap.exists(key)) {
+          console.log(`[EscenaOverworld] Encontrado tilemap con key alternativa: ${key}`);
+          tieneAssets = true;
+          break;
+        }
+      }
+    }
+    
+    console.log(`[EscenaOverworld] Intentando cargar mapa: ${mapa}`);
+    console.log(`[EscenaOverworld] Tilemap existe en cache: ${tieneAssets}`);
+    console.log(`[EscenaOverworld] Keys en cache:`, Object.keys(this.cache.tilemap.entries.entries));
 
+    // Intentar cargar tilemap real, si falla usar placeholder (dios quiera que no)
     if (tieneAssets) {
-      this._crearEscenaTilemap(mapa, tileX, tileY, configMapa);
+      try {
+        this._crearEscenaTilemap(mapa, tileX, tileY, configMapa);
+      } catch (e) {
+        console.warn(`[create] Error cargando tilemap ${mapa}, usando placeholder:`, e);
+        this._crearEscenaPlaceholder(mapa, tileX, tileY, configMapa);
+      }
     } else {
+      console.warn(`[create] Tilemap ${mapa} no encontrado en cache, usando placeholder`);
       this._crearEscenaPlaceholder(mapa, tileX, tileY, configMapa);
     }
 
     if (esNuevaPartida) {
-      this._reproducirIntroNuevaPartida(tileX, tileY);
+      this._reproducirIntroNuevaPartida(tileX, tileY, configMapa);
     } else {
       this._iniciarJuego(configMapa.bgm);
     }
@@ -51,12 +88,32 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   // ── Animación de intro nueva partida (sprite grande → se encoge) ──────
 
-  _reproducirIntroNuevaPartida(tileX, tileY) {
+  _reproducirIntroNuevaPartida(tileX, tileY, configMapa) {
     // Bloquear controles durante la intro
     this._introActiva = true;
 
-    // Sprite grande centrado (usa el jugador ya creado como referencia de posición final)
-    // Si no hay spritesheet, usar un rectángulo de color
+    // Timeout de seguridad: si después de 5 segundos la intro no termina, forzar inicio
+    const timeoutSeguridad = this.time.delayedCall(5000, () => {
+      console.warn('[EscenaOverworld] Timeout de seguridad activado - forzando inicio del juego');
+      this._introActiva = false;
+      if (this._jugador) this._jugador.setAlpha(1);
+      this.cameras.main.setAlpha(1);
+      usarJuegoStore.getState().clearNuevaPartida();
+      this._iniciarJuego(null);
+    });
+
+    // Verificar que el jugador existe
+    if (!this._jugador) {
+      console.error('[EscenaOverworld] Jugador no inicializado para intro');
+      timeoutSeguridad.remove();
+      this._introActiva = false;
+      usarJuegoStore.getState().clearNuevaPartida();
+      this.cameras.main.setAlpha(1);
+      this._iniciarJuego(null);
+      return;
+    }
+
+    // Sprite grande centrado 
     const cx = 80;
     const cy = 72;
     const escalaInicial = 5;
@@ -67,7 +124,6 @@ export default class EscenaOverworld extends Phaser.Scene {
         .setScale(escalaInicial)
         .setDepth(50);
     } else {
-      // Placeholder: cuadrado del color del jugador
       spriteIntro = this.add.rectangle(cx, cy, 10, 12, 0xff8000)
         .setScale(escalaInicial)
         .setDepth(50);
@@ -94,6 +150,7 @@ export default class EscenaOverworld extends Phaser.Scene {
         duration: 1200,
         ease: 'Quad.easeIn',
         onComplete: () => {
+          timeoutSeguridad.remove();
           spriteIntro.destroy();
           this._jugador.setAlpha(1);
           this._introActiva = false;
@@ -101,13 +158,20 @@ export default class EscenaOverworld extends Phaser.Scene {
           // Marcar que ya no es nueva partida
           usarJuegoStore.getState().clearNuevaPartida();
 
+          // Verificar que el sistema de diálogo existe
+          if (!this._dialogo) {
+            console.error('[EscenaOverworld] Sistema de diálogo no inicializado');
+            this._iniciarJuego(null);
+            return;
+          }
+
           // Diálogo inicial: mamá habla
           this.time.delayedCall(200, () => {
             this._dialogo.mostrar([
               '¡' + (usarJuegoStore.getState().nombreJugador || 'Tú') + '!',
               '¡El Prof. Elm quiere\nverte! ¡Date prisa!',
             ], () => {
-              this._iniciarJuego(null); // habitación → sin BGM de exterior
+              this._iniciarJuego(configMapa.bgm);
             });
           });
         },
@@ -119,7 +183,11 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   _crearEscenaPlaceholder(mapaKey, tileX, tileY, configMapa) {
     if (configMapa.esInterior) {
-      this._dibujarHabitacionPlaceholder();
+      if (mapaKey === 'player-room') {
+        this._dibujarHabitacionJugador();
+      } else {
+        this._dibujarInteriorGenerico();
+      }
     } else {
       this._dibujarExteriorPlaceholder(mapaKey);
     }
@@ -131,9 +199,26 @@ export default class EscenaOverworld extends Phaser.Scene {
 
     this._configurarCamara(null);
     this._configurarMenu();
+    this._secuencias = new SistemaSecuencias(this);
+    this._uiStarter = new UISeleccionStarter(this, this._dialogo);
   }
 
-  _dibujarHabitacionPlaceholder() {
+  _dibujarInteriorGenerico() {
+    // Suelo de madera
+    this.add.rectangle(80, 72, 160, 144, 0xc8a050).setOrigin(0.5);
+
+    // Paredes
+    this.add.rectangle(80, 8, 160, 16, 0x806838).setOrigin(0.5);
+    this.add.rectangle(4, 72, 8, 144, 0x806838).setOrigin(0.5);
+    this.add.rectangle(156, 72, 8, 144, 0x806838).setOrigin(0.5);
+
+    // Etiqueta
+    this.add.text(80, 72, 'INTERIOR', {
+      fontFamily: '"Press Start 2P"', fontSize: '5px', fill: '#80500a',
+    }).setOrigin(0.5).setAlpha(0.4);
+  }
+
+  _dibujarHabitacionJugador() {
     // Suelo de madera
     this.add.rectangle(80, 72, 160, 144, 0xc8a050).setOrigin(0.5);
 
@@ -182,53 +267,94 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   // ── Modo completo con tilemap ─────────────────────────────────────────
 
-  // Tilesets usados por cada mapa (nombre en Tiled JSON → clave Phaser)
-  // El nombre en Tiled debe coincidir exactamente con el primer argumento.
-  static TILESETS_POR_MAPA = {
-    'player-house':  [['players_room', 'players_room']],
-    'players-house': [['house', 'house']],
-    'new-bark-town': [['johto', 'johto'], ['johto_modern', 'johto_modern'], ['house', 'house']],
-    'elm-lab':       [['lab', 'lab']],
-  };
-
   _crearEscenaTilemap(mapaKey, tileX, tileY, configMapa) {
-    const mapa = this.make.tilemap({ key: mapaKey });
-    const defsTileset = EscenaOverworld.TILESETS_POR_MAPA[mapaKey] ?? [['johto', 'johto']];
-    const tilesets = defsTileset
-      .map(([nombreTiled, claveFaser]) => mapa.addTilesetImage(nombreTiled, claveFaser))
-      .filter(Boolean);
+    try {
+      console.log(`[_crearEscenaTilemap] Creando tilemap: ${mapaKey}`);
+      const mapa = this.make.tilemap({ key: mapaKey });
+      
+      // Obtener el tileset del JSON
+      const tilesetData = mapa.tilesets[0];
+      if (!tilesetData) {
+        throw new Error(`No tileset found in map ${mapaKey}`);
+      }
 
-    mapa.createLayer('suelo', tilesets, 0, 0);
-    mapa.createLayer('decoracion_bajo', tilesets, 0, 0);
+      const tilesetName = tilesetData.name;
+      const tilesetKey = TILESET_POR_MAPA[mapaKey] || 'new_bark_town';
+      
+      console.log(`[_crearEscenaTilemap] Tileset name: ${tilesetName}, key: ${tilesetKey}`);
+      
+      // Cargar el tileset
+      const tileset = mapa.addTilesetImage(tilesetName, tilesetKey);
+      if (!tileset) {
+        throw new Error(`Failed to load tileset: ${tilesetName} -> ${tilesetKey}`);
+      }
+      
+      console.log(`[_crearEscenaTilemap] Tileset cargado correctamente`);
 
-    const capaHierba = mapa.createLayer('hierba_alta', tilesets, 0, 0);
-    const capaColisiones = mapa.createLayer('colisiones', tilesets, 0, 0);
-    const capaAlto = mapa.createLayer('decoracion_alto', tilesets, 0, 0);
+      // Crear solo las capas que existen
+      if (mapa.getLayer('suelo')) mapa.createLayer('suelo', tileset, 0, 0);
+      if (mapa.getLayer('decoracion_bajo')) mapa.createLayer('decoracion_bajo', tileset, 0, 0);
+      const capaHierba = mapa.getLayer('hierba_alta') ? mapa.createLayer('hierba_alta', tileset, 0, 0) : null;
+      const capaColisiones = mapa.getLayer('colisiones') ? mapa.createLayer('colisiones', tileset, 0, 0) : null;
+      const capaAlto = mapa.getLayer('decoracion_alto') ? mapa.createLayer('decoracion_alto', tileset, 0, 0) : null;
 
-    if (capaColisiones) capaColisiones.setCollisionByProperty({ colision: true });
-    if (capaAlto) capaAlto.setDepth(10);
+      if (capaColisiones) {
+        capaColisiones.setCollisionByExclusion([-1]);
+        // Ocultar colisiones solo en mapas exteriores
+        if (!configMapa.esInterior) {
+          capaColisiones.setVisible(false);
+        }
+      }
+      if (capaAlto) capaAlto.setDepth(10);
 
-    this._jugador = new Jugador(this, tileX, tileY);
-    if (capaColisiones) {
-      this._jugador.capas = { colisiones: capaColisiones };
-      this.physics.add.collider(this._jugador, capaColisiones);
+      // Crear jugador
+      this._jugador = new Jugador(this, tileX, tileY);
+      if (capaColisiones) {
+        this._jugador.capas = { colisiones: capaColisiones };
+        this.physics.add.collider(this._jugador, capaColisiones);
+      }
+
+      // Sistema de encuentros (solo en exteriores)
+      if (!configMapa.esInterior && capaHierba) {
+        const tablaKey = `encuentros-${mapaKey}`;
+        const tabla = this.cache.json.get(tablaKey);
+        if (tabla) {
+          this._encuentros = new SistemaEncuentros(this, capaHierba, tabla);
+          this._jugador.on('paso', (tx, ty) => this._encuentros.comprobarPaso(tx, ty));
+          this.events.once('encuentro', (pokemon) => this._iniciarBatalla(pokemon));
+        }
+      }
+
+      // NPCs y eventos
+      this._npcs = [];
+      this._pokeballs = []; // Array para las pokeballs
+      mapa.getObjectLayer('npcs')?.objects.forEach(obj => this._crearNpc(obj));
+      mapa.getObjectLayer('eventos')?.objects.forEach(obj => {
+        // Si es una pokeball de starter, crear sprite interactuable
+        if (obj.name === 'chikorita' || obj.name === 'cyndaquil' || obj.name === 'totodile') {
+          this._crearPokeball(obj);
+        } else {
+          this._crearZonaEvento(obj);
+        }
+      });
+
+      // Añadir colisiones con NPCs después de crearlos
+      this._npcs.forEach(npc => {
+        this.physics.add.collider(this._jugador, npc);
+      });
+
+      // Sistemas
+      this._teclado = crearTecladoJugador(this);
+      this._dialogo = new SistemaDialogo(this);
+      this._configurarCamara(mapa);
+      this._configurarMenu();
+      this._secuencias = new SistemaSecuencias(this);
+      this._uiStarter = new UISeleccionStarter(this, this._dialogo);
+      this._comprobarSecuenciasNarrativas(mapaKey);
+    } catch (e) {
+      console.error(`[_crearEscenaTilemap] Error cargando ${mapaKey}:`, e);
+      this._crearEscenaPlaceholder(mapaKey, tileX, tileY, configMapa);
     }
-
-    if (!configMapa.esInterior && capaHierba) {
-      const tablaKey = `encuentros-${mapaKey}`;
-      const tabla = this.cache.json.get(tablaKey);
-      this._encuentros = new SistemaEncuentros(this, capaHierba, tabla);
-      this._jugador.on('paso', (tx, ty) => this._encuentros.comprobarPaso(tx, ty));
-      this.events.once('encuentro', (pokemon) => this._iniciarBatalla(pokemon));
-    }
-
-    mapa.getObjectLayer('npcs')?.objects.forEach(obj => this._crearNpc(obj));
-    mapa.getObjectLayer('eventos')?.objects.forEach(obj => this._crearZonaEvento(obj));
-
-    this._teclado = crearTecladoJugador(this);
-    this._dialogo = new SistemaDialogo(this);
-    this._configurarCamara(mapa);
-    this._configurarMenu();
   }
 
   // ── Arrancar juego (música + control) ────────────────────────────────
@@ -257,42 +383,289 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   _configurarMenu() {
     this.input.keyboard.on('keydown-ENTER', () => {
-      if (this._dialogo?.activo || this._introActiva) return;
+      if (this._dialogo?.activo || this._introActiva || this._secuencias?.activo) return;
       this.scene.launch('EscenaMenu');
       this.scene.pause();
+    });
+  }
+
+  // ── Secuencias narrativas ─────────────────────────────────────────────
+
+  _comprobarSecuenciasNarrativas(mapaKey) {
+    const store = usarJuegoStore.getState();
+
+    if (mapaKey === 'player-house' && !store.pokegearEntregado) {
+      this._ejecutarSecuenciaMadre();
+    }
+    // La secuencia de Elm se activa mediante una zona de trigger en el mapa
+  }
+
+  _ejecutarSecuenciaMadre() {
+    // Buscar el sprite de la madre en la capa npcs
+    // Como el sprite ya fue creado en _crearNpc, necesitamos encontrarlo
+    // Usamos una referencia guardada o buscamos por nombre
+    const store = usarJuegoStore.getState();
+    const nombre = store.nombreJugador || 'Tú';
+
+    // Crear sprite temporal de la madre si no existe referencia
+    // La madre empieza en tile (5,3) según el tilemap
+    const madrePx = { x: 5 * 16 + 8, y: 3 * 16 + 8 };
+    const spriteMadre = this.add.rectangle(madrePx.x, madrePx.y, 12, 16, 0xff88aa).setDepth(5);
+
+    const lineas = [
+      `¡${nombre}!`,
+      'Nuestro vecino, el PROF. ELM,\nte estaba buscando.',
+      'Dijo que quería pedirte\nun favor.',
+      '¡Ah! Casi lo olvido.',
+      'Tu POKÉGEAR ha vuelto\ndel taller de reparaciones.',
+      '¡Aquí tienes!',
+    ];
+
+    this._secuencias.ejecutar([
+      this._secuencias.pasoTween(
+        spriteMadre,
+        { x: this._jugador.x, y: this._jugador.y - 16 },
+        800
+      ),
+      this._secuencias.pasoDialogo(this._dialogo, lineas),
+      this._secuencias.pasoStore(() => usarJuegoStore.getState().setPokegearEntregado()),
+    ], () => {
+      spriteMadre.destroy();
+    });
+  }
+
+  _ejecutarSecuenciaElm() {
+    const store = usarJuegoStore.getState();
+    const nombre = store.nombreJugador || 'Tú';
+
+    // Posición de Elm según el JSON (x:96, y:48 en píxeles = tile 6, 3)
+    const elmX = 6 * TAM_TILE + TAM_TILE / 2;
+    const elmY = 3 * TAM_TILE + TAM_TILE;
+    
+    // Posición objetivo del jugador (frente a Elm)
+    const targetX = elmX;
+    const targetY = elmY + TAM_TILE * 2; // 2 tiles abajo de Elm
+
+    const lineasElm = [
+      `¡${nombre}! Justo a tiempo.`,
+      'Estoy investigando los Pokémon\nde la región Johto.',
+      '¿Me harías un favor?\nNecesito que lleves uno\nde mis Pokémon.',
+      'Están en la mesa. Elige el que más te guste.',
+    ];
+
+    this._secuencias.ejecutar([
+      // Mover al jugador hacia Elm
+      this._secuencias.pasoTween(
+        this._jugador,
+        { x: targetX, y: targetY },
+        800
+      ),
+      // Diálogo de Elm
+      this._secuencias.pasoDialogo(this._dialogo, lineasElm),
+    ]);
+    
+    // Después del diálogo, el jugador puede moverse libremente y elegir una pokeball
+  }
+
+  _ejecutarSecuenciaAyudante(onFin) {
+    const lineas = [
+      '¡Espera! El Prof. Elm me\npidió que te diera esto.',
+      '¡Has recibido una POCIÓN!',
+    ];
+
+    this._secuencias.ejecutar([
+      this._secuencias.pasoDialogo(this._dialogo, lineas),
+      this._secuencias.pasoStore(() => {
+        const store = usarJuegoStore.getState();
+        store.setPocionEntregada();
+        store.addInventario({ id: 'pocion', nombre: 'Poción', cantidad: 1 });
+      }),
+    ], onFin);
+  }
+
+  // ── Pokeballs de starter ──────────────────────────────────────────────
+
+  _crearPokeball(obj) {
+    const store = usarJuegoStore.getState();
+    
+    // Si ya eligió starter, no mostrar las pokeballs
+    if (store.starterElegido) return;
+    
+    // Crear sprite de pokeball (círculo rojo por ahora)
+    const pokeball = this.add.circle(obj.x + 8, obj.y + 8, 6, 0xff0000).setDepth(5);
+    pokeball.setStrokeStyle(2, 0xffffff);
+    this._pokeballs.push(pokeball);
+    
+    // Mapeo de nombres a índices de starter
+    const starterMap = {
+      'chikorita': 0,
+      'cyndaquil': 1,
+      'totodile': 2
+    };
+    
+    const starterIndex = starterMap[obj.name];
+    const starter = STARTERS[starterIndex];
+    
+    // Interacción con Z
+    this.input.keyboard.on('keydown-Z', () => {
+      if (this._dialogo?.activo || this._secuencias?.activo || store.starterElegido) return;
+      
+      const dist = Phaser.Math.Distance.Between(this._jugador.x, this._jugador.y, pokeball.x, pokeball.y);
+      if (dist >= TAM_TILE * 1.5) return;
+      
+      // Elegir este starter
+      const nombre = store.nombreJugador || 'Tú';
+      const lineasConfirm = [
+        `¿Quieres elegir a ${starter.nombre.toUpperCase()}?`,
+      ];
+      
+      this._dialogo.mostrar(lineasConfirm, () => {
+        // Reproducir sonido de obtener starter
+        if (this.sound.get('sfx-obtener-starter')) {
+          this.sound.play('sfx-obtener-starter', { volume: 0.7 });
+        }
+        
+        const lineasObtenido = [
+          `¡${nombre} obtuvo a ${starter.nombre.toUpperCase()}!`,
+          `¡Buena elección!\nCuida bien de ${starter.nombre}.`,
+        ];
+        
+        this._dialogo.mostrar(lineasObtenido, () => {
+          // Guardar starter
+          usarJuegoStore.getState().setStarterElegido({
+            id: starter.id,
+            nombre: starter.nombre,
+            esStarter: true,
+            nivel: 5,
+            hpActual: 20,
+            hpMax: 20,
+            ataque: 12,
+            defensa: 10,
+          });
+          
+          // Ocultar todas las pokeballs
+          this._pokeballs.forEach(pb => pb.setVisible(false));
+        });
+      });
     });
   }
 
   // ── NPCs ──────────────────────────────────────────────────────────────
 
   _crearNpc(obj) {
-    const npc = this.add.sprite(obj.x, obj.y, 'jugador', 1).setOrigin(0.5, 1);
+    const npcTexture = this.textures.exists('jugador') ? 'jugador' : '__DEFAULT';
+    const npc = this.add.sprite(obj.x, obj.y, npcTexture, this.textures.exists('jugador') ? 1 : 0).setOrigin(0.5, 1);
+    
+    // Añadir física al NPC
+    this.physics.add.existing(npc, false);
+    npc.body.setImmovable(true);
+    npc.body.setSize(12, 12); // Tamaño del body de colisión
+    npc.body.setOffset(2, 4); // Ajustar offset para que coincida con el sprite
+    
+    // Guardar NPC para añadir colisión después
+    this._npcs.push(npc);
+    
     const dialogo = obj.properties?.find(p => p.name === 'dialogo')?.value;
     if (!dialogo) return;
 
     const nombreJugador = usarJuegoStore.getState().nombreJugador || 'Tú';
-    const lineas = dialogo.replace('[JUGADOR]', nombreJugador).split('|');
+    const lineas = dialogo.replaceAll('[JUGADOR]', nombreJugador).split('|');
+    const esRival = obj.name === 'rival';
+
     this.input.keyboard.on('keydown-Z', () => {
-      if (this._dialogo?.activo || this._introActiva) return;
+      if (this._dialogo?.activo || this._introActiva || this._secuencias?.activo) return;
       const dist = Phaser.Math.Distance.Between(this._jugador.x, this._jugador.y, npc.x, npc.y);
-      if (dist < TAM_TILE * 1.8) this._dialogo.mostrar(lineas);
+      if (dist >= TAM_TILE * 1.8) return;
+
+      if (esRival) {
+        this._dialogo.mostrar(lineas, () => {
+          // Empujar al jugador 1 tile (empujon de plata como en juego original)
+          const dir = this._calcularDireccionOpuesta(this._jugador, npc);
+          this._secuencias.ejecutar([
+            this._secuencias.pasoTween(
+              this._jugador,
+              { x: this._jugador.x + dir.x * TAM_TILE, y: this._jugador.y + dir.y * TAM_TILE },
+              150
+            ),
+          ]);
+        });
+      } else {
+        this._dialogo.mostrar(lineas);
+      }
     });
+  }
+
+  _calcularDireccionOpuesta(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      return { x: dx > 0 ? 1 : -1, y: 0 };
+    }
+    return { x: 0, y: dy > 0 ? 1 : -1 };
   }
 
   // ── Zonas de evento (transiciones de mapa) ───────────────────────────
 
   _crearZonaEvento(obj) {
-    const zona = this.add.zone(obj.x, obj.y, obj.width ?? TAM_TILE, obj.height ?? TAM_TILE);
-    this.physics.world.enable(zona);
-    zona.body.setImmovable(true);
+    // Tiled da esquina superior izquierda, Phaser Zone usa centro
+    const width = obj.width ?? TAM_TILE;
+    const height = obj.height ?? TAM_TILE;
+    const centroX = obj.x + width / 2;
+    const centroY = obj.y + height / 2;
+    
+    const zona = this.add.zone(centroX, centroY, width, height);
+    this.physics.add.existing(zona, true);
+
+    // Verificar si el jugador ya está en la zona al inicio
+    let estabaEnZona = this.physics.overlap(this._jugador, zona);
+    let yaActivado = false;
 
     this.physics.add.overlap(this._jugador, zona, () => {
-      if (this._introActiva) return;
+      // Si ya estaba en la zona al cargar, no activar hasta que salga
+      if (estabaEnZona) return;
+      
+      if (yaActivado || this._introActiva || this._secuencias?.activo) return;
+      
       const props = obj.properties ?? [];
+      
+      // Verificar si es un trigger especial (como trigger_elm)
+      const tipo = props.find(p => p.name === 'tipo')?.value;
+      if (tipo === 'trigger_elm') {
+        const store = usarJuegoStore.getState();
+        if (!store.starterElegido) {
+          yaActivado = true;
+          this._ejecutarSecuenciaElm();
+        }
+        return;
+      }
+      
+      // Si no es un trigger especial, es un warp normal
       const destino = props.find(p => p.name === 'destino')?.value;
       const posX    = props.find(p => p.name === 'posX')?.value ?? 5;
       const posY    = props.find(p => p.name === 'posY')?.value ?? 5;
-      if (destino) this._cambiarMapa(destino, posX, posY);
+      if (!destino) return;
+
+      yaActivado = true;
+
+      // Interceptar salida del lab para secuencia del ayudante (poción)
+      const store = usarJuegoStore.getState();
+      const mapaActual = store.mapaActual;
+      if (mapaActual === 'elm-lab' && store.starterElegido && !store.pocionEntregada) {
+        this._ejecutarSecuenciaAyudante(() => this._cambiarMapa(destino, posX, posY));
+      } else {
+        this._cambiarMapa(destino, posX, posY);
+      }
+    });
+
+    // Detectar cuando sale de la zona para resetear flags
+    this.physics.world.on('worldstep', () => {
+      const ahoraEnZona = this.physics.overlap(this._jugador, zona);
+      if (estabaEnZona && !ahoraEnZona) {
+        estabaEnZona = false;
+      }
+      if (!ahoraEnZona) {
+        yaActivado = false;
+      }
     });
   }
 
@@ -309,6 +682,7 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   _iniciarBatalla(pokemon) {
     this._musica?.stop();
+    if (!this._jugador) return;
     const { x, y } = this._jugador.getTilePosicion();
     usarJuegoStore.getState().setPosition(x, y, usarJuegoStore.getState().mapaActual);
     this.scene.launch('EscenaTransicion', {
@@ -322,7 +696,7 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   update() {
     if (!this._jugador || !this._teclado) return;
-    if (this._dialogo?.activo || this._introActiva) return;
+    if (this._dialogo?.activo || this._introActiva || this._secuencias?.activo) return;
     this._jugador.update(normalizarTeclado(this._teclado));
   }
 
@@ -330,5 +704,6 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   shutdown() {
     this._musica?.stop();
+    this.events.off('encuentro');
   }
 }

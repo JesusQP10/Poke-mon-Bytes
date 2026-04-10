@@ -25,78 +25,171 @@ export default class EscenaPreload extends Phaser.Scene {
   preload() {
     this._mostrarBarraCarga();
 
-    // ── Audio (existen, importados via Vite) ──────────────────────────────
+    // ── Audio ────────────────────────────────────────────────────────────
     this.load.audio('bgm-overworld', bgmOverworld);
     this.load.audio('bgm-batalla-salvaje', bgmBatalla);
+    this.load.audio('bgm-new-bark-town', '/assets/game/audio/new_bark_town.mp3');
+    this.load.audio('bgm-elm-lab', '/assets/game/audio/elm_lab.mp3');
+    this.load.audio('sfx-obtener-starter', '/assets/game/audio/obtener_starter.mp3');
 
-    // ── Tabla de encuentros (en public/) ──────────────────────────────────
-    this.load.json(
-      'encuentros-new-bark-town',
-      '/assets/game/overworld/tiles/events/encuentros_new_bark_town.json'
-    );
+    // ── Tilesets (solo los que existen) ──────────────────────────────────
+    this.load.image('new_bark_town', '/assets/game/overworld/tiles/sheets/new_bark_town.png');
+    this.load.image('ruta_29_bg', '/assets/game/overworld/tiles/sheets/ruta_29_bg.png');
 
-    // ── Tilesets (generados de pokegold, tiles de 16×16) ─────────────────
-    // Interiores
-    this.load.image('players_room',       '/assets/game/overworld/tiles/sheets/interiors/players_room.png');
-    this.load.image('players_house',      '/assets/game/overworld/tiles/sheets/interiors/players_house.png');
-    this.load.image('house',              '/assets/game/overworld/tiles/sheets/interiors/house.png');
-    this.load.image('lab',                '/assets/game/overworld/tiles/sheets/interiors/lab.png');
-    this.load.image('pokecenter',         '/assets/game/overworld/tiles/sheets/interiors/pokecenter.png');
-    this.load.image('mart',               '/assets/game/overworld/tiles/sheets/interiors/mart.png');
-    this.load.image('traditional_house',  '/assets/game/overworld/tiles/sheets/interiors/traditional_house.png');
-    this.load.image('gate',               '/assets/game/overworld/tiles/sheets/interiors/gate.png');
-    // Exteriores
-    this.load.image('johto',              '/assets/game/overworld/tiles/sheets/overworld/johto.png');
-    this.load.image('johto_modern',       '/assets/game/overworld/tiles/sheets/overworld/johto_modern.png');
-    this.load.image('forest',             '/assets/game/overworld/tiles/sheets/overworld/forest.png');
-    this.load.image('cave',               '/assets/game/overworld/tiles/sheets/overworld/cave.png');
-
-    // ── Spritesheet del jugador ───────────────────────────────────────────
-    // 12 frames de 16×16 en un sheet 48×48 (fila 0: abajo, 1: izq, 2: der, 3: arriba)
-    // Colocar en: public/assets/game/overworld/sprites/player/overworld_player_walk_sheet.png
+    // ── Spritesheet del jugador ──────────────────────────────────────────
     this.load.spritesheet(
       'jugador',
       '/assets/game/overworld/sprites/player/overworld_player_walk_sheet.png',
       { frameWidth: 16, frameHeight: 16 }
     );
 
-    // ── Tilemaps (JSON exportados desde Tiled) ────────────────────────────
-    // Habitación del jugador (planta alta)
-    this.load.tilemapTiledJSON(
-      'player-house',
-      '/assets/game/overworld/tiles/exports/player_house.json'
-    );
-    // Planta baja de la casa del jugador
-    this.load.tilemapTiledJSON(
-      'players-house',
-      '/assets/game/overworld/tiles/exports/players_house.json'
-    );
-    // New Bark Town (exterior)
-    this.load.tilemapTiledJSON(
-      'new-bark-town',
-      '/assets/game/overworld/tiles/exports/new_bark_town.json'
-    );
-    // Lab del Prof. Elm
-    this.load.tilemapTiledJSON(
-      'elm-lab',
-      '/assets/game/overworld/tiles/exports/elm_lab.json'
-    );
+    // ── Tilemaps (JSON exportados desde Tiled) ──────────────────────────
+    this.load.tilemapTiledJSON('player-room', '/assets/game/overworld/tiles/exports/player_room.json');
+    this.load.tilemapTiledJSON('player-house', '/assets/game/overworld/tiles/exports/player_house.json');
+    this.load.tilemapTiledJSON('new-bark-town', '/assets/game/overworld/tiles/exports/new_bark_town.json');
+    this.load.tilemapTiledJSON('elm-lab', '/assets/game/overworld/tiles/exports/elm_lab.json');
+    this.load.tilemapTiledJSON('ruta-29', '/assets/game/overworld/tiles/exports/ruta_29.json');
 
-    // ── Fondo de batalla ──────────────────────────────────────────────────
-    // Colocar en: public/assets/game/battle/backgrounds/battle_bg_grass.png
-    this.load.image(
-      'batalla-fondo-hierba',
-      '/assets/game/battle/backgrounds/battle_bg_grass.png'
-    );
+    // ── Tabla de encuentros ──────────────────────────────────────────────
+    this.load.json('encuentros-new-bark-town', '/assets/game/overworld/tiles/events/encuentros_new_bark_town.json');
 
-    // Ignorar errores de carga de assets opcionales
+    // Ignorar errores de carga
     this.load.on('loaderror', (file) => {
-      console.warn(`[Preload] Asset no encontrado (se usará placeholder): ${file.key}`);
+      console.error(`[Preload] ❌ Error cargando asset: ${file.key} - ${file.src}`);
+    });
+    
+    this.load.on('filecomplete', (key) => {
+      if (key === 'tilemapJSON-elm-lab') {
+        console.log('[Preload] ✅ elm-lab.json cargado correctamente');
+      }
     });
   }
 
   create() {
+    // Si el spritesheet del jugador no cargó, placeholder
+    if (!this.textures.exists('jugador')) {
+      this._generarSpritesheetJugador();
+    }
+    
+    // Debug: listar todos los tilemaps cargados
+    console.log('[Preload] Tilemaps en cache:', this.cache.tilemap.entries.entries);
+    
     this.scene.start('EscenaOverworld');
+  }
+
+  /**
+   * Genera un spritesheet de 48×64 px (12 frames de 16×16, 3 por fila, 4 filas)
+   * con un muñeco simple estilo GBC.
+   *
+   * Layout:
+   *   Fila 0 (y=0):  frames 0-2  → caminar ABAJO
+   *   Fila 1 (y=16): frames 3-5  → caminar ARRIBA
+   *   Fila 2 (y=32): frames 6-8  → caminar IZQUIERDA
+   *   Fila 3 (y=48): frames 9-11 → caminar DERECHA
+   */
+  _generarSpritesheetJugador() {
+    const FW = 16, FH = 16;
+    const COLS = 3, ROWS = 4;
+    const W = FW * COLS; // 48
+    const H = FH * ROWS; // 64
+
+    const rt = this.add.renderTexture(0, 0, W, H).setVisible(false);
+    const g = this.add.graphics().setVisible(false);
+
+    // Paleta
+    const SKIN  = 0xf8c880;
+    const HAIR  = 0x402000;
+    const SHIRT = 0xe04040; // rojo
+    const PANTS = 0x2040c0; // azul
+    const SHOES = 0x301808;
+    const WHITE = 0xffffff;
+
+    // Dibuja un frame del personaje en (fx, fy) según dirección y paso
+    const dibujarFrame = (fx, fy, dir, paso) => {
+      g.clear();
+
+      // Piernas (animación de paso)
+      const pierna1X = fx + (paso === 1 ? 4 : 5);
+      const pierna2X = fx + (paso === 1 ? 9 : 8);
+      g.fillStyle(PANTS);
+      g.fillRect(pierna1X, fy + 10, 3, 4);
+      g.fillRect(pierna2X, fy + 10, 3, 4);
+      // Zapatos
+      g.fillStyle(SHOES);
+      g.fillRect(pierna1X, fy + 14, 3, 2);
+      g.fillRect(pierna2X, fy + 14, 3, 2);
+
+      // Cuerpo (camisa)
+      g.fillStyle(SHIRT);
+      g.fillRect(fx + 4, fy + 6, 8, 5);
+
+      // Cabeza
+      g.fillStyle(SKIN);
+      g.fillRect(fx + 5, fy + 2, 6, 5);
+
+      // Pelo
+      g.fillStyle(HAIR);
+      g.fillRect(fx + 5, fy + 1, 6, 2);
+      g.fillRect(fx + 4, fy + 2, 1, 2);
+      g.fillRect(fx + 11, fy + 2, 1, 2);
+
+      // Ojos según dirección
+      if (dir === 'abajo') {
+        g.fillStyle(0x000000);
+        g.fillRect(fx + 6, fy + 5, 1, 1);
+        g.fillRect(fx + 9, fy + 5, 1, 1);
+      } else if (dir === 'arriba') {
+        // De espaldas, sin ojos visibles
+        g.fillStyle(HAIR);
+        g.fillRect(fx + 5, fy + 2, 6, 4);
+      } else if (dir === 'izquierda') {
+        g.fillStyle(0x000000);
+        g.fillRect(fx + 6, fy + 5, 1, 1);
+      } else if (dir === 'derecha') {
+        g.fillStyle(0x000000);
+        g.fillRect(fx + 9, fy + 5, 1, 1);
+      }
+
+      // Brazos
+      g.fillStyle(SKIN);
+      g.fillRect(fx + 3, fy + 6, 2, 4);
+      g.fillRect(fx + 11, fy + 6, 2, 4);
+
+      rt.draw(g, 0, 0);
+    };
+
+    const dirs = ['abajo', 'arriba', 'izquierda', 'derecha'];
+    const pasos = [0, 1, 0]; // idle, paso, idle
+
+    dirs.forEach((dir, fila) => {
+      pasos.forEach((paso, col) => {
+        dibujarFrame(col * FW, fila * FH, dir, paso);
+      });
+    });
+
+    rt.saveTexture('jugador');
+    g.destroy();
+    rt.destroy();
+
+    // Registrar como spritesheet con frameWidth/frameHeight
+    // saveTexture guarda como imagen normal; registrarla como spritesheet
+    this.textures.get('jugador').add(
+      '__BASE',
+      0,
+      0, 0,
+      W, H
+    );
+
+    // Añadir frames manualmente
+    const tex = this.textures.get('jugador');
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const frameIdx = row * COLS + col;
+        tex.add(frameIdx, 0, col * FW, row * FH, FW, FH);
+      }
+    }
+
+    console.log('[Preload] Spritesheet jugador generado como placeholder (48×64, 12 frames)');
   }
 
   _mostrarBarraCarga() {

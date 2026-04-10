@@ -31,15 +31,15 @@ export default class SistemaDialogo {
   }
 
   _crearUI() {
-    // Caja de texto: 158×38 px, posición y:104 (justo encima del borde inferior)
-    this._contenedor = this.scene.add.container(0, 104).setDepth(100);
+    // Caja de texto: 158×38 px, centrada horizontalmente, y:104 
+    this._contenedor = this.scene.add.container(1, 104).setDepth(100).setScrollFactor(0);
 
     // Fondo blanco con borde negro
-    const fondo = this.scene.add.rectangle(1, 1, 158, 38, 0xf8f8f8).setOrigin(0);
+    const fondo = this.scene.add.rectangle(0, 0, 158, 38, 0xf8f8f8).setOrigin(0);
     fondo.setStrokeStyle(1, 0x000000);
 
     // Texto del diálogo
-    this._texto = this.scene.add.text(6, 6, '', {
+    this._texto = this.scene.add.text(5, 5, '', {
       fontFamily: '"Press Start 2P"',
       fontSize: '6px',
       fill: '#000000',
@@ -48,7 +48,7 @@ export default class SistemaDialogo {
     }).setOrigin(0);
 
     // Flecha de avance (▼) en esquina inferior derecha
-    this._flecha = this.scene.add.text(150, 28, '▼', {
+    this._flecha = this.scene.add.text(149, 27, '▼', {
       fontFamily: '"Press Start 2P"',
       fontSize: '6px',
       fill: '#000000',
@@ -57,7 +57,7 @@ export default class SistemaDialogo {
     this._contenedor.add([fondo, this._texto, this._flecha]);
 
     // Escuchar tecla de avance
-    this.scene.input.keyboard.on('keydown', (event) => {
+    this._handlerTeclado = (event) => {
       if (!this._activo) return;
       const esAceptar =
         event.code === 'KeyZ' ||
@@ -66,12 +66,12 @@ export default class SistemaDialogo {
       if (!esAceptar) return;
 
       if (!this._esperandoInput) {
-        // Completar el texto actual de golpe
         this._completarLinea();
       } else {
         this._siguienteLinea();
       }
-    });
+    };
+    this.scene.input.keyboard.on('keydown', this._handlerTeclado);
   }
 
   /**

@@ -6,7 +6,7 @@ const MS_POR_PASO = 200;
 const TAM_TILE = 16;
 
 /**
- * Jugador — sprite del personaje principal con movimiento tile-a-tile.
+ * Jugador — sprite del personaje principal.
  *
  * Spritesheet esperado (48×48 px, 12 frames de 16×16):
  *   Fila 0 (frames 0-2):  caminar ABAJO
@@ -36,13 +36,16 @@ export default class Jugador extends Phaser.GameObjects.Sprite {
 
     this._crearAnimaciones(scene);
 
-    // Guardar referencia al sistema de colisiones (desde EscenaOverworld)
+    // Guardar referencia al sistema de colisiones (EscenaOverworld)
     this.capas = null;
   }
 
   // ── Animaciones ────────────────────────────────────────────────────────
 
   _crearAnimaciones(scene) {
+    // Si no hay spritesheet, no crear animaciones (modo fallback)
+    if (!scene.textures.exists('jugador')) return;
+
     const anims = scene.anims;
 
     if (!anims.exists('jugador-abajo')) {
@@ -134,7 +137,9 @@ export default class Jugador extends Phaser.GameObjects.Sprite {
     this._tileX = destTileX;
     this._tileY = destTileY;
 
-    this.anims.play(`jugador-${direccion}`, true);
+    if (this.scene.textures.exists('jugador')) {
+      this.anims.play(`jugador-${direccion}`, true);
+    }
 
     const destPx = destTileX * TAM_TILE + TAM_TILE / 2;
     const destPy = destTileY * TAM_TILE + TAM_TILE / 2;
@@ -164,6 +169,7 @@ export default class Jugador extends Phaser.GameObjects.Sprite {
   // ── Helpers ────────────────────────────────────────────────────────────
 
   _setFrameIdle() {
+    if (!this.scene.textures.exists('jugador')) return;
     const frameIdle = {
       abajo: 1,
       arriba: 4,

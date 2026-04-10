@@ -1,3 +1,5 @@
+import { usarJuegoStore } from '../../store/usarJuegoStore';
+
 /**
  * SistemaEncuentros — detecta encuentros aleatorios al caminar en hierba alta.
  *
@@ -6,6 +8,7 @@
  *   - Se genera un umbral aleatorio entre MIN_PASOS y MAX_PASOS.
  *   - Al alcanzar el umbral, se selecciona un Pokémon de la tabla de encuentros
  *     ponderada por tasa y se emite el evento 'encuentro'.
+ *   - Si el jugador no tiene starter en el equipo, no se emite el evento.
  */
 
 const MIN_PASOS = 4;
@@ -45,6 +48,11 @@ export default class SistemaEncuentros {
     if (this._pasosEnHierba >= this._umbral) {
       this._pasosEnHierba = 0;
       this._umbral = this._nuevoUmbral();
+
+      // Guarda: solo emitir encuentro si el jugador tiene starter
+      const team = usarJuegoStore.getState().team ?? [];
+      if (team.length === 0 || !team.some(p => p.esStarter)) return;
+
       const pokemon = this._seleccionarPokemon();
       if (pokemon) {
         this.scene.events.emit('encuentro', pokemon);
