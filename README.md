@@ -128,11 +128,11 @@ El cliente web se centra en la fidelidad visual y la experiencia de usuario:
 | Interacción en Exteriores | Diálogos en Interiores |
 |:---:|:---:|
 | ![Radar NPC](docs/screenshots/interaccion_new_nark_town_1.png) | ![Diálogos](docs/screenshots/interaccion_cientifico_lab_elm.png) |
-
 | *Detección de NPCs y barrido espacial continuo.* | *Sistema de secuencias narrativas in-game.* |
+
 | Integración UI  | Sistema de Combate |
 |:---:|:---:|
-| ![Starter](docs/screenshots/obtencion_starter.png) | ![Combate]() *(Próximamente)* |
+| ![Starter](docs/screenshots/obtencion_starter.png) | ![Combate](docs/screenshots/ejemplo_combate.png) *(Visualización de ejemplo...Próximamente)* |
 
 | *UI montada en React leyendo el estado de Phaser.* | *En desarrollo...* |
 
