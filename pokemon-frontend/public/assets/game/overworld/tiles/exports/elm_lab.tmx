@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="12" height="14" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="14">
+ <editorsettings>
+  <export target="elm_lab.json" format="json"/>
+ </editorsettings>
+ <tileset firstgid="1" name="new_bark_town" tilewidth="16" tileheight="16" tilecount="1340" columns="67">
+  <image source="../sheets/new_bark_town.png" width="1080" height="335"/>
+ </tileset>
+ <layer id="1" name="suelo" width="12" height="14">
+  <data encoding="csv">
+666,666,666,666,666,666,666,666,666,666,666,666,
+666,666,666,666,666,666,666,666,666,666,666,666,
+666,666,666,666,666,666,666,666,666,666,666,666,
+666,666,666,666,666,666,666,666,666,666,666,666,
+666,666,666,666,666,666,666,666,666,666,666,666,
+666,666,666,666,666,666,666,666,666,666,666,666,
+666,666,666,666,666,666,666,666,666,666,666,666,
+666,666,666,666,666,666,666,666,666,799,799,799,
+666,666,666,666,666,666,666,666,666,666,666,666,
+666,666,666,666,666,666,666,666,666,666,666,666,
+666,666,666,666,666,666,666,666,666,666,666,666,
+666,666,666,666,666,666,666,666,666,666,666,666,
+666,666,666,666,666,666,666,666,666,666,666,666,
+666,666,666,666,666,666,666,666,666,666,666,666
+</data>
+ </layer>
+ <layer id="2" name="decoracion_bajo" width="12" height="14">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,862,863,864,865,866,867,868,869,870,871,0,
+929,929,930,931,932,933,934,935,936,937,938,929
+</data>
+ </layer>
+ <layer id="3" name="colisiones" width="12" height="14">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,1206,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,870,870,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <layer id="4" name="decoracion_alto" width="12" height="14">
+  <data encoding="csv">
+125,126,127,128,129,130,129,130,131,132,133,134,
+192,193,194,195,196,197,196,197,198,199,200,201,
+259,260,261,262,0,0,0,0,265,266,267,268,
+326,327,0,0,0,0,0,0,0,0,0,335,
+0,0,0,0,0,0,0,0,332,333,334,402,
+0,0,0,0,0,0,0,0,399,400,401,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+533,534,535,0,0,0,0,0,0,0,535,536,
+600,601,602,0,0,0,0,0,0,0,602,603,
+667,668,669,0,0,0,0,0,0,0,669,670,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="5" name="npcs">
+  <object id="1" name="cienti_1" x="64" y="176" width="16" height="16">
+   <properties>
+    <property name="dialogo" value="Estoy analizando datos de Pokémon salvajes.|¡Es fascinante!"/>
+   </properties>
+  </object>
+  <object id="2" name="cienti_2" x="144" y="176" width="16" height="16">
+   <properties>
+    <property name="dialogo" value="El Prof. Elm es un experto en evolución Pokémon.|Aprendo mucho trabajando aquí."/>
+   </properties>
+  </object>
+  <object id="3" name="elm" x="80" y="64" width="16" height="16">
+   <properties>
+    <property name="dialogo" value="¡[JUGADOR]! Justo a tiempo.|Estoy investigando los Pokémon de la región Johto.|¿Me harías un favor? Necesito que lleves uno de mis Pokémon.|Elige el que más te guste."/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="6" name="eventos">
+  <object id="6" name="warp_salida" x="80" y="192" width="32" height="32">
+   <properties>
+    <property name="destino" value="new-bark-town"/>
+    <property name="posX" type="int" value="5"/>
+    <property name="posY" type="int" value="8"/>
+   </properties>
+  </object>
+  <object id="9" name="chikorita" x="128" y="64" width="16" height="16">
+   <properties>
+    <property name="nombre" value="chikorita"/>
+    <property name="starterIndex" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="10" name="cyndaquil" x="144" y="64" width="16" height="16">
+   <properties>
+    <property name="nombre" value="cyndaquil"/>
+    <property name="starterIndex" type="int" value="1"/>
+   </properties>
+  </object>
+  <object id="12" name="totodile" x="160" y="64" width="16" height="16">
+   <properties>
+    <property name="nombre" value="totodile"/>
+    <property name="starterIndex" type="int" value="2"/>
+   </properties>
+  </object>
+  <object id="13" name="trigger_elm_intro" x="80" y="112" width="32" height="16">
+   <properties>
+    <property name="tipo" value="trigger_elm"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

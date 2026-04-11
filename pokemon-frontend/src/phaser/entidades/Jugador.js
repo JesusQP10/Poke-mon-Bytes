@@ -25,7 +25,7 @@ export default class Jugador extends Phaser.GameObjects.Sprite {
 
     // Hitbox reducida 
     this.body.setSize(10, 8);
-    this.body.setOffset(3, 8);
+    this.body.setOffset(3, 6);
 
     // Estado interno
     this._moviendose = false;

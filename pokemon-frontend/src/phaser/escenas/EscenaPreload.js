@@ -36,12 +36,24 @@ export default class EscenaPreload extends Phaser.Scene {
     this.load.image('new_bark_town', '/assets/game/overworld/tiles/sheets/new_bark_town.png');
     this.load.image('ruta_29_bg', '/assets/game/overworld/tiles/sheets/ruta_29_bg.png');
 
-    // ── Spritesheet del jugador ──────────────────────────────────────────
-    this.load.spritesheet(
-      'jugador',
-      '/assets/game/overworld/sprites/player/overworld_player_walk_sheet.png',
-      { frameWidth: 16, frameHeight: 16 }
-    );
+    // Spritesheet del jugador
+  this.load.spritesheet('jugador', '/assets/game/overworld/sprites/player/overworld_player_walk_sheet.png', { frameWidth: 32, frameHeight: 32 });
+
+  // Items
+  this.load.image('pokeball', '/assets/game/overworld/sprites/items/pokeball.png');
+
+  // NPCs (si son spritesheets con animación, usa spritesheet; si son imágenes estáticas, usa image)
+  this.load.spritesheet('aldeano', '/assets/game/overworld/sprites/npcs/aldeano.png', { frameWidth: 32, frameHeight: 32 });
+  this.load.spritesheet('cientifico', '/assets/game/overworld/sprites/npcs/cientifico.png', { frameWidth: 32, frameHeight: 32 });
+  this.load.spritesheet('elm', '/assets/game/overworld/sprites/npcs/elm.png', { frameWidth: 32, frameHeight: 32 });
+  this.load.spritesheet('madre', '/assets/game/overworld/sprites/npcs/madre.png', { frameWidth: 32, frameHeight: 32 });
+  this.load.spritesheet('nino', '/assets/game/overworld/sprites/npcs/nino.png', { frameWidth: 32, frameHeight: 32 });
+
+  // Pokémon starters (GIFs - usa image, no spritesheet)
+  this.load.image('chikorita', '/assets/game/overworld/sprites/pokemon/chikorita.gif');
+  this.load.image('cyndaquil', '/assets/game/overworld/sprites/pokemon/cyndaquil.gif');
+  this.load.image('totodile', '/assets/game/overworld/sprites/pokemon/totodile.gif');
+
 
     // ── Tilemaps (JSON exportados desde Tiled) ──────────────────────────
     this.load.tilemapTiledJSON('player-room', '/assets/game/overworld/tiles/exports/player_room.json');
@@ -64,16 +76,49 @@ export default class EscenaPreload extends Phaser.Scene {
       }
     });
   }
+  
+
+  
 
   create() {
+    console.log('[Preload] ========================================');
+    console.log('[Preload] Verificando assets cargados...');
+    
     // Si el spritesheet del jugador no cargó, placeholder
     if (!this.textures.exists('jugador')) {
+      console.warn('[Preload] ⚠️ Spritesheet jugador no encontrado, generando placeholder');
       this._generarSpritesheetJugador();
+    } else {
+      console.log('[Preload] ✅ Spritesheet jugador cargado');
     }
+
+    // Después de la línea 88 (después de verificar tilesets)
+  console.log('[Preload] Texturas NPCs:', {
+  elm: this.textures.exists('elm'),
+  madre: this.textures.exists('madre'),
+  aldeano: this.textures.exists('aldeano'),
+  cientifico: this.textures.exists('cientifico'),
+  nino: this.textures.exists('nino'),
+  pokeball: this.textures.exists('pokeball')
+  });
+
     
     // Debug: listar todos los tilemaps cargados
-    console.log('[Preload] Tilemaps en cache:', this.cache.tilemap.entries.entries);
+    const tilemapsKeys = Object.keys(this.cache.tilemap.entries.entries);
+    console.log('[Preload] Tilemaps cargados:', tilemapsKeys);
     
+    // Verificar tilesets
+    const tilesets = ['new_bark_town', 'ruta_29_bg'];
+    tilesets.forEach(key => {
+      if (this.textures.exists(key)) {
+        console.log(`[Preload] ✅ Tileset ${key} cargado`);
+      } else {
+        console.error(`[Preload] ❌ Tileset ${key} NO cargado`);
+      }
+    });
+    
+    console.log('[Preload] Iniciando EscenaOverworld...');
+    console.log('[Preload] ========================================');
     this.scene.start('EscenaOverworld');
   }
 
