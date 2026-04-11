@@ -2,6 +2,28 @@
 
 Documentación técnica del servidor Spring Boot (API REST).
 
+## Documentación OpenAPI (Swagger)
+
+Con el perfil **`dev`** activo, el servidor expone **Swagger UI** para probar endpoints sin Postman:
+
+```bash
+# Ejemplo (ajusta el puerto si usas SERVER_PORT)
+set SPRING_PROFILES_ACTIVE=dev
+.\mvnw.cmd spring-boot:run
+```
+
+- Interfaz: `http://localhost:8081/swagger-ui.html` (o el puerto que uses).
+- En **default** (`application.properties`) la UI está **desactivada** para no publicar el esquema de la API sin querer.
+
+**Health (sin login):** `GET /actuator/health` — útil para comprobar que el servicio arrancó. (En código, Actuator va en una `SecurityFilterChain` propia con `@Order(1)` para que no quede detrás del JWT y devuelva **403** sin token.)
+
+## Tests (`mvn test`)
+
+- **Unitarios:** p. ej. `CalculoServiceTest`, `JuegoServiceTest` ( Mockito, sin red ni MySQL).
+- **Smoke de contexto:** `PokemonBackendApplicationTests` con perfil **`test`** (H2 en memoria) y seeders de PokéAPI **mockeados** para no depender de red.
+
+Desde la carpeta `pokemon-backend`: `.\mvnw.cmd test`
+
 ## Estructura
 
 ```

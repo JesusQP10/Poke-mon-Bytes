@@ -4,11 +4,13 @@ import com.proyecto.pokemon_backend.filter.FiltroAutenticacionJwt;
 import com.proyecto.pokemon_backend.service.ServicioDetallesUsuario;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -31,7 +33,22 @@ public class ConfiguracionSeguridad {
         this.userDetailsService = userDetailsService;
     }
 
+    /**
+     * Cadena solo para Actuator: sin JWT ni sesión, para que {@code GET /actuator/health} responda sin token.
+     * Debe evaluarse antes que la cadena principal (orden más bajo = mayor prioridad).
+     */
     @Bean
+    @Order(1)
+    public SecurityFilterChain cadenaActuator(HttpSecurity http) throws Exception {
+        http.securityMatcher("/actuator/**")
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain cadenaFiltroSeguridad(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable()) // CSRF deshabilitado: API stateless con JWT, no hay cookies de sesión
@@ -58,6 +75,7 @@ public class ConfiguracionSeguridad {
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated()
             );
 

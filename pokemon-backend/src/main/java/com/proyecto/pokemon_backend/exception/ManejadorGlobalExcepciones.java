@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -21,6 +23,8 @@ import java.util.stream.Collectors;
  */
 @RestControllerAdvice
 public class ManejadorGlobalExcepciones {
+
+    private static final Logger log = LoggerFactory.getLogger(ManejadorGlobalExcepciones.class);
 
     @ExceptionHandler(ErrorNegocio.class)
     public ResponseEntity<Map<String, Object>> manejarErrorNegocio(ErrorNegocio ex) {
@@ -48,6 +52,7 @@ public class ManejadorGlobalExcepciones {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> manejarGenerico(Exception ex) {
+        log.error("Excepción no controlada en la API", ex);
         return respuesta(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor.");
     }
 
