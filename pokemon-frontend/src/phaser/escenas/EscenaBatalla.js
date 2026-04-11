@@ -3,6 +3,7 @@ import BarraHp from '../ui/BarraHp';
 import MenuMovimientos from '../ui/MenuMovimientos';
 import PuenteApi from '../puentes/PuenteApi';
 import { usarJuegoStore } from '../../store/usarJuegoStore';
+import { volumenBgmParaPhaser } from '../../config/opcionesCliente';
 
 /**
  * EscenaBatalla — pantalla de combate fiel a Pokémon GBC.
@@ -49,9 +50,18 @@ export default class EscenaBatalla extends Phaser.Scene {
 
     // Música
     if (this.cache.audio.exists('bgm-batalla-salvaje')) {
-      this._musica = this.sound.add('bgm-batalla-salvaje', { loop: true, volume: 0.6 });
+      this._musica = this.sound.add('bgm-batalla-salvaje', {
+        loop: true,
+        volume: volumenBgmParaPhaser(),
+      });
       this._musica.play();
     }
+
+    this._aplicarVolumenBgmBatalla = () => {
+      if (this._musica) this._musica.setVolume(volumenBgmParaPhaser());
+    };
+    this._onOpcionesAudioBatalla = () => this._aplicarVolumenBgmBatalla();
+    window.addEventListener('bytes-opciones-audio', this._onOpcionesAudioBatalla);
 
     // Texto inicial de encuentro
     this._mostrarTexto(`¡Un ${this._pokemonSalvaje.nombre}\nsalvaje apareció!`, () => {
@@ -470,6 +480,9 @@ export default class EscenaBatalla extends Phaser.Scene {
   // ── Cleanup ───────────────────────────────────────────────────────────
 
   shutdown() {
+    if (this._onOpcionesAudioBatalla) {
+      window.removeEventListener('bytes-opciones-audio', this._onOpcionesAudioBatalla);
+    }
     this._musica?.stop();
     this._menuMov?.ocultar();
   }

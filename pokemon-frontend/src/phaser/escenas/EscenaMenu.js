@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import PuenteApi from '../puentes/PuenteApi';
+import { crearMarcoDialogoRetro, estiloTextoDialogoRetro } from '../utils/marcoDialogoRetro';
 import { usarJuegoStore } from '../../store/usarJuegoStore';
 import { usarAutenticacionStore } from '../../store/usarAutenticacionStore';
 
@@ -22,29 +23,30 @@ export default class EscenaMenu extends Phaser.Scene {
     // Limpiar tweens y eventos previos por si la escena se reinicia
     this.tweens.killAll(); 
 
-    // Fondo semitransparente sobre el overworld
-    this.add.rectangle(0, 0, 160, 144, 0x000000, 0.3).setOrigin(0);
-
-    // Panel del menú (esquina superior derecha, estilo GBC)
+    // Panel del menú (esquina superior derecha)
     const anchoMenu = 80;
     const altoMenu = OPCIONES.length * 14 + 8;
     const xMenu = 160 - anchoMenu - 2;
     const yMenu = 2;
 
-    const fondo = this.add.rectangle(xMenu, yMenu, anchoMenu, altoMenu, 0xf8f8f8).setOrigin(0);
-    fondo.setStrokeStyle(1, 0x000000);
+    this.add.rectangle(0, 0, 160, 144, 0x000000, 0.38).setOrigin(0);
+    crearMarcoDialogoRetro(this, xMenu, yMenu, anchoMenu, altoMenu);
 
     this._cursores = [];
     this._textos = OPCIONES.map((opcion, i) => {
       const y = yMenu + 6 + i * 14;
 
       const cursor = this.add.text(xMenu + 4, y, '▶', {
-        fontFamily: '"Press Start 2P"', fontSize: '6px', fill: '#000',
+        fontFamily: '"Press Start 2P", monospace',
+        fontSize: '6px',
+        fill: '#2040c0',
       }).setOrigin(0).setVisible(false);
       this._cursores.push(cursor);
 
       return this.add.text(xMenu + 14, y, opcion, {
-        fontFamily: '"Press Start 2P"', fontSize: '6px', fill: '#000',
+        fontFamily: '"Press Start 2P", monospace',
+        fontSize: '6px',
+        fill: '#1a222c',
       }).setOrigin(0);
     });
 
@@ -385,14 +387,16 @@ export default class EscenaMenu extends Phaser.Scene {
     this.create(); // Reinicia el menú principal limpio
   }
 
-  // MAGIA: Función interna solo para pintar la caja (útil para "Guardando...")
+  // Función interna solo para pintar la caja
   _crearCajaTexto(texto) {
     if (this._cajaMensaje) this._cajaMensaje.destroy();
     if (this._textoMsg) this._textoMsg.destroy();
 
-    this._cajaMensaje = this.add.rectangle(2, 100, 156, 42, 0xf8f8f8).setOrigin(0).setStrokeStyle(1, 0x000000);
-    this._textoMsg = this.add.text(6, 104, texto, {
-      fontFamily: '"Press Start 2P"', fontSize: '5px', fill: '#000', wordWrap: { width: 148 }, lineSpacing: 4,
+    this._cajaMensaje = crearMarcoDialogoRetro(this, 1, 100, 158, 44);
+    this._textoMsg = this.add.text(8, 106, texto, {
+      ...estiloTextoDialogoRetro(142),
+      fontSize: '5px',
+      lineSpacing: 4,
     }).setOrigin(0);
   }
 
@@ -400,7 +404,7 @@ export default class EscenaMenu extends Phaser.Scene {
     this._inputBloqueado = true; // Bloquea los menús de fondo
     this._crearCajaTexto(texto);
 
-    // MAGIA: Manejador único y limpio para cerrar mensajes sin fugas de eventos
+    // Manejador único para cerrar mensajes sin fugas de eventos
     const cerrarMensaje = (event) => {
       const teclasAceptadas = ['KeyZ', 'Enter', 'NumpadEnter', 'KeyX', 'Escape'];
       if (teclasAceptadas.includes(event.code)) {

@@ -1,3 +1,5 @@
+import { crearMarcoDialogoRetro, estiloTextoDialogoRetro } from '../utils/marcoDialogoRetro';
+
 /**
  * Menú vertical de opciones (PC, etc.). Navegación W/S o flechas, Z confirma, X cancela.
  */
@@ -34,33 +36,27 @@ export default class UIMenuLista {
 
     this._contenedor = this._scene.add.container(0, 0).setDepth(110).setScrollFactor(0);
 
-    const fondo = this._scene.add.rectangle(10, 36, 140, 72, 0xf8f8f8)
-      .setOrigin(0)
-      .setStrokeStyle(2, 0x000000);
-    this._contenedor.add(fondo);
+    const marco = crearMarcoDialogoRetro(this._scene, 10, 36, 140, 72);
+    this._contenedor.add(marco);
 
     const textoTitulo = this._scene.add.text(14, 40, titulo, {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '6px',
-      fill: '#000000',
-      wordWrap: { width: 132 },
+      ...estiloTextoDialogoRetro(128),
+      lineSpacing: 4,
     }).setOrigin(0);
     this._contenedor.add(textoTitulo);
 
     this._cursor = this._scene.add.text(14, 54, '▶', {
-      fontFamily: '"Press Start 2P"',
+      fontFamily: '"Press Start 2P", monospace',
       fontSize: '6px',
-      fill: '#000000',
+      fill: '#2040c0',
     }).setOrigin(0);
     this._contenedor.add(this._cursor);
 
     this._textosOpcion = [];
     items.forEach((label, i) => {
       const t = this._scene.add.text(26, 54 + i * 12, label, {
-        fontFamily: '"Press Start 2P"',
-        fontSize: '6px',
-        fill: '#000000',
-        wordWrap: { width: 118 },
+        ...estiloTextoDialogoRetro(110),
+        lineSpacing: 4,
       }).setOrigin(0);
       this._textosOpcion.push(t);
       this._contenedor.add(t);

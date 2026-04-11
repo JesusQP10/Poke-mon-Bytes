@@ -8,28 +8,16 @@ import { STARTERS } from '../ui/UISeleccionStarter';
 import UIOpcionSiNo from '../ui/UIOpcionSiNo';
 import UIMenuLista from '../ui/UIMenuLista';
 import WarpSystem from '../sistemas/WarpSystem';
-
-const TAM_TILE = 16;
-
-// Configuración de mapas: qué tileset usa cada uno
-const TILESET_POR_MAPA = {
-  'player-room': 'new_bark_town',
-  'player-house': 'new_bark_town',
-  'new-bark-town': 'new_bark_town',
-  'elm-lab': 'new_bark_town',
-  'ruta-29': 'ruta_29_bg',
-};
-
-// Configuración de cada mapa: posición inicial, si es interior, BGM
-const CONFIG_MAPAS = {
-  'player-room': { esInterior: true, posXInicio: 5, posYInicio: 7, bgm: 'bgm-new-bark-town' },
-  'player-house': { esInterior: true, posXInicio: 5, posYInicio: 5, bgm: 'bgm-new-bark-town' },
-  'new-bark-town': { esInterior: false, posXInicio: 5, posYInicio: 5, bgm: 'bgm-new-bark-town' },
-  'elm-lab': { esInterior: true, posXInicio: 6, posYInicio: 11, bgm: 'bgm-elm-lab' },
-  'elm_lab': { esInterior: true, posXInicio: 6, posYInicio: 11, bgm: 'bgm-elm-lab' },
-  // Mapa 30×9 tiles: filas válidas 0–8 (posY 9 queda fuera del tilemap)
-  'ruta-29': { esInterior: false, posXInicio: 19, posYInicio: 8, bgm: 'bgm-overworld' },
-};
+import {
+  TAM_TILE,
+  TILESET_POR_MAPA,
+  CONFIG_MAPAS,
+  dibujarPlaceholderPorMapa,
+  comprobarNarrativaTrasTilemap,
+  crearZonaTriggerElm,
+  intentarWarpConSecuenciaAyudante,
+} from '../mapas';
+import { volumenBgmParaPhaser, sfxPermitido } from '../../config/opcionesCliente';
 
 export default class EscenaOverworld extends Phaser.Scene {
   constructor() {
@@ -93,6 +81,17 @@ export default class EscenaOverworld extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.POSTUPDATE, () => {
       this._warpSystem?.sincronizarPresenciaJugadorEnZonas();
     });
+
+    this._aplicarVolumenBgmDesdeOpciones = () => {
+      const v = volumenBgmParaPhaser();
+      if (this._musica) {
+        this._musica.setVolume(v);
+      }
+    };
+    this._onOpcionesAudio = () => this._aplicarVolumenBgmDesdeOpciones();
+    window.addEventListener('bytes-opciones-audio', this._onOpcionesAudio);
+    // Con el menú React la escena está en pausa; el volumen debe reaplicarse al volver.
+    this.events.on('resume', this._aplicarVolumenBgmDesdeOpciones);
   }
 
   _warpEstaBloqueado() {
@@ -128,10 +127,11 @@ export default class EscenaOverworld extends Phaser.Scene {
   }) {
     const payload = { destino, tileX, tileY, spawnAt, spawnOffsetX, spawnOffsetY };
     const store = usarJuegoStore.getState();
-    if (store.mapaActual === 'elm-lab' && store.starterElegido && !store.pocionEntregada) {
-      this._ejecutarSecuenciaAyudante(() => {
+    if (
+      intentarWarpConSecuenciaAyudante(store, this, () => {
         void this._warpSystem.ejecutarTransicionMapa(payload, usarJuegoStore);
-      });
+      })
+    ) {
       return;
     }
     void this._warpSystem.ejecutarTransicionMapa(payload, usarJuegoStore);
@@ -245,12 +245,7 @@ export default class EscenaOverworld extends Phaser.Scene {
   // ── Placeholder de mapa ────────────────
 
   _crearEscenaPlaceholder(mapaKey, tileX, tileY, configMapa) {
-    if (configMapa.esInterior) {
-      if (mapaKey === 'player-room') this._dibujarHabitacionJugador();
-      else this._dibujarInteriorGenerico();
-    } else {
-      this._dibujarExteriorPlaceholder(mapaKey);
-    }
+    dibujarPlaceholderPorMapa(this, mapaKey, configMapa);
 
     this._jugador = new Jugador(this, tileX, tileY);
     this._teclado = crearTecladoJugador(this);
@@ -260,39 +255,6 @@ export default class EscenaOverworld extends Phaser.Scene {
     this._configurarCamara(null);
     this._configurarMenu();
     this._secuencias = new SistemaSecuencias(this);
-  }
-
-  _dibujarInteriorGenerico() {
-    this.add.rectangle(80, 72, 160, 144, 0xc8a050).setOrigin(0.5);
-    this.add.rectangle(80, 8, 160, 16, 0x806838).setOrigin(0.5);
-    this.add.rectangle(4, 72, 8, 144, 0x806838).setOrigin(0.5);
-    this.add.rectangle(156, 72, 8, 144, 0x806838).setOrigin(0.5);
-    this.add.text(80, 72, 'INTERIOR', { fontFamily: '"Press Start 2P"', fontSize: '5px', fill: '#80500a' }).setOrigin(0.5).setAlpha(0.4);
-  }
-
-  _dibujarHabitacionJugador() {
-    this.add.rectangle(80, 72, 160, 144, 0xc8a050).setOrigin(0.5);
-    this.add.rectangle(80, 8, 160, 16, 0x806838).setOrigin(0.5);
-    this.add.rectangle(4, 72, 8, 144, 0x806838).setOrigin(0.5);
-    this.add.rectangle(156, 72, 8, 144, 0x806838).setOrigin(0.5);
-    this.add.rectangle(136, 28, 24, 28, 0xe04040).setOrigin(0.5);
-    this.add.rectangle(136, 16, 24, 8, 0xffffff).setOrigin(0.5);
-    this.add.rectangle(28, 24, 20, 20, 0x8888cc).setOrigin(0.5);
-    this.add.rectangle(28, 36, 14, 6, 0x555588).setOrigin(0.5);
-    this.add.rectangle(80, 18, 28, 14, 0x333333).setOrigin(0.5);
-    this.add.rectangle(80, 136, 20, 12, 0x885520).setOrigin(0.5);
-    this.add.text(80, 136, '▼', { fontFamily: '"Press Start 2P"', fontSize: '6px', fill: '#fff' }).setOrigin(0.5);
-    this.add.text(80, 72, 'HABITACIÓN', { fontFamily: '"Press Start 2P"', fontSize: '5px', fill: '#80500a' }).setOrigin(0.5).setAlpha(0.4);
-  }
-
-  _dibujarExteriorPlaceholder(mapaKey) {
-    this.add.rectangle(80, 72, 160, 144, 0x78c850).setOrigin(0.5);
-    const graficos = this.add.graphics();
-    graficos.lineStyle(0.5, 0x5aaa3a, 0.4);
-    for (let x = 0; x <= 160; x += TAM_TILE) graficos.lineBetween(x, 0, x, 144);
-    for (let y = 0; y <= 144; y += TAM_TILE) graficos.lineBetween(0, y, 160, y);
-    const nombre = mapaKey.replace(/-/g, ' ').toUpperCase();
-    this.add.text(80, 40, nombre, { fontFamily: '"Press Start 2P"', fontSize: '6px', fill: '#1a6010', align: 'center' }).setOrigin(0.5);
   }
 
   // ── Modo completo con tilemap ─────────────────────────────────────────
@@ -366,7 +328,7 @@ export default class EscenaOverworld extends Phaser.Scene {
       this._configurarCamara(mapa);
       this._configurarMenu();
       this._secuencias = new SistemaSecuencias(this);
-      this._comprobarSecuenciasNarrativas(mapaKey);
+      comprobarNarrativaTrasTilemap(this, mapaKey);
     } catch (e) {
       console.error(`[_crearEscenaTilemap] Error cargando ${mapaKey}:`, e);
       this._tilemapPhaser = null;
@@ -380,7 +342,10 @@ export default class EscenaOverworld extends Phaser.Scene {
     this._introActiva = false;
     if (bgmKey && this.cache.audio.exists(bgmKey)) {
       this.sound.stopAll();
-      this._musica = this.sound.add(bgmKey, { loop: true, volume: 0.6 });
+      this._musica = this.sound.add(bgmKey, {
+        loop: true,
+        volume: volumenBgmParaPhaser(),
+      });
       this._musica.play();
     }
   }
@@ -403,81 +368,19 @@ export default class EscenaOverworld extends Phaser.Scene {
       if (this._dialogo?.activo || this._introActiva || this._secuencias?.activo) return;
       if (this._uiMenuLista?.activo) return;
       if (this._reactTextoEstaticoActivo) return;
+      const abrirReact = this.game.registry.get('callbacks')?.onAbrirMenuIngame;
+      if (abrirReact) {
+        this.scene.pause();
+        abrirReact({
+          resumePhaser: () => {
+            this.scene.resume('EscenaOverworld');
+          },
+        });
+        return;
+      }
       this.scene.launch('EscenaMenu');
       this.scene.pause();
     });
-  }
-
-  // ── Secuencias narrativas ─────────────────────────────────────────────
-
-  _comprobarSecuenciasNarrativas(mapaKey) {
-    const store = usarJuegoStore.getState();
-    if (mapaKey === 'player-house' && !store.pokegearEntregado) {
-      this._ejecutarSecuenciaMadre();
-    }
-  }
-
-  _ejecutarSecuenciaMadre() {
-    const store = usarJuegoStore.getState();
-    const nombre = store.nombreJugador || 'Tú';
-
-    const madrePx = { x: 5 * 16 + 8, y: 3 * 16 + 8 };
-    const spriteMadre = this.add.rectangle(madrePx.x, madrePx.y, 12, 16, 0xff88aa).setDepth(5);
-
-    const lineas = [
-      `¡${nombre}!`,
-      'Nuestro vecino, el PROF. ELM,\nte estaba buscando.',
-      'Dijo que quería pedirte\nun favor.',
-      '¡Ah! Casi lo olvido.',
-      'Tu POKÉGEAR ha vuelto\ndel taller de reparaciones.',
-      '¡Aquí tienes!',
-    ];
-
-    this._secuencias.ejecutar([
-      this._secuencias.pasoTween(spriteMadre, { x: this._jugador.x, y: this._jugador.y - 16 }, 800),
-      this._secuencias.pasoDialogo(this._dialogo, lineas),
-      this._secuencias.pasoStore(() => usarJuegoStore.getState().setPokegearEntregado()),
-    ], () => {
-      spriteMadre.destroy();
-    });
-  }
-
-  _ejecutarSecuenciaElm() {
-    const store = usarJuegoStore.getState();
-    const nombre = store.nombreJugador || 'Tú';
-
-    const elmX = 6 * TAM_TILE + TAM_TILE / 2;
-    const elmY = 3 * TAM_TILE + TAM_TILE;
-    const targetX = elmX;
-    const targetY = elmY + TAM_TILE * 2; 
-
-    const lineasElm = [
-      `¡${nombre}! Justo a tiempo.`,
-      'Estoy investigando los Pokémon\nde la región Johto.',
-      '¿Me harías un favor?\nNecesito que lleves uno\nde mis Pokémon.',
-      'Están en la mesa. Elige el que más te guste.',
-    ];
-
-    this._secuencias.ejecutar([
-      this._secuencias.pasoTween(this._jugador, { x: targetX, y: targetY }, 800),
-      this._secuencias.pasoDialogo(this._dialogo, lineasElm),
-    ]);
-  }
-
-  _ejecutarSecuenciaAyudante(onFin) {
-    const lineas = [
-      '¡Espera! El Prof. Elm me\npidió que te diera esto.',
-      '¡Has recibido una POCIÓN!',
-    ];
-
-    this._secuencias.ejecutar([
-      this._secuencias.pasoDialogo(this._dialogo, lineas),
-      this._secuencias.pasoStore(() => {
-        const store = usarJuegoStore.getState();
-        store.setPocionEntregada();
-        store.addInventario({ id: 'pocion', nombre: 'Poción', cantidad: 1 });
-      }),
-    ], onFin);
   }
 
   // ── Pokeballs de starter ──────────────────────────────────────────────
@@ -501,17 +404,31 @@ export default class EscenaOverworld extends Phaser.Scene {
       sprite: pokeball,
       tipo: 'pokeball',
       accion: () => {
-        if (usarJuegoStore.getState().starterElegido) return;
+        const st = usarJuegoStore.getState();
+        if (st.starterElegido) return;
+
+        const enLabElm = st.mapaActual === 'elm-lab' || st.mapaActual === 'elm_lab';
+        if (enLabElm && !st.elmCharlaEleccionStarter) {
+          this._dialogo.mostrar(
+            [
+              '¡Espera!',
+              'Deberías hablar primero\ncon el PROF. ELM.',
+              'Te explicará qué hacer\ncon los Pokémon de la mesa.',
+            ],
+            null,
+          );
+          return;
+        }
 
         pokeball.setVisible(false);
         pokemonSprite.setVisible(true);
-        
+
         const lineasPresentacion = [`¡Es ${starter.nombre.toUpperCase()}!`];
-        
+
         this._dialogo.mostrar(lineasPresentacion, () => {
           this._mostrarConfirmacionStarter(starter, pokeball, pokemonSprite);
         });
-      }
+      },
     });
   }
   
@@ -525,7 +442,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     
     this._uiSiNo.mostrar(pregunta, (respuesta) => {
       if (respuesta) {
-        if (this.sound.get('sfx-obtener-starter')) {
+        if (sfxPermitido() && this.sound.get('sfx-obtener-starter')) {
           this.sound.play('sfx-obtener-starter', { volume: 0.7 });
         }
         
@@ -592,7 +509,22 @@ export default class EscenaOverworld extends Phaser.Scene {
             ]);
           });
         } else {
-          this._dialogo.mostrar(lineas);
+          const mapa = usarJuegoStore.getState().mapaActual;
+          const enLabElm = mapa === 'elm-lab' || mapa === 'elm_lab';
+          const esProfElm = obj.name === 'elm';
+          const sinStarter = !usarJuegoStore.getState().starterElegido;
+          const marcarCharlaElm =
+            esProfElm && enLabElm && sinStarter
+              ? () => {
+                  usarJuegoStore.getState().setElmCharlaEleccionStarter();
+                  try {
+                    usarJuegoStore.getState().guardarPartidaLocal();
+                  } catch {
+                    /* caché opcional */
+                  }
+                }
+              : null;
+          this._dialogo.mostrar(lineas, marcarCharlaElm);
         }
       }
     });
@@ -614,7 +546,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     const tipo = String(WarpSystem.prop(props, 'tipo') ?? '').trim();
 
     if (tipo === 'trigger_elm') {
-      this._crearZonaTriggerElm(obj);
+      crearZonaTriggerElm(this, obj, this._warpSystem);
       return;
     }
 
@@ -733,33 +665,6 @@ export default class EscenaOverworld extends Phaser.Scene {
     this._jugador?.setInputBloqueado(false);
   }
 
-  _crearZonaTriggerElm(obj) {
-    const width = obj.width ?? TAM_TILE;
-    const height = obj.height ?? TAM_TILE;
-    const centroX = obj.x + width / 2;
-    const centroY = obj.y + height / 2;
-
-    const zona = this.add.zone(centroX, centroY, width, height);
-    this.physics.add.existing(zona, true);
-
-    const estado = {
-      estabaEnZona: this.physics.overlap(this._jugador, zona),
-      yaActivado: false,
-    };
-
-    this.physics.add.overlap(this._jugador, zona, () => {
-      if (estado.estabaEnZona || estado.yaActivado || this._introActiva || this._secuencias?.activo || this._cambiandoMapa) return;
-
-      const store = usarJuegoStore.getState();
-      if (!store.starterElegido) {
-        estado.yaActivado = true;
-        this._ejecutarSecuenciaElm();
-      }
-    });
-
-    this._warpSystem.agregarZonaParaWorldstep(zona, estado);
-  }
-
   // ── Batalla ───────────────────────────────────────────────────────────
 
   _iniciarBatalla(pokemon) {
@@ -795,6 +700,12 @@ export default class EscenaOverworld extends Phaser.Scene {
   // ── Cleanup ───────────────────────────────────────────────────────────
 
   shutdown() {
+    if (this._onOpcionesAudio) {
+      window.removeEventListener('bytes-opciones-audio', this._onOpcionesAudio);
+    }
+    if (this._aplicarVolumenBgmDesdeOpciones) {
+      this.events.off('resume', this._aplicarVolumenBgmDesdeOpciones);
+    }
     this._musica?.stop();
     this.events.off('encuentro');
 

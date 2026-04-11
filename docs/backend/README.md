@@ -12,7 +12,7 @@ set SPRING_PROFILES_ACTIVE=dev
 .\mvnw.cmd spring-boot:run
 ```
 
-- Interfaz: `http://localhost:8081/swagger-ui.html` (o el puerto que uses).
+- Interfaz: `http://localhost:8081/swagger-ui.html`.
 - En **default** (`application.properties`) la UI está **desactivada** para no publicar el esquema de la API sin querer.
 
 **Health (sin login):** `GET /actuator/health` — útil para comprobar que el servicio arrancó. (En código, Actuator va en una `SecurityFilterChain` propia con `@Order(1)` para que no quede detrás del JWT y devuelva **403** sin token.)

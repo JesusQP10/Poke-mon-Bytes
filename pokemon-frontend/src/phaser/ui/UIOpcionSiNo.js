@@ -1,3 +1,5 @@
+import { crearMarcoDialogoRetro, estiloTextoDialogoRetro } from '../utils/marcoDialogoRetro';
+
 class UIOpcionSiNo {
   constructor(scene) {
     this._scene = scene;
@@ -38,17 +40,12 @@ class UIOpcionSiNo {
     const cuadroAncho = 120;
     const cuadroAlto = 50;
 
-    const fondo = this._scene.add.rectangle(cuadroX, cuadroY, cuadroAncho, cuadroAlto, 0xf8f8f8)
-      .setOrigin(0)
-      .setStrokeStyle(2, 0x000000);
-    this._contenedor.add(fondo);
+    const marcoP = crearMarcoDialogoRetro(this._scene, cuadroX, cuadroY, cuadroAncho, cuadroAlto);
+    this._contenedor.add(marcoP);
 
     const textoPregunta = this._scene.add.text(cuadroX + 8, cuadroY + 8, pregunta, {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '6px',
-      fill: '#000000',
-      wordWrap: { width: cuadroAncho - 16 },
-      lineSpacing: 2,
+      ...estiloTextoDialogoRetro(cuadroAncho - 16),
+      lineSpacing: 4,
     }).setOrigin(0);
     this._contenedor.add(textoPregunta);
 
@@ -57,37 +54,27 @@ class UIOpcionSiNo {
     const opcionesAncho = 30;
     const opcionesAlto = 24;
 
-    const fondoOpciones = this._scene.add.rectangle(opcionesX, opcionesY, opcionesAncho, opcionesAlto, 0xf8f8f8)
-      .setOrigin(0)
-      .setStrokeStyle(2, 0x000000);
-    this._contenedor.add(fondoOpciones);
+    const marcoOp = crearMarcoDialogoRetro(this._scene, opcionesX, opcionesY, opcionesAncho, opcionesAlto);
+    this._contenedor.add(marcoOp);
 
-    const opcionSi = this._scene.add.text(opcionesX + 14, opcionesY + 4, 'Sí', {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '6px',
-      fill: '#000000',
-    }).setOrigin(0);
+    const estiloOp = { fontFamily: '"Press Start 2P", monospace', fontSize: '6px', fill: '#1a222c' };
+
+    const opcionSi = this._scene.add.text(opcionesX + 14, opcionesY + 4, 'Sí', estiloOp).setOrigin(0);
     this._contenedor.add(opcionSi);
 
-    const opcionNo = this._scene.add.text(opcionesX + 14, opcionesY + 14, 'No', {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '6px',
-      fill: '#000000',
-    }).setOrigin(0);
+    const opcionNo = this._scene.add.text(opcionesX + 14, opcionesY + 14, 'No', estiloOp).setOrigin(0);
     this._contenedor.add(opcionNo);
 
     const cursorSi = this._scene.add.text(opcionesX + 4, opcionesY + 4, '▶', {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '6px',
-      fill: '#000000',
+      ...estiloOp,
+      fill: '#2040c0',
     }).setOrigin(0).setVisible(false);
     this._contenedor.add(cursorSi);
     this._cursores.push(cursorSi);
 
     const cursorNo = this._scene.add.text(opcionesX + 4, opcionesY + 14, '▶', {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '6px',
-      fill: '#000000',
+      ...estiloOp,
+      fill: '#2040c0',
     }).setOrigin(0).setVisible(false);
     this._contenedor.add(cursorNo);
     this._cursores.push(cursorNo);

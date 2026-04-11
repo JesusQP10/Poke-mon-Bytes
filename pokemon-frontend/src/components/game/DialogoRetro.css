@@ -1,0 +1,75 @@
+/**
+ * Cajas de texto / diálogo alineadas con el menú in-game (Press Start 2P).
+ */
+
+.dialogo-retro-capas {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 6px 4px 10px;
+  background: linear-gradient(
+    transparent 0%,
+    rgba(8, 12, 20, 0.38) 50%,
+    rgba(8, 12, 20, 0.58) 100%
+  );
+  pointer-events: auto;
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  -webkit-font-smoothing: none;
+}
+
+.dialogo-retro-caja {
+  background: linear-gradient(180deg, #fafaf8 0%, #e8e8e4 100%);
+  border: 2px solid #141820;
+  border-radius: 2px;
+  box-shadow:
+    2px 2px 0 rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  color: #1a222c;
+  font-size: 7px;
+  line-height: 1.65;
+  letter-spacing: 0.02em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.dialogo-retro-caja--panel {
+  max-height: 88px;
+  overflow-y: auto;
+  padding: 8px 8px 10px;
+}
+
+.dialogo-retro-caja--flotante {
+  padding: 8px 8px 10px;
+  font-size: 5px;
+  line-height: 1.55;
+}
+
+.dialogo-retro-parrafo {
+  margin: 0;
+}
+
+.dialogo-retro-parrafo + .dialogo-retro-parrafo {
+  margin-top: 10px;
+}
+
+.dialogo-retro-hint {
+  margin-top: 6px;
+  font-size: 5px;
+  line-height: 1.5;
+  color: rgba(232, 236, 242, 0.95);
+  text-shadow: 1px 1px 0 #000;
+  text-align: right;
+}
+
+/* Diálogos flotantes dentro del menú in-game (160×144) */
+.dialogo-retro-caja--menuOverlay {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 22px;
+  z-index: 2;
+  pointer-events: auto;
+}

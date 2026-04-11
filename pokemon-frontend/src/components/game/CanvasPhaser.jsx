@@ -4,7 +4,7 @@ import { crearJuegoPhaser } from '../../phaser/PhaserJuego';
 /**
  * Monta Phaser.Game en el div 160×144.
  *
- * @param {{ current: { onCambioPantalla?: (p: string) => void, onTextoEstatico?: (p: { lineas: string[], onCerrar: () => void }) => void } }} callbacksRef
+ * @param {{ current: { onCambioPantalla?: (p: string) => void, onTextoEstatico?: (p: { lineas: string[], onCerrar: () => void }) => void, onAbrirMenuIngame?: (p: { resumePhaser: () => void }) => void } }} callbacksRef
  *        Ref actualizada por el padre en cada render para que los callbacks no queden obsoletos.
  */
 const CanvasPhaser = ({ callbacksRef }) => {
@@ -18,6 +18,7 @@ const CanvasPhaser = ({ callbacksRef }) => {
     juegoRef.current = crearJuegoPhaser(contenedorRef.current, {
       onCambioPantalla: (pantalla) => ref.current.onCambioPantalla?.(pantalla),
       onTextoEstatico: (payload) => ref.current.onTextoEstatico?.(payload),
+      onAbrirMenuIngame: (payload) => ref.current.onAbrirMenuIngame?.(payload),
     });
 
     return () => {

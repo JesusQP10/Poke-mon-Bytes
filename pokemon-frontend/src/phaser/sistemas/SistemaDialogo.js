@@ -1,17 +1,12 @@
 import Phaser from 'phaser';
+import { delayDialogoMs } from '../../config/opcionesCliente';
+import { crearMarcoDialogoRetro, estiloTextoDialogoRetro } from '../utils/marcoDialogoRetro';
 
 /**
- * SistemaDialogo — caja de texto estilo Game Boy Color.
+ * SistemaDialogo — caja de texto estilo menú in-game (retro).
  *
- * Muestra una caja en la parte inferior del canvas (160×40 px)
- * con el texto que aparece carácter a carácter.
- * El jugador avanza con Z/Enter.
- *
- * Uso:
- *   const dialogo = new SistemaDialogo(scene);
- *   dialogo.mostrar(['Hola!', 'Bienvenido a New Bark Town.'], () => {
- *     console.log('Diálogo terminado');
- *   });
+ * Caja inferior 160×44 con marco doble; texto carácter a carácter.
+ * Avance con Z/Enter.
  */
 export default class SistemaDialogo {
   constructor(scene) {
@@ -31,32 +26,24 @@ export default class SistemaDialogo {
   }
 
   _crearUI() {
-    // Caja de texto: 158×38 px, centrada horizontalmente, y:104 
-    this._contenedor = this.scene.add.container(1, 104).setDepth(100).setScrollFactor(0);
+    const W = 158;
+    const H = 44;
+    this._contenedor = this.scene.add.container(1, 100).setDepth(100).setScrollFactor(0);
 
-    // Fondo blanco con borde negro
-    const fondo = this.scene.add.rectangle(0, 0, 158, 38, 0xf8f8f8).setOrigin(0);
-    fondo.setStrokeStyle(1, 0x000000);
+    const marco = crearMarcoDialogoRetro(this.scene, 0, 0, W, H);
+    this._contenedor.add(marco);
 
-    // Texto del diálogo
-    this._texto = this.scene.add.text(5, 5, '', {
-      fontFamily: '"Press Start 2P"',
+    const wrap = W - 14;
+    this._texto = this.scene.add.text(7, 6, '', estiloTextoDialogoRetro(wrap)).setOrigin(0);
+
+    this._flecha = this.scene.add.text(W - 12, H - 12, '▼', {
+      fontFamily: '"Press Start 2P", monospace',
       fontSize: '6px',
-      fill: '#000000',
-      wordWrap: { width: 146 },
-      lineSpacing: 4,
-    }).setOrigin(0);
-
-    // Flecha de avance (▼) en esquina inferior derecha
-    this._flecha = this.scene.add.text(149, 27, '▼', {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '6px',
-      fill: '#000000',
+      fill: '#2040c0',
     }).setOrigin(0).setVisible(false);
 
-    this._contenedor.add([fondo, this._texto, this._flecha]);
+    this._contenedor.add([this._texto, this._flecha]);
 
-    // Escuchar tecla de avance
     this._handlerTeclado = (event) => {
       if (!this._activo) return;
       const esAceptar =
@@ -106,7 +93,7 @@ export default class SistemaDialogo {
 
     this._limpiarIntervalo();
     this._intervalo = this.scene.time.addEvent({
-      delay: 30, // ms por carácter
+      delay: delayDialogoMs(),
       repeat: lineaCompleta.length - 1,
       callback: () => {
         this._charIndex++;
@@ -122,7 +109,6 @@ export default class SistemaDialogo {
     this._limpiarIntervalo();
     this._texto.setText(this._lineas[this._indice]);
     this._esperandoInput = true;
-    // Parpadear la flecha si hay más líneas, o simplemente mostrarla
     this._flecha.setVisible(true);
   }
 

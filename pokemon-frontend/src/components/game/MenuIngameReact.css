@@ -1,0 +1,352 @@
+/* Menú in-game 160×144, estilo retro */
+
+.menu-ingame-root {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+}
+
+.menu-ingame-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 12, 20, 0.45);
+  pointer-events: auto;
+}
+
+.menu-ingame-panel {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 86px;
+  min-height: 72px;
+  padding: 6px 4px 8px 2px;
+  background: linear-gradient(180deg, #fafaf8 0%, #e8e8e4 100%);
+  border: 2px solid #141820;
+  border-radius: 2px;
+  box-shadow:
+    2px 2px 0 rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  pointer-events: auto;
+}
+
+.menu-ingame-title {
+  font-size: 6px;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  color: #2a3440;
+  text-align: center;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(20, 24, 32, 0.2);
+}
+
+.menu-ingame-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 14px;
+  padding: 1px 0;
+  font-size: 5px;
+  line-height: 1.35;
+  color: #1a222c;
+}
+
+.menu-ingame-row--active {
+  background: rgba(64, 104, 200, 0.12);
+  outline: 1px solid rgba(40, 72, 160, 0.35);
+}
+
+.menu-ingame-cursor {
+  width: 8px;
+  font-size: 5px;
+  color: #2040c0;
+  flex-shrink: 0;
+  animation: menu-ingame-cursor-blink 0.55s steps(1, end) infinite;
+}
+
+@keyframes menu-ingame-cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.menu-ingame-hint {
+  position: absolute;
+  bottom: 3px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 4px;
+  line-height: 1.5;
+  color: rgba(232, 236, 242, 0.92);
+  text-shadow: 1px 1px 0 #000;
+  pointer-events: none;
+}
+
+/* Pantallas completas (mochila / equipo) */
+.menu-ingame-full {
+  position: absolute;
+  inset: 3px;
+  padding: 6px 6px 18px;
+  background: linear-gradient(180deg, #eef2f8 0%, #d8dce6 100%);
+  border: 2px solid #141820;
+  box-shadow:
+    2px 2px 0 rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+
+.menu-ingame-full--bag {
+  background: linear-gradient(180deg, #e8f2e8 0%, #c8dcc8 100%);
+}
+
+.menu-ingame-full--team {
+  background: linear-gradient(180deg, #e4ecfa 0%, #c4d0ec 100%);
+}
+
+.menu-ingame-full-title {
+  font-size: 7px;
+  text-align: center;
+  margin-bottom: 6px;
+  color: #1a2430;
+}
+
+.menu-ingame-scroll {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 5px;
+  line-height: 1.55;
+  color: #222a34;
+  max-height: 86px;
+}
+
+.menu-ingame-team-list {
+  flex: 0 0 auto;
+  max-height: 64px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.menu-ingame-team-slot {
+  margin-bottom: 4px;
+  padding: 3px 4px 4px;
+  border: 1px solid rgba(24, 40, 80, 0.2);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.menu-ingame-team-slot--active {
+  background: rgba(80, 120, 220, 0.2);
+  border-color: rgba(40, 72, 160, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(40, 72, 160, 0.15);
+}
+
+.menu-ingame-team-slot-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  font-size: 5px;
+  line-height: 1.25;
+  color: #182438;
+}
+
+.menu-ingame-team-slot-num {
+  width: 8px;
+  color: #506070;
+  flex-shrink: 0;
+}
+
+.menu-ingame-team-slot-names {
+  flex: 1;
+  min-width: 0;
+}
+
+.menu-ingame-team-etiqueta {
+  font-size: 5px;
+  word-break: break-word;
+}
+
+.menu-ingame-team-sub {
+  font-size: 4px;
+  color: #4a5a6c;
+  margin-top: 1px;
+}
+
+.menu-ingame-team-nv {
+  flex-shrink: 0;
+  font-size: 4px;
+  color: #304050;
+}
+
+.menu-ingame-hp-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.menu-ingame-hpbar {
+  flex: 1;
+  height: 5px;
+  background: #203040;
+  border: 1px solid #0a1018;
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.menu-ingame-hpbar-fill {
+  height: 100%;
+  min-width: 0;
+  transition: width 0.12s ease-out;
+}
+
+.menu-ingame-hpbar-fill.menu-ingame-hp-ok {
+  background: linear-gradient(180deg, #5ce878 0%, #2aa848 100%);
+}
+
+.menu-ingame-hpbar-fill.menu-ingame-hp-warn {
+  background: linear-gradient(180deg, #f0d040 0%, #c89820 100%);
+}
+
+.menu-ingame-hpbar-fill.menu-ingame-hp-bad {
+  background: linear-gradient(180deg, #ff7070 0%, #d02020 100%);
+}
+
+.menu-ingame-hpnums {
+  font-size: 4px;
+  flex-shrink: 0;
+  min-width: 28px;
+  text-align: right;
+}
+
+.menu-ingame-detail {
+  margin-top: 4px;
+  padding: 5px 6px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(20, 24, 32, 0.25);
+  font-size: 4px;
+  line-height: 1.5;
+  color: #243040;
+}
+
+.menu-ingame-detail--team {
+  flex-shrink: 0;
+}
+
+.menu-ingame-detail-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 2px;
+}
+
+.menu-ingame-detail-line:first-child {
+  margin-top: 0;
+}
+
+.menu-ingame-detail-k {
+  color: #506070;
+  margin-right: 2px;
+}
+
+.menu-ingame-scroll--bag {
+  max-height: 88px;
+}
+
+.menu-ingame-mochila-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 14px;
+  padding: 2px 3px;
+  font-size: 5px;
+  line-height: 1.3;
+  color: #1a2830;
+  border-radius: 2px;
+}
+
+.menu-ingame-mochila-row--active {
+  background: rgba(40, 100, 60, 0.18);
+  outline: 1px solid rgba(30, 90, 50, 0.35);
+}
+
+.menu-ingame-mochila-nombre {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.menu-ingame-mochila-cant {
+  flex-shrink: 0;
+  color: #2a5040;
+}
+
+.menu-ingame-full--opts {
+  background: linear-gradient(180deg, #f0eef8 0%, #d8d4e8 100%);
+}
+
+.menu-ingame-opciones-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menu-ingame-opcion-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 16px;
+  padding: 2px 4px;
+  font-size: 5px;
+  color: #1a2030;
+  border: 1px solid transparent;
+  border-radius: 2px;
+}
+
+.menu-ingame-opcion-row--active {
+  background: rgba(100, 80, 180, 0.12);
+  border-color: rgba(80, 60, 160, 0.3);
+}
+
+.menu-ingame-opcion-label {
+  flex: 1;
+}
+
+.menu-ingame-opcion-valor {
+  font-size: 5px;
+  color: #3040a0;
+  min-width: 40px;
+  text-align: right;
+}
+
+.menu-ingame-opciones-nota {
+  margin: 6px 0 0;
+  font-size: 4px;
+  line-height: 1.4;
+  color: #5a6070;
+  text-align: center;
+}
+
+.menu-ingame-hp-ok {
+  color: #1a7a2a;
+}
+.menu-ingame-hp-warn {
+  color: #946000;
+}
+.menu-ingame-hp-bad {
+  color: #a01818;
+}
+
+.menu-ingame-saving {
+  opacity: 0.92;
+}

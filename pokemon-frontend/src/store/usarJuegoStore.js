@@ -40,6 +40,8 @@ export const usarJuegoStore = create((set, get) => ({
   // Flags de estado narrativo
   pokegearEntregado: false,
   starterElegido: false,
+  /** Tras la escena del trigger en elm-lab (hablar con Elm antes de tocar Poké Balls). */
+  elmCharlaEleccionStarter: false,
   pocionEntregada: false,
 
   // Inventario
@@ -95,6 +97,9 @@ export const usarJuegoStore = create((set, get) => ({
       inventario: Array.isArray(ec.inventario) ? ec.inventario : [],
       pokegearEntregado: Boolean(ec.pokegearEntregado),
       starterElegido: Boolean(ec.starterElegido ?? team.length > 0),
+      elmCharlaEleccionStarter: Boolean(
+        ec.elmCharlaEleccionStarter ?? ec.starterElegido ?? team.length > 0,
+      ),
       pocionEntregada: Boolean(ec.pocionEntregada),
       esNuevaPartida: ec.esNuevaPartida === true,
       reloj: ec.reloj && typeof ec.reloj === 'object'
@@ -119,6 +124,7 @@ export const usarJuegoStore = create((set, get) => ({
       pcPocionRetirada: s.pcPocionRetirada,
       hasStarter: s.hasStarter,
       starterElegido: s.starterElegido,
+      elmCharlaEleccionStarter: s.elmCharlaEleccionStarter,
       gameStep: s.gameStep,
       badges: s.badges,
       reloj: s.reloj,
@@ -139,11 +145,13 @@ export const usarJuegoStore = create((set, get) => ({
   setPokegearEntregado: () => set({ pokegearEntregado: true }),
   setStarterElegido: (starter) => set({
     starterElegido: true,
+    elmCharlaEleccionStarter: true,
     hasStarter: true,
     starter,
     team: [starter],
   }),
   setPocionEntregada: () => set({ pocionEntregada: true }),
+  setElmCharlaEleccionStarter: () => set({ elmCharlaEleccionStarter: true }),
   setPcPocionRetirada: () => set({ pcPocionRetirada: true }),
   setGameStep: (gameStep) => set({ gameStep }),
   addInventario: (item) => set((state) => ({
@@ -171,6 +179,7 @@ export const usarJuegoStore = create((set, get) => ({
       gameStep: 'PLAYING',
       hasStarter: false,
       starterElegido: false,
+      elmCharlaEleccionStarter: false,
       starter: null,
       team: [],
       inventario: [],
@@ -204,6 +213,7 @@ export const usarJuegoStore = create((set, get) => ({
       posX: s.posX,
       posY: s.posY,
       starterElegido: s.starterElegido,
+      elmCharlaEleccionStarter: s.elmCharlaEleccionStarter,
       starter: s.starter,
       team: s.team,
       inventario: s.inventario,
@@ -254,6 +264,9 @@ export const usarJuegoStore = create((set, get) => ({
       posX: Number.isFinite(data.posX) ? data.posX : 5,
       posY: Number.isFinite(data.posY) ? data.posY : 7,
       starterElegido: Boolean(data.starterElegido),
+      elmCharlaEleccionStarter: Boolean(
+        data.elmCharlaEleccionStarter ?? data.starterElegido,
+      ),
       starter: data.starter ?? null,
       team: Array.isArray(data.team) ? data.team : [],
       inventario: Array.isArray(data.inventario) ? data.inventario : [],
