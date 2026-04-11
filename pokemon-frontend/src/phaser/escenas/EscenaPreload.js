@@ -8,14 +8,14 @@ import bgmBatalla from '../../assets/game/audio/bgm/title_screen_gold_silver.mp3
  * EscenaPreload — carga todos los assets antes de iniciar el juego.
  *
  * Assets opcionales (el juego funciona en modo placeholder si no existen):
- *   - Spritesheet del jugador
- *   - Tileset de exteriores
- *   - Tilemap de New Bark Town
- *   - Fondo de batalla
+ * - Spritesheet del jugador
+ * - Tileset de exteriores
+ * - Tilemap de New Bark Town
+ * - Fondo de batalla
  *
  * Assets requeridos (siempre disponibles):
- *   - Audio BGM (en src/assets, importados como URL)
- *   - Tabla de encuentros (en public/)
+ * - Audio BGM (en src/assets, importados como URL)
+ * - Tabla de encuentros (en public/)
  */
 export default class EscenaPreload extends Phaser.Scene {
   constructor() {
@@ -36,24 +36,23 @@ export default class EscenaPreload extends Phaser.Scene {
     this.load.image('new_bark_town', '/assets/game/overworld/tiles/sheets/new_bark_town.png');
     this.load.image('ruta_29_bg', '/assets/game/overworld/tiles/sheets/ruta_29_bg.png');
 
-    // Spritesheet del jugador
-  this.load.spritesheet('jugador', '/assets/game/overworld/sprites/player/overworld_player_walk_sheet.png', { frameWidth: 32, frameHeight: 32 });
+    // Spritesheet del jugador (32x32 respetando el padding de tus assets)
+    this.load.spritesheet('jugador', '/assets/game/overworld/sprites/player/overworld_player_walk_sheet.png', { frameWidth: 32, frameHeight: 32 });
 
-  // Items
-  this.load.image('pokeball', '/assets/game/overworld/sprites/items/pokeball.png');
+    // Items
+    this.load.image('pokeball', '/assets/game/overworld/sprites/items/pokeball.png');
 
-  // NPCs (si son spritesheets con animación, usa spritesheet; si son imágenes estáticas, usa image)
-  this.load.spritesheet('aldeano', '/assets/game/overworld/sprites/npcs/aldeano.png', { frameWidth: 32, frameHeight: 32 });
-  this.load.spritesheet('cientifico', '/assets/game/overworld/sprites/npcs/cientifico.png', { frameWidth: 32, frameHeight: 32 });
-  this.load.spritesheet('elm', '/assets/game/overworld/sprites/npcs/elm.png', { frameWidth: 32, frameHeight: 32 });
-  this.load.spritesheet('madre', '/assets/game/overworld/sprites/npcs/madre.png', { frameWidth: 32, frameHeight: 32 });
-  this.load.spritesheet('nino', '/assets/game/overworld/sprites/npcs/nino.png', { frameWidth: 32, frameHeight: 32 });
+    // NPCs
+    this.load.spritesheet('aldeano', '/assets/game/overworld/sprites/npcs/aldeano.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('cientifico', '/assets/game/overworld/sprites/npcs/cientifico.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('elm', '/assets/game/overworld/sprites/npcs/elm.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('madre', '/assets/game/overworld/sprites/npcs/madre.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('nino', '/assets/game/overworld/sprites/npcs/nino.png', { frameWidth: 32, frameHeight: 32 });
 
-  // Pokémon starters (GIFs - usa image, no spritesheet)
-  this.load.image('chikorita', '/assets/game/overworld/sprites/pokemon/chikorita.gif');
-  this.load.image('cyndaquil', '/assets/game/overworld/sprites/pokemon/cyndaquil.gif');
-  this.load.image('totodile', '/assets/game/overworld/sprites/pokemon/totodile.gif');
-
+    // Pokémon starters (GIFs cargados como imagen estática)
+    this.load.image('chikorita', '/assets/game/overworld/sprites/pokemon/chikorita.gif');
+    this.load.image('cyndaquil', '/assets/game/overworld/sprites/pokemon/cyndaquil.gif');
+    this.load.image('totodile', '/assets/game/overworld/sprites/pokemon/totodile.gif');
 
     // ── Tilemaps (JSON exportados desde Tiled) ──────────────────────────
     this.load.tilemapTiledJSON('player-room', '/assets/game/overworld/tiles/exports/player_room.json');
@@ -77,31 +76,26 @@ export default class EscenaPreload extends Phaser.Scene {
     });
   }
   
-
-  
-
   create() {
     console.log('[Preload] ========================================');
     console.log('[Preload] Verificando assets cargados...');
     
     // Si el spritesheet del jugador no cargó, placeholder
     if (!this.textures.exists('jugador')) {
-      console.warn('[Preload] ⚠️ Spritesheet jugador no encontrado, generando placeholder');
+      console.warn('[Preload] ⚠️ Spritesheet jugador no encontrado, generando placeholder adaptado a 32x32');
       this._generarSpritesheetJugador();
     } else {
       console.log('[Preload] ✅ Spritesheet jugador cargado');
     }
 
-    // Después de la línea 88 (después de verificar tilesets)
-  console.log('[Preload] Texturas NPCs:', {
-  elm: this.textures.exists('elm'),
-  madre: this.textures.exists('madre'),
-  aldeano: this.textures.exists('aldeano'),
-  cientifico: this.textures.exists('cientifico'),
-  nino: this.textures.exists('nino'),
-  pokeball: this.textures.exists('pokeball')
-  });
-
+    console.log('[Preload] Texturas NPCs:', {
+      elm: this.textures.exists('elm'),
+      madre: this.textures.exists('madre'),
+      aldeano: this.textures.exists('aldeano'),
+      cientifico: this.textures.exists('cientifico'),
+      nino: this.textures.exists('nino'),
+      pokeball: this.textures.exists('pokeball')
+    });
     
     // Debug: listar todos los tilemaps cargados
     const tilemapsKeys = Object.keys(this.cache.tilemap.entries.entries);
@@ -119,24 +113,23 @@ export default class EscenaPreload extends Phaser.Scene {
     
     console.log('[Preload] Iniciando EscenaOverworld...');
     console.log('[Preload] ========================================');
-    this.scene.start('EscenaOverworld');
+    
+    this.cameras.main.fadeOut(500, 0, 0, 0); 
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.scene.start('EscenaOverworld');
+    });
   }
 
   /**
-   * Genera un spritesheet de 48×64 px (12 frames de 16×16, 3 por fila, 4 filas)
-   * con un muñeco simple estilo GBC.
-   *
-   * Layout:
-   *   Fila 0 (y=0):  frames 0-2  → caminar ABAJO
-   *   Fila 1 (y=16): frames 3-5  → caminar ARRIBA
-   *   Fila 2 (y=32): frames 6-8  → caminar IZQUIERDA
-   *   Fila 3 (y=48): frames 9-11 → caminar DERECHA
+   * Crea celdas de 32x32 (96x128 total) pero dibuja el arte de 16x16 
+   * centrado en la parte inferior de la celda. Así funciona como drop-in 
+   * replacement perfecto si falla el asset original.
    */
   _generarSpritesheetJugador() {
-    const FW = 16, FH = 16;
+    const FW = 32, FH = 32; 
     const COLS = 3, ROWS = 4;
-    const W = FW * COLS; // 48
-    const H = FH * ROWS; // 64
+    const W = FW * COLS; // 96
+    const H = FH * ROWS; // 128
 
     const rt = this.add.renderTexture(0, 0, W, H).setVisible(false);
     const g = this.add.graphics().setVisible(false);
@@ -147,58 +140,63 @@ export default class EscenaPreload extends Phaser.Scene {
     const SHIRT = 0xe04040; // rojo
     const PANTS = 0x2040c0; // azul
     const SHOES = 0x301808;
-    const WHITE = 0xffffff;
 
-    // Dibuja un frame del personaje en (fx, fy) según dirección y paso
+    // Dibuja un frame del personaje 
     const dibujarFrame = (fx, fy, dir, paso) => {
       g.clear();
 
+      // CALCULAMOS EL OFFSET PARA EL PADDING:
+      // El sprite visual es de 16x16, pero el frame es de 32x32.
+      // Centramos horizontalmente (+8px) y alineado abajo (+16px).
+      const offsetX = fx + 8;
+      const offsetY = fy + 16;
+
       // Piernas (animación de paso)
-      const pierna1X = fx + (paso === 1 ? 4 : 5);
-      const pierna2X = fx + (paso === 1 ? 9 : 8);
+      const pierna1X = offsetX + (paso === 1 ? 4 : 5);
+      const pierna2X = offsetX + (paso === 1 ? 9 : 8);
       g.fillStyle(PANTS);
-      g.fillRect(pierna1X, fy + 10, 3, 4);
-      g.fillRect(pierna2X, fy + 10, 3, 4);
+      g.fillRect(pierna1X, offsetY + 10, 3, 4);
+      g.fillRect(pierna2X, offsetY + 10, 3, 4);
+      
       // Zapatos
       g.fillStyle(SHOES);
-      g.fillRect(pierna1X, fy + 14, 3, 2);
-      g.fillRect(pierna2X, fy + 14, 3, 2);
+      g.fillRect(pierna1X, offsetY + 14, 3, 2);
+      g.fillRect(pierna2X, offsetY + 14, 3, 2);
 
       // Cuerpo (camisa)
       g.fillStyle(SHIRT);
-      g.fillRect(fx + 4, fy + 6, 8, 5);
+      g.fillRect(offsetX + 4, offsetY + 6, 8, 5);
 
       // Cabeza
       g.fillStyle(SKIN);
-      g.fillRect(fx + 5, fy + 2, 6, 5);
+      g.fillRect(offsetX + 5, offsetY + 2, 6, 5);
 
       // Pelo
       g.fillStyle(HAIR);
-      g.fillRect(fx + 5, fy + 1, 6, 2);
-      g.fillRect(fx + 4, fy + 2, 1, 2);
-      g.fillRect(fx + 11, fy + 2, 1, 2);
+      g.fillRect(offsetX + 5, offsetY + 1, 6, 2);
+      g.fillRect(offsetX + 4, offsetY + 2, 1, 2);
+      g.fillRect(offsetX + 11, offsetY + 2, 1, 2);
 
       // Ojos según dirección
       if (dir === 'abajo') {
         g.fillStyle(0x000000);
-        g.fillRect(fx + 6, fy + 5, 1, 1);
-        g.fillRect(fx + 9, fy + 5, 1, 1);
+        g.fillRect(offsetX + 6, offsetY + 5, 1, 1);
+        g.fillRect(offsetX + 9, offsetY + 5, 1, 1);
       } else if (dir === 'arriba') {
-        // De espaldas, sin ojos visibles
         g.fillStyle(HAIR);
-        g.fillRect(fx + 5, fy + 2, 6, 4);
+        g.fillRect(offsetX + 5, offsetY + 2, 6, 4);
       } else if (dir === 'izquierda') {
         g.fillStyle(0x000000);
-        g.fillRect(fx + 6, fy + 5, 1, 1);
+        g.fillRect(offsetX + 6, offsetY + 5, 1, 1);
       } else if (dir === 'derecha') {
         g.fillStyle(0x000000);
-        g.fillRect(fx + 9, fy + 5, 1, 1);
+        g.fillRect(offsetX + 9, offsetY + 5, 1, 1);
       }
 
       // Brazos
       g.fillStyle(SKIN);
-      g.fillRect(fx + 3, fy + 6, 2, 4);
-      g.fillRect(fx + 11, fy + 6, 2, 4);
+      g.fillRect(offsetX + 3, offsetY + 6, 2, 4);
+      g.fillRect(offsetX + 11, offsetY + 6, 2, 4);
 
       rt.draw(g, 0, 0);
     };
@@ -216,16 +214,8 @@ export default class EscenaPreload extends Phaser.Scene {
     g.destroy();
     rt.destroy();
 
-    // Registrar como spritesheet con frameWidth/frameHeight
-    // saveTexture guarda como imagen normal; registrarla como spritesheet
-    this.textures.get('jugador').add(
-      '__BASE',
-      0,
-      0, 0,
-      W, H
-    );
+    this.textures.get('jugador').add('__BASE', 0, 0, 0, W, H);
 
-    // Añadir frames manualmente
     const tex = this.textures.get('jugador');
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
@@ -234,26 +224,46 @@ export default class EscenaPreload extends Phaser.Scene {
       }
     }
 
-    console.log('[Preload] Spritesheet jugador generado como placeholder (48×64, 12 frames)');
+    console.log('[Preload] Spritesheet jugador generado como placeholder (96x128, 12 frames de 32x32 con padding interno)');
   }
 
   _mostrarBarraCarga() {
     const cx = 80;
     const cy = 72;
 
-    this.add.rectangle(cx, cy, 160, 144, 0x000000);
+    const fondoCarga = this.add.rectangle(cx, cy, 160, 144, 0x000000);
 
-    this.add.text(cx, cy - 20, 'CARGANDO...', {
+    const textoTitulo = this.add.text(cx, cy - 20, 'CARGANDO...', {
       fontFamily: '"Press Start 2P"',
       fontSize: '6px',
       fill: '#ffffff',
     }).setOrigin(0.5);
 
-    this.add.rectangle(cx, cy, 100, 8).setStrokeStyle(1, 0xffffff);
+    
+    const textoArchivo = this.add.text(cx, cy + 15, '', {
+      fontFamily: '"Press Start 2P"',
+      fontSize: '4px',
+      fill: '#aaaaaa',
+    }).setOrigin(0.5);
+
+    const contornoBarra = this.add.rectangle(cx, cy, 100, 8).setStrokeStyle(1, 0xffffff);
     const barra = this.add.rectangle(cx - 49, cy, 0, 6, 0xffffff).setOrigin(0, 0.5);
 
     this.load.on('progress', (valor) => {
       barra.width = Math.floor(98 * valor);
+    });
+
+    this.load.on('fileprogress', (file) => {
+      textoArchivo.setText(`Descargando: ${file.key}`);
+    });
+
+    // Evitamos fugas de memoria limpiando la pantalla de carga al terminar
+    this.load.on('complete', () => {
+      fondoCarga.destroy();
+      textoTitulo.destroy();
+      textoArchivo.destroy();
+      contornoBarra.destroy();
+      barra.destroy();
     });
   }
 }
