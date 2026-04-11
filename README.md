@@ -34,7 +34,7 @@
 
 #### ⚠️ Problemas Conocidos
 
-> **Nota de Desarrollo:** El frontend está en fase de aprendizaje e implementación. Actualmente estoy estudiando y dominando la integración de **React con Phaser 3** y el uso de **Tiled Map Editor**, lo cual está llevando tiempo de investigación y experimentación.
+> **Nota de Desarrollo:** El frontend está en fase de aprendizaje e implementación. Actualmente sigo estudiando y dominando la integración de **React con Phaser 3** y el uso de **Tiled Map Editor**, lo cual está llevando tiempo de investigación y experimentación.
 
 **Bugs visuales actuales:**
 - **Después de introducir el nombre:** La transición al overworld puede mostrar gráficos placeholder o bugs visuales debido a la configuración de tilesets
