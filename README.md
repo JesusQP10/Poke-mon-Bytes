@@ -38,10 +38,10 @@
 > **Nota de Desarrollo:** El frontend está en fase de aprendizaje e implementación. Actualmente sigo estudiando y dominando la integración de **React con Phaser 3** y el uso de **Tiled Map Editor**, lo cual está llevando tiempo de investigación y experimentación.
 
 **Bugs visuales actuales:**
-- **Después de introducir el nombre:** La transición al overworld puede mostrar gráficos placeholder o bugs visuales debido a la configuración de tilesets
 - **Colisiones:** Sistema en proceso de refinamiento mientras aprendo las mejores prácticas de Phaser
-- **Elección starter:** Actualmente al seleccionar un starter, no hay opción de cancelar 
+- **Elección starter:** Actualmente al seleccionar un starter, puede no dar opción a cancelar
 - **Evento de Elm:** Según el movimiento del personaje, la activación del evento provoca cambios de posición dentro del mismo laboratorio
+- **Casa jugador:** En el diálogo con la madre aparece un placeHolder rosa (entrega del PokeGear). Esto será eliminado, pues no se adapta al juego original dicha acción
 
 **Tecnologías en aprendizaje:**
 - 🎮 **Phaser 3:** Motor de juego 2D (sistema de escenas, sprites, física)
