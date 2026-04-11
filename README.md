@@ -150,7 +150,7 @@ root/
     │   └── store/           # Estado Global (Zustand)
     ├── package.json
     └── vite.config.js
-
+```
 
 ---
 
