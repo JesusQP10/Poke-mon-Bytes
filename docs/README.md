@@ -28,6 +28,10 @@ docs/
 │   └── PLAN_PARTE_1_POKEMON_ORO.txt  # Plan inicial del juego
 │
 ├── screenshots/                  # Capturas para README / presentaciones (renovar cuando cambie la UI)
+│   ├── landing.png               # Página de inicio 
+│   ├── titulo.png                # Pantalla de título
+│   ├── oak.png                   # Intro Profesor Oak
+│   ├── nombre.png                # Entrada de nombre
 │   ├── player_room.png           # Interior habitación (Tiled)
 │   ├── ejemplo_combate.png       # Escena de batalla (API)
 │   ├── captura-dialogo-mama.png
