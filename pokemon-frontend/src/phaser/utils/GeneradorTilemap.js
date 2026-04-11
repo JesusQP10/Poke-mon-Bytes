@@ -71,6 +71,30 @@ const GeneradorTilemap = {
     };
   },
 
+  /** Rectángulo de warp en píxeles (como en Tiled), p. ej. 192×80 32×32. */
+  _crearWarpPixels(id, nombre, xPx, yPx, wPx, hPx, destino, posX, posY, spawnAt = null, spawnOffsetX = 0, spawnOffsetY = 0) {
+    const properties = [
+      { name: 'destino', type: 'string', value: destino },
+      { name: 'posX', type: 'int', value: posX },
+      { name: 'posY', type: 'int', value: posY },
+    ];
+    if (spawnAt) properties.push({ name: 'spawnAt', type: 'string', value: spawnAt });
+    if (spawnOffsetX) properties.push({ name: 'spawnOffsetX', type: 'int', value: spawnOffsetX });
+    if (spawnOffsetY) properties.push({ name: 'spawnOffsetY', type: 'int', value: spawnOffsetY });
+    return {
+      id,
+      name: nombre,
+      type: 'warp',
+      x: xPx,
+      y: yPx,
+      width: wPx,
+      height: hPx,
+      rotation: 0,
+      visible: true,
+      properties,
+    };
+  },
+
   _crearNpc(id, nombre, tileX, tileY, dialogo) {
     return {
       id,
@@ -153,12 +177,12 @@ const GeneradorTilemap = {
       this._crearCapaTiles(4, 'decoracion_alto',  ANCHO, ALTO, decAlto),
       this._crearCapaObjetos(5, 'npcs', []),
       this._crearCapaObjetos(6, 'eventos', [
-        this._crearWarp(1, 'warp_player_house_1', 4, 8, 'player-house', 5, 2),
-        this._crearWarp(2, 'warp_player_house_2', 5, 8, 'player-house', 5, 2),
+        // Misma geometría que exports/player_room.json (Tiled)
+        this._crearWarpPixels(5, 'warp_player_house', 144, 0, 16, 32, 'player-house', 9, 2),
       ]),
     ];
 
-    const mapa = this._crearCabecera(ANCHO, ALTO, tilesets, 6, 2);
+    const mapa = this._crearCabecera(ANCHO, ALTO, tilesets, 6, 5);
     mapa.layers = capas;
     return mapa;
   },
@@ -199,10 +223,8 @@ const GeneradorTilemap = {
       this._crearCapaTiles(4, 'decoracion_alto',  ANCHO, ALTO, decAlto),
       this._crearCapaObjetos(5, 'npcs', [npcMama]),
       this._crearCapaObjetos(6, 'eventos', [
-        this._crearWarp(2, 'warp_player_room_1', 4, 0, 'player-room', 5, 7),
-        this._crearWarp(3, 'warp_player_room_2', 5, 0, 'player-room', 5, 7),
-        this._crearWarp(4, 'warp_new_bark_1',    4, 8, 'new-bark-town', 5, 10),
-        this._crearWarp(5, 'warp_new_bark_2',    5, 8, 'new-bark-town', 5, 10),
+        this._crearWarpPixels(2, 'warp_habitacion', 144, 0, 16, 32, 'player-room', 9, 2),
+        this._crearWarpPixels(3, 'warp_exterior', 96, 128, 32, 16, 'new-bark-town', 12, 8, 'warp_player_house', 0, 1),
       ]),
     ];
 
@@ -251,18 +273,15 @@ const GeneradorTilemap = {
       this._crearCapaTiles(5, 'decoracion_alto',  ANCHO, ALTO, decAlto),
       this._crearCapaObjetos(6, 'npcs', [npcRival]),
       this._crearCapaObjetos(7, 'eventos', [
-        this._crearWarp(2,  'warp_player_room_1',  4,  9,  'player-room',   5, 7),
-        this._crearWarp(3,  'warp_player_room_2',  5,  9,  'player-room',   5, 7),
-        this._crearWarp(4,  'warp_player_house_1', 4,  10, 'player-house',  5, 7),
-        this._crearWarp(5,  'warp_player_house_2', 5,  10, 'player-house',  5, 7),
-        this._crearWarp(6,  'warp_elm_lab_1',      14, 9,  'elm-lab',       5, 8),
-        this._crearWarp(7,  'warp_elm_lab_2',      15, 9,  'elm-lab',       5, 8),
-        this._crearWarp(8,  'warp_ruta29_1',       0,  8,  'ruta-29',       19, 9),
-        this._crearWarp(9,  'warp_ruta29_2',       0,  9,  'ruta-29',       19, 9),
+        // Geometría alineada con exports/new_bark_town.json (Tiled)
+        // Ruta 30×9: posY máximo 8 (9 queda fuera del mapa y desalinea al jugador)
+        this._crearWarpPixels(5, 'warp_ruta_29', 0, 112, 16, 32, 'ruta-29', 19, 8),
+        this._crearWarpPixels(11, 'warp_elm_lab', 96, 48, 32, 32, 'elm-lab', 6, 11, 'warp_salida', 0, -1),
+        this._crearWarpPixels(12, 'warp_player_house', 192, 80, 32, 32, 'player-house', 6, 7),
       ]),
     ];
 
-    const mapa = this._crearCabecera(ANCHO, ALTO, tilesets, 7, 9);
+    const mapa = this._crearCabecera(ANCHO, ALTO, tilesets, 7, 13);
     mapa.layers = capas;
     return mapa;
   },
@@ -300,12 +319,12 @@ const GeneradorTilemap = {
       this._crearCapaTiles(4, 'decoracion_alto',  ANCHO, ALTO, decAlto),
       this._crearCapaObjetos(5, 'npcs', [npcElm]),
       this._crearCapaObjetos(6, 'eventos', [
-        this._crearWarp(2, 'warp_new_bark_1', 4, 9, 'new-bark-town', 15, 10),
-        this._crearWarp(3, 'warp_new_bark_2', 5, 9, 'new-bark-town', 15, 10),
+        // Salida al pueblo: exports/elm_lab.json (regenerar no incluye starters/trigger; editar en Tiled si hace falta)
+        this._crearWarpPixels(6, 'warp_salida', 80, 192, 32, 32, 'new-bark-town', 7, 5, 'warp_elm_lab', 0, 1),
       ]),
     ];
 
-    const mapa = this._crearCabecera(ANCHO, ALTO, tilesets, 6, 3);
+    const mapa = this._crearCabecera(ANCHO, ALTO, tilesets, 6, 13);
     mapa.layers = capas;
     return mapa;
   },
@@ -356,8 +375,8 @@ const GeneradorTilemap = {
       this._crearCapaTiles(5, 'decoracion_alto',  ANCHO, ALTO, decAlto),
       this._crearCapaObjetos(6, 'npcs', []),
       this._crearCapaObjetos(7, 'eventos', [
-        this._crearWarp(1, 'warp_new_bark_1', 29, 4, 'new-bark-town', 1, 9),
-        this._crearWarp(2, 'warp_new_bark_2', 29, 5, 'new-bark-town', 1, 9),
+        this._crearWarp(1, 'warp_new_bark_1', 29, 4, 'new-bark-town', 1, 8),
+        this._crearWarp(2, 'warp_new_bark_2', 29, 5, 'new-bark-town', 1, 8),
       ]),
     ];
 

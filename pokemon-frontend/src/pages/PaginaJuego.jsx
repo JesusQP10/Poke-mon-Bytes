@@ -53,7 +53,7 @@ const PaginaJuego = () => {
         {scene === "opening" && (
           <EscenaApertura onContinue={() => setScene("overworld")} />
         )}
-        {(scene === "overworld" || scene === "battle") && (
+        {scene === "overworld" && (
           <CanvasPhaser onCambioPantalla={setScene} />
         )}
       </div>

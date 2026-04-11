@@ -75,8 +75,10 @@
   <object id="3" name="warp_exterior" x="96" y="128" width="32" height="16">
    <properties>
     <property name="destino" value="new-bark-town"/>
-    <property name="posX" type="int" value="5"/>
-    <property name="posY" type="int" value="5"/>
+    <property name="posX" type="int" value="12"/>
+    <property name="posY" type="int" value="8"/>
+    <property name="spawnAt" value="warp_player_house"/>
+    <property name="spawnOffsetY" type="int" value="1"/>
    </properties>
   </object>
  </objectgroup>

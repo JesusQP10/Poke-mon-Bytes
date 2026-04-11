@@ -34,7 +34,7 @@ export default class MenuMovimientos extends Phaser.GameObjects.Container {
       { x: 44, y: 26 }, // 3: inferior derecha
     ];
 
-    posiciones.forEach((pos, i) => {
+    posiciones.forEach((pos) => {
       const nombre = this.scene.add.text(pos.x + 4, pos.y + 2, '-', {
         fontFamily: '"Press Start 2P"',
         fontSize: '5px',

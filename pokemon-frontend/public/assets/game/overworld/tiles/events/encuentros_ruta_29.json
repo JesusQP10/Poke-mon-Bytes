@@ -1,0 +1,10 @@
+{
+  "hierba_alta": {
+    "pokemon": [
+      { "id": 19,  "nombre": "Rattata",  "tasa": 35, "nivelMin": 2, "nivelMax": 5 },
+      { "id": 161, "nombre": "Sentret",  "tasa": 30, "nivelMin": 2, "nivelMax": 5 },
+      { "id": 165, "nombre": "Ledyba",   "tasa": 20, "nivelMin": 3, "nivelMax": 6 },
+      { "id": 16,  "nombre": "Pidgey",   "tasa": 15, "nivelMin": 2, "nivelMax": 5 }
+    ]
+  }
+}

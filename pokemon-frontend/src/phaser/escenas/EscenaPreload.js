@@ -61,59 +61,21 @@ export default class EscenaPreload extends Phaser.Scene {
     this.load.tilemapTiledJSON('elm-lab', '/assets/game/overworld/tiles/exports/elm_lab.json');
     this.load.tilemapTiledJSON('ruta-29', '/assets/game/overworld/tiles/exports/ruta_29.json');
 
-    // ── Tabla de encuentros ──────────────────────────────────────────────
+    // ── Tabla de encuentros (clave = `encuentros-${mapaKey}` en EscenaOverworld) ──
     this.load.json('encuentros-new-bark-town', '/assets/game/overworld/tiles/events/encuentros_new_bark_town.json');
+    this.load.json('encuentros-ruta-29', '/assets/game/overworld/tiles/events/encuentros_ruta_29.json');
 
-    // Ignorar errores de carga
     this.load.on('loaderror', (file) => {
       console.error(`[Preload] ❌ Error cargando asset: ${file.key} - ${file.src}`);
-    });
-    
-    this.load.on('filecomplete', (key) => {
-      if (key === 'tilemapJSON-elm-lab') {
-        console.log('[Preload] ✅ elm-lab.json cargado correctamente');
-      }
     });
   }
   
   create() {
-    console.log('[Preload] ========================================');
-    console.log('[Preload] Verificando assets cargados...');
-    
-    // Si el spritesheet del jugador no cargó, placeholder
     if (!this.textures.exists('jugador')) {
-      console.warn('[Preload] ⚠️ Spritesheet jugador no encontrado, generando placeholder adaptado a 32x32');
+      console.warn('[Preload] Spritesheet jugador no encontrado; usando placeholder 32×32.');
       this._generarSpritesheetJugador();
-    } else {
-      console.log('[Preload] ✅ Spritesheet jugador cargado');
     }
 
-    console.log('[Preload] Texturas NPCs:', {
-      elm: this.textures.exists('elm'),
-      madre: this.textures.exists('madre'),
-      aldeano: this.textures.exists('aldeano'),
-      cientifico: this.textures.exists('cientifico'),
-      nino: this.textures.exists('nino'),
-      pokeball: this.textures.exists('pokeball')
-    });
-    
-    // Debug: listar todos los tilemaps cargados
-    const tilemapsKeys = Object.keys(this.cache.tilemap.entries.entries);
-    console.log('[Preload] Tilemaps cargados:', tilemapsKeys);
-    
-    // Verificar tilesets
-    const tilesets = ['new_bark_town', 'ruta_29_bg'];
-    tilesets.forEach(key => {
-      if (this.textures.exists(key)) {
-        console.log(`[Preload] ✅ Tileset ${key} cargado`);
-      } else {
-        console.error(`[Preload] ❌ Tileset ${key} NO cargado`);
-      }
-    });
-    
-    console.log('[Preload] Iniciando EscenaOverworld...');
-    console.log('[Preload] ========================================');
-    
     this.cameras.main.fadeOut(500, 0, 0, 0); 
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
       this.scene.start('EscenaOverworld');
@@ -224,7 +186,6 @@ export default class EscenaPreload extends Phaser.Scene {
       }
     }
 
-    console.log('[Preload] Spritesheet jugador generado como placeholder (96x128, 12 frames de 32x32 con padding interno)');
   }
 
   _mostrarBarraCarga() {

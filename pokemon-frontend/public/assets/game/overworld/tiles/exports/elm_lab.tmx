@@ -101,6 +101,8 @@
     <property name="destino" value="new-bark-town"/>
     <property name="posX" type="int" value="5"/>
     <property name="posY" type="int" value="8"/>
+    <property name="spawnAt" value="warp_elm_lab"/>
+    <property name="spawnOffsetY" type="int" value="1"/>
    </properties>
   </object>
   <object id="9" name="chikorita" x="128" y="64" width="16" height="16">

@@ -80,10 +80,8 @@ const EscenaApertura = ({ onContinue }) => {
   }, [lineIndex, mode, nameIndex, customName, keyboardIndex]);
 
   const currentLine = OPENING_LINES[lineIndex];
-  const isLastLine = lineIndex === OPENING_LINES.length - 1;
   const showMarill = lineIndex >= 4;
   const selectedName = useMemo(() => NAME_OPTIONS[nameIndex], [nameIndex]);
-  const selectedKeyboardKey = useMemo(() => NAME_KEYBOARD_KEYS[keyboardIndex], [keyboardIndex]);
 
   // Si el jugador pulsa algo, se gestiona aquí.
   const manejarSiguienteDialogo = useCallback(() => {
@@ -103,15 +101,13 @@ const EscenaApertura = ({ onContinue }) => {
     setLineIndex((prev) => prev - 1);
   }, []);
 
-  
-  const manejarNombreArriba = () => {
+  const manejarNombreArriba = useCallback(() => {
     setNameIndex((prev) => (prev - 1 + NAME_OPTIONS.length) % NAME_OPTIONS.length);
-  };
+  }, []);
 
-  
-  const manejarNombreAbajo = () => {
+  const manejarNombreAbajo = useCallback(() => {
     setNameIndex((prev) => (prev + 1) % NAME_OPTIONS.length);
-  };
+  }, []);
 
   
   const manejarAceptarSeleccionNombre = useCallback(() => {
@@ -126,13 +122,9 @@ const EscenaApertura = ({ onContinue }) => {
   }, [onContinue]);
 
   
-  const manejarAtrasSeleccionNombre = () => {
-    return;
-  };
+  const manejarAtrasSeleccionNombre = useCallback(() => {}, []);
 
- 
   const manejarMovimientoTeclado = useCallback((rowDelta, colDelta) => {
-    console.log(`[DEBUG] manejarMovimientoTeclado llamado: rowDelta=${rowDelta}, colDelta=${colDelta}`);
     setKeyboardIndex((prevIndex) => {
       const currentRow = Math.floor(prevIndex / KEYBOARD_COLUMNS);
       const currentCol = prevIndex % KEYBOARD_COLUMNS;

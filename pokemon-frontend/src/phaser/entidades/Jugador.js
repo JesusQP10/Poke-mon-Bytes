@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { usarJuegoStore } from '../../store/usarJuegoStore';
 
 // Duración de cada paso en ms
 const MS_POR_PASO = 200;
@@ -153,6 +154,8 @@ export default class Jugador extends Phaser.GameObjects.Sprite {
       onComplete: () => {
         this._moviendose = false;
         this._pasos++;
+        const { mapaActual, setPosition } = usarJuegoStore.getState();
+        setPosition(this._tileX, this._tileY, mapaActual);
         this.emit('paso', this._tileX, this._tileY);
       },
     });

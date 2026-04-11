@@ -47,12 +47,6 @@ export const usarJuegoStore = create((set) => ({
     loading: false,
   }),
 
-  // Setear starter tras elección
-  setStarter: (starter) => set({
-    starter,
-    team: [starter],
-  }),
-
   // Setters narrativos
   setPokegearEntregado: () => set({ pokegearEntregado: true }),
   setStarterElegido: (starter) => set({
@@ -64,6 +58,15 @@ export const usarJuegoStore = create((set) => ({
   addInventario: (item) => set((state) => ({
     inventario: [...state.inventario, item],
   })),
+
+  /** Sincroniza HP (p. ej. tras batalla) sin sustituir el objeto Pokémon entero. */
+  setPokemonHpEnEquipo: (indice, hpActual) => set((state) => {
+    if (!state.team[indice]) return {};
+    const team = state.team.map((p, i) =>
+      i === indice ? { ...p, hpActual } : p
+    );
+    return { team };
+  }),
 
   // Actualizar posición (llamado desde Phaser al moverse o guardar)
   setPosition: (posX, posY, mapaActual) => set({ posX, posY, mapaActual }),

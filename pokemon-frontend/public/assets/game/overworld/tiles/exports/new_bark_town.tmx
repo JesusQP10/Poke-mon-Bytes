@@ -126,8 +126,10 @@
   <object id="11" name="warp_elm_lab" x="96" y="48" width="32" height="32">
    <properties>
     <property name="destino" value="elm_lab"/>
-    <property name="posX " type="int" value="5"/>
-    <property name="posY" type="int" value="8"/>
+    <property name="posX" type="int" value="6"/>
+    <property name="posY" type="int" value="11"/>
+    <property name="spawnAt" value="warp_salida"/>
+    <property name="spawnOffsetY" type="int" value="-1"/>
    </properties>
   </object>
   <object id="12" name="warp_player_house" x="192" y="80" width="32" height="32">

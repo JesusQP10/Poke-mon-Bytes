@@ -134,7 +134,7 @@ export default class EscenaMenu extends Phaser.Scene {
       this._cajaMensaje?.destroy();
       this._textoMsg?.destroy();
       this._mostrarMensaje('¡Partida guardada!');
-    } catch (e) {
+    } catch {
       this._cajaMensaje?.destroy();
       this._textoMsg?.destroy();
       this._mostrarMensaje('Error al guardar.');

@@ -344,6 +344,13 @@ export default class EscenaBatalla extends Phaser.Scene {
         this._mostrarTexto(resultado.mensajeEfectividad);
       }
 
+      if (typeof resultado.hpRestanteAtacante === 'number' && jugador) {
+        jugador.hpActual = resultado.hpRestanteAtacante;
+        usarJuegoStore.getState().setPokemonHpEnEquipo(0, resultado.hpRestanteAtacante);
+        this._barraHpJugador.setValores(resultado.hpRestanteAtacante, jugador.hpMax ?? 100);
+        this._textoHpNumerico.setText(`${resultado.hpRestanteAtacante}/${jugador.hpMax ?? '??'}`);
+      }
+
       // Animar barra HP del enemigo
       const nuevoHpEnemigo = resultado.hpRestanteDefensor ?? 0;
       this._barraHpEnemigo.animarHacia(nuevoHpEnemigo, async () => {
@@ -395,6 +402,7 @@ export default class EscenaBatalla extends Phaser.Scene {
         (jugador.hpActual ?? jugador.hpMax ?? 100) - (resultado.danoInfligido ?? 0)
       );
       jugador.hpActual = nuevoHpJugador;
+      usarJuegoStore.getState().setPokemonHpEnEquipo(0, nuevoHpJugador);
 
       this._barraHpJugador.animarHacia(nuevoHpJugador, () => {
         this._textoHpNumerico.setText(`${nuevoHpJugador}/${jugador.hpMax ?? '??'}`);
