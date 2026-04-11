@@ -38,10 +38,10 @@
 > **Nota de Desarrollo:** El frontend está en fase de aprendizaje e implementación. Actualmente sigo estudiando y dominando la integración de **React con Phaser 3** y el uso de **Tiled Map Editor**, lo cual está llevando tiempo de investigación y experimentación.
 
 **Bugs visuales actuales:**
-- **Después de introducir el nombre:** La transición al overworld puede mostrar gráficos placeholder o bugs visuales debido a la configuración de tilesets
 - **Colisiones:** Sistema en proceso de refinamiento mientras aprendo las mejores prácticas de Phaser
-- **Elección starter:** Actualmente al seleccionar un starter, no hay opción de cancelar 
+- **Elección starter:** Actualmente al seleccionar un starter, puede no dar opción a cancelar
 - **Evento de Elm:** Según el movimiento del personaje, la activación del evento provoca cambios de posición dentro del mismo laboratorio
+- **Casa jugador:** En el diálogo con la madre aparece un placeHolder rosa (entrega del PokeGear). Esto será eliminado, pues no se adapta al juego original dicha acción
 
 **Tecnologías en aprendizaje:**
 - 🎮 **Phaser 3:** Motor de juego 2D (sistema de escenas, sprites, física)
@@ -119,6 +119,23 @@ El cliente web se centra en la fidelidad visual y la experiencia de usuario:
 |:---:|:---:|
 | ![Profesor Oak](docs/screenshots/oak.png) | ![Name Input](docs/screenshots/nombre.png) |
 | *Diálogo narrativo  Profesor Oak.* | *Teclado en pantalla y sprite del jugador.* |
+
+| Habitación del Jugador | Casa del Jugador |
+|:---:|:---:|
+| ![Habitación](docs/screenshots/player_room.png) | ![Casa](docs/screenshots/player_house.png) |
+| *Renderizado base, grid movement y físicas.* | *Gestión de capas dinámicas y colisiones.* |
+
+| Interacción en Exteriores | Diálogos en Interiores |
+|:---:|:---:|
+| ![Radar NPC](docs/screenshots/interaccion_new_nark_town_1.png) | ![Diálogos](docs/screenshots/interaccion_cientifico_lab_elm.png) |
+| *Detección de NPCs y barrido espacial continuo.* | *Sistema de secuencias narrativas in-game.* |
+
+| Integración UI  | Sistema de Combate |
+|:---:|:---:|
+| ![Starter](docs/screenshots/obtencion_starter.png) | ![Combate](docs/screenshots/ejemplo_combate.png) *(Visualización de ejemplo...Próximamente)* |
+
+| *UI montada en React leyendo el estado de Phaser.* | *En desarrollo...* |
+
 
 ---
 ---
