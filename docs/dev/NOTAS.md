@@ -2,8 +2,8 @@
 
 ## Registro de sesión (2026-04-11)
 
-- Actualización **solo de documentación**: alinear este archivo y el `README.md` raíz con lo que **ya existe en código** (la doc llevaba meses desfasada).
-- Próximas ideas de trabajo (no ejecutadas en esta sesión): sala de depuración / retocar mapas; **Ruta 29 pendiente** (sin trabajo de contenido propio aún).
+- Actualización **solo de documentación**: Objetivo alinear este archivo y el `README.md` raíz con lo que **ya existe en código** (la doc llevaba meses desfasada).
+- Próximas ideas de trabajo: sala de depuración (debugger room) / retocar mapas; **Ruta 29 pendiente** .
 
 ---
 
@@ -12,7 +12,7 @@
 - [ ] **Batalla en cliente:** cerrar el ciclo completo (fin de combate, HP en store y en servidor, huida, estados, mensajes).
 - [ ] **Encuentros:** afinar tablas por mapa y balance; más especies si aplica.
 - [ ] **Progresión:** experiencia y subida de nivel persistida donde toque.
-- [ ] **Más mundo:** **Ruta 29 (contenido)** cuando toque, luego Ruta 30, Ciudad Violeta, interiores (Pokécenter, tienda) — opcional a medio plazo.
+- [ ] **Más mundo:** **Ruta 29 (contenido)** cuando toque, luego Ruta 30, Ciudad Violeta, interiores (Pokécenter, tienda) — opcional a medio/largo plazo.
 - [ ] **Tienda / Pokédex** enlazadas al flujo overworld según diseño de juego.
 
 ---
@@ -43,7 +43,7 @@
 
 ---
 
-## Cosas por hacer (lista antigua revisada)
+## Cosas por hacer
 
 - [ ] ~~Sistema de guardado en backend~~ → **Hecho** (API + front); falta pulir qué se guarda tras batalla / tienda.
 - [ ] ~~Implementar encuentros aleatorios~~ → **Base hecha** en mapas con hierba + JSON; falta ampliar y balancear.

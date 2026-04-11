@@ -179,55 +179,10 @@ root/
 
 ---
 
-## 🎓 Desafíos Técnicos
+## Nota personal
 
-Este proyecto esta representando un desafío técnico al combinar tecnologías que no suelen trabajar juntas:
+No me apetecía plantear **el típico CRUD** y cerrar el curso con eso. He crecido con *Pokémon*, así que monté **este proyecto de FP** alrededor de un RPG en el navegador: suena divertido, pero detrás hay **API, base de datos, seguridad**, etc.
 
-### Integración React + Phaser
-- **Desafío:** React y Phaser manejan el DOM de formas diferentes
-- **Aprendizaje:** Gestión del ciclo de vida de Phaser dentro de componentes React
-- **Estado:** En proceso de dominio
+Lo que más me gusta es el **backend**: API ordenada, datos, reglas en servidor. En **seguridad** este proyecto toca sobre todo **auth con JWT y API protegida** (no es red team ni pentesting; eso me interesa **aparte** como posible salida, pero **no está en el código** de este repo). La parte **visual** la llevo peor: me peleo un montón con estilos y pixel hasta que “encajan”, y sigo sin sentirme cómodo ahí.
 
-### Tiled Map Editor
-- **Desafío:** Exportar mapas JSON compatibles con Phaser
-- **Aprendizaje:** Configuración de tilesets, capas, propiedades de objetos
-- **Estado:** Curva de aprendizaje en progreso
-
-### Phaser 3 Game Engine
-- **Desafío:** Sistema de escenas, física, sprites, animaciones
-- **Aprendizaje:** Arquitectura de juegos 2D, optimización de rendimiento
-- **Estado:** Implementación iterativa
-
-### Pixel Art Pipeline
-- **Desafío:** Mantener fidelidad visual de Game Boy Color
-- **Aprendizaje:** Escalado pixel-perfect, paletas de colores, tilesets
-- **Estado:** Refinamiento continuo
-
-> **Transparencia:** Los bugs visuales actuales son resultado directo de este proceso de aprendizaje. Cada error es una me permite entender mejor cómo funcionan estas herramientas juntas.
-
-
-### ¿Por qué no cambio a herramientas más simples?
-
-A pesar de los desafíos, he decidido mantener este stack tecnológico por :
-
-#### 1. **Fidelidad a la Visión Original**
-- Phaser 3 es el motor más adecuado para recrear la experiencia de Game Boy Color en navegador
-- Tiled es el estándar de la industria para diseño de mapas 2D
-- React permite una arquitectura moderna y escalable
-
-#### 2. **Aprendizaje**
-- Estas herramientas son **ampliamente usadas en la industria** del desarrollo de juegos web
-- Dominar la integración React + Phaser es una habilidad diferenciadora
-- El conocimiento adquirido es transferible a otros proyectos
-
-#### 3. **Escalabilidad del Proyecto**
-- Phaser permite añadir fácilmente: animaciones complejas, partículas, efectos visuales
-- Tiled facilita la creación de nuevos mapas sin tocar código
-- React + Zustand permiten gestionar estados complejos de forma predecible
-
-#### 4. **Desafío Técnico Real**
-- Resolver estos problemas me permite crecer en capacidad de **investigación y resolución de problemas**
-- Trabajar con documentación oficial y comunidades
-- Aprender a debuggear sistemas con múltiples capas
-
-> **Prefiero enfrentar desafíos técnicos reales y aprender herramientas profesionales, aunque tome más tiempo, que optar por soluciones simples que limiten el potencial del proyecto.**
+**React + Phaser** me han hecho plantearme **mil veces** dejar el proyecto. Sigo con él porque, aunque me frustre, **al final me gusta lo complicado**: cuando algo encaja después de darle vueltas, compensa.
