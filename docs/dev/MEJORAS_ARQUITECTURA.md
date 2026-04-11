@@ -1,5 +1,7 @@
 # Mejoras de Arquitectura
 
+> **Nota (2026-04-11):** La configuración de mapas del overworld está en **`src/phaser/mapas/`** (`index.js` reexporta `CONFIG_MAPAS` de cada módulo). El archivo `phaser/config/mapas.config.js` citado más abajo era el plan inicial; si no existe en el repo, usar esa carpeta `mapas/` como referencia real.
+
 ## Resumen
 
 Conforme avanza el desarrolo he encontrado problemas en el código actual y creado una estructura más modular para solucionarlos(TODO IRA EN CONTINUA ACTUALIZACIÓN):

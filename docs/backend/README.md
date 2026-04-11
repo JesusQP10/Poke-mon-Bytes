@@ -7,7 +7,7 @@ Documentación técnica del servidor Spring Boot (API REST).
 Con el perfil **`dev`** activo, el servidor expone **Swagger UI** para probar endpoints sin Postman:
 
 ```bash
-# Ejemplo (ajusta el puerto si usas SERVER_PORT)
+# Ejemplo
 set SPRING_PROFILES_ACTIVE=dev
 .\mvnw.cmd spring-boot:run
 ```
@@ -15,7 +15,7 @@ set SPRING_PROFILES_ACTIVE=dev
 - Interfaz: `http://localhost:8081/swagger-ui.html`.
 - En **default** (`application.properties`) la UI está **desactivada** para no publicar el esquema de la API sin querer.
 
-**Health (sin login):** `GET /actuator/health` — útil para comprobar que el servicio arrancó. (En código, Actuator va en una `SecurityFilterChain` propia con `@Order(1)` para que no quede detrás del JWT y devuelva **403** sin token.)
+**Health (sin login):** `GET /actuator/health` — Comprobar que el servicio arrancó. (En código, Actuator va en una `SecurityFilterChain` propia con `@Order(1)` para que no quede detrás del JWT y devuelva **403** sin token.)
 
 ## Tests (`mvn test`)
 
@@ -185,8 +185,12 @@ Modelo de dominio completo con entidades JPA:
 - `POST /api/v1/tienda/comprar` - Comprar item
 
 ### Juego
-- `GET /api/v1/juego/estado` - Estado del jugador
-- `POST /api/v1/juego/guardar` - Guardar partida
+- `GET /api/v1/juego/estado` — Estado del jugador (equipo, dinero, mapa, posición, `estadoCliente`)
+- `POST /api/v1/juego/starter` — Elegir Pokémon inicial (Johto)
+- `GET /api/v1/juego/equipo` — Equipo actual
+- `POST /api/v1/juego/guardar` — Guardar partida
+
+Los objetos de **equipo** en las respuestas incluyen, `tipo1`, `tipo2` (si la especie tiene segundo tipo), HP, nivel, sprite y **stats de combate** (`ataque`, `defensa`, `ataqueEspecial`, `defensaEspecial`, `velocidad`) para alimentar la UI del cliente.
 
 ---
 
@@ -225,17 +229,12 @@ mvn spring-boot:run
 - Sistema de economía (tienda + inventario)
 - Mecánica de captura
 - Data seeding automático
+- **Persistencia de partida** vía `/api/v1/juego` (`estado`, `starter`, `equipo`, `guardar`) y DTO de equipo con tipos y stats para el front
 
 ### En Desarrollo 🚧
-- Sistema de guardado persistente
-- Multiplayer (batallas PvP)
+- Guardado tras batalla / tienda y sincronización completa con el estado del cliente
+- Batallas PvP
 - Sistema de intercambio
-
-### Pendiente 📋
-- Sistema de logros
-- Ranking de jugadores
-- Chat en tiempo real
-- Eventos especiales
 
 ---
 

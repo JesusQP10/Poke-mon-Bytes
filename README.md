@@ -27,14 +27,17 @@ Esta sección resume el estado del código.
 
 #### ✅ Funcionalidades Completadas (además de título / intro / nombre)
 - Overworld con **varios mapas Tiled** (JSON), capas, colisiones y **warps** entre mapas (`WarpSystem`)
-- Pueblo Origen, habitación, casa y laboratorio en uso; **encuentros** en hierba donde hay tabla JSON. En el código hay también la clave `ruta-29` en preload (archivos en repo), **pero la Ruta 29 como tramo jugable tuya aún no está hecha** — no contarla como entregada.
-- **Menú in-game (Básico):** equipo, mochila, **guardado local y en servidor** (si hay sesión JWT)
+- New Bark Town, habitación, casa y laboratorio en uso; **encuentros** en hierba donde hay tabla JSON. **Ruta 29 como tramo jugable tuya aún no está hecha**
+- **Lógica por mapa modularizada** en `pokemon-frontend/src/phaser/mapas/` (p. ej. `casaJugador.js`, `labElm.js`, `johtoOverworld.js`, `dialogosPostStarter.js`) para aligerar `EscenaOverworld.js`.
+- **Diálogo in-world estilo retro:** `SistemaDialogo` con marco GBC (`marcoDialogoRetro.js`), texto y **nombre de hablante**.
+- **Menú in-game en React (`MenuIngameReact`):** equipo con **retratos y mini sprites** de los iniciales (`portraitUrls.js`, GIFs en `assets/pokemon/starters/`), datos extra de especie vía **`pokemonDetallePokeapi.js`** (PokéAPI), **stats de combate** que el backend ya envía en el DTO del equipo (`ataque`, `defensa`, `ataqueEspecial`, `defensaEspecial`, `velocidad`, `tipo1` / `tipo2`); mochila y **guardado local y en servidor** (si hay sesión JWT). Opciones de cliente en `config/opcionesCliente.js`.
+- **Confirmación de starter** en Phaser (`UIConfirmacionStarter.js`) y diálogos posteriores centralizados en parte en `dialogosPostStarter.js`.
 - **`EscenaBatalla`:** carga equipo/movimientos y resuelve turnos contra la **API** del backend
 - Estado de juego en **Zustand** con hidratación desde `GET /api/v1/juego/estado` y payload de `POST .../guardar`
 
 #### 🚧 En Desarrollo
 - **Cierre de batalla:** flujo completo (resultado, HP persistido, vuelta al mapa) y pulido UI
-- **Sistema de colisiones** y **diálogos** (bugs conocidos; ver abajo y `NOTAS.md`)
+- **Sistema de colisiones** y pulido de **diálogos / eventos** (siguen bugs conocidos; ver abajo y `NOTAS.md`)
 - **Ruta 29** (diseño y contenido del tramo) y más mundo; tienda en overworld, Pokédex, etc.
 
 #### ⚠️ Problemas Conocidos
@@ -63,7 +66,8 @@ Esta sección resume el estado del código.
 - Sistema de economía (tienda + inventario)
 - Mecánica de captura
 - Data seeding automático desde PokéAPI
-- **API de estado de partida** (`/api/v1/juego`): `estado`, `starter`, `equipo`, `guardar` (mapa, posición, dinero, JSON de estado del cliente en `Usuario`)
+- **API de estado de partida** (`/api/v1/juego`): `estado`, `starter`, `equipo`, `guardar` (mapa, posición, dinero, JSON de estado del cliente en `Usuario`). El DTO de cada Pokémon en **equipo** incluye **dos tipos** (`tipo1`, `tipo2` si aplica) y **stats de combate** persistidos para enriquecer el menú del cliente.
+- **OpenAPI / Swagger UI** con perfil `dev` (ver `docs/backend/README.md`).
 
 ---
 
@@ -166,12 +170,12 @@ root/
 │
 └── pokemon-frontend/        # Cliente React (SPA)
     ├── src/
-    │   ├── assets/          # Sprites, Audio y Tilesets
-    │   ├── components/      # UI (PantallaJuego, EscenaApertura)
-    │   ├── config/          # Mapeo de Teclas (Input System)
+    │   ├── assets/          # Sprites, Audio y Tilesets (incl. mini sprites de iniciales)
+    │   ├── components/      # UI (PantallaJuego, menú in-game React, shell Game Boy)
+    │   ├── config/          # Input, opciones de cliente (p. ej. ritmo de diálogo)
     │   ├── pages/           # Vistas (Login, GameBoy Shell)
-    │   ├── phaser/          # Motor de juego Phaser
-    │   ├── services/        # Conexión con API (Axios)
+    │   ├── phaser/          # Motor Phaser: escenas, `mapas/` por ubicación, sistemas
+    │   ├── services/        # API (Axios) y helpers (p. ej. detalle PokéAPI)
     │   └── store/           # Estado Global (Zustand)
     ├── package.json
     └── vite.config.js

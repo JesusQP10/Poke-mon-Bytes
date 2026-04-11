@@ -1,16 +1,30 @@
-# React + Vite
+# Pokémon Bytes — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Cliente **React 19 + Vite** con **Phaser 3** embebido (overworld, batalla, menús) y estado en **Zustand**.
 
-Currently, two official plugins are available:
+## Documentación principal
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Estado del proyecto, stack y alcance: [README del monorepo](../README.md)
+- Notas de desarrollo, bugs y prioridades: [`docs/dev/NOTAS.md`](../docs/dev/NOTAS.md)
+- API backend (incl. OpenAPI con perfil `dev`): [`docs/backend/README.md`](../docs/backend/README.md)
 
-## React Compiler
+## Arranque local
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Desde esta carpeta:
 
-## Expanding the ESLint configuration
+```bash
+npm install
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## Piezas recientes
+
+- **Menú in-game:** `src/components/game/MenuIngameReact.jsx` (overlay React) junto a `EscenaMenu` en Phaser.
+- **Diálogo overworld:** `src/phaser/sistemas/SistemaDialogo.js` y `src/phaser/utils/marcoDialogoRetro.js` (incluye nombre de hablante).
+- **Lógica por mapa:** `src/phaser/mapas/` (`casaJugador.js`, `labElm.js`, `johtoOverworld.js`, etc.).
+- **Mapas Tiled exportados:** `public/assets/game/overworld/tiles/exports/` (no editar JSON a mano NUNCA DE LOS NUNCAS; fuente `.tmx` bajo `docs/tiled/`).
+
+---
+
+Plantilla Vite/React: [vitejs.dev](https://vitejs.dev/), [react.dev](https://react.dev/).

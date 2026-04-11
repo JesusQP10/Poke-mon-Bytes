@@ -60,7 +60,9 @@ Los archivos `.tmx` son mapas editables con [Tiled Map Editor](https://www.maped
 - **elm_lab.tmx**: Laboratorio donde se elige el starter
 - **player_house.tmx**: Casa del jugador (planta baja)
 
-Para editar: Abrir con Tiled → Exportar como JSON → Colocar los `.json` en `pokemon-frontend/public/assets/game/overworld/tiles/exports/` (y registrar la clave en `EscenaPreload.js` si es un mapa nuevo).
+Para editar: Abrir con Tiled → Exportar como JSON → Colocar los `.json` en `pokemon-frontend/public/assets/game/overworld/tiles/exports/` (y registrar la clave en `src/phaser/mapas/` —p. ej. `index.js` y el módulo del mapa— y en `EscenaPreload.js` para assets nuevos).
+
+**Código overworld reciente:** parte de la lógica por mapa vive en `pokemon-frontend/src/phaser/mapas/` (casa, laboratorio, exteriores) para no concentrar todo en `EscenaOverworld.js`.
 
 ### 📸 Screenshots
 Capturas de pantalla para el README principal y presentaciones

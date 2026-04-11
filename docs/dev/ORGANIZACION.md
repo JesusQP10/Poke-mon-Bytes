@@ -60,7 +60,7 @@ Archivos fuente de Tiled Map Editor (`.tmx`):
 Workflow:
 1. Editar en Tiled
 2. Exportar como JSON
-3. `pokemon-frontend/public/assets/maps/`
+3. Colocar el `.json` en `pokemon-frontend/public/assets/game/overworld/tiles/exports/` y registrar el mapa en el front (`src/phaser/mapas/` + `EscenaPreload.js` para tilesets/audio nuevos).
 
 ### 📋 Planificación (`docs/planning/`)
 Documentos de planificación del proyecto:
