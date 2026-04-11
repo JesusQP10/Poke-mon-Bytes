@@ -50,10 +50,11 @@ export default class SistemaSecuencias {
    * Muestra un diálogo y resuelve al cerrar la última línea.
    * @param {SistemaDialogo} dialogo - Instancia de SistemaDialogo
    * @param {string[]} lineas
+   * @param {{ hablante?: string }} [opciones] - Ver `SistemaDialogo.mostrar`.
    */
-  pasoDialogo(dialogo, lineas) {
+  pasoDialogo(dialogo, lineas, opciones) {
     return (resolve) => {
-      dialogo.mostrar(lineas, resolve);
+      dialogo.mostrar(lineas, resolve, opciones ?? {});
     };
   }
 

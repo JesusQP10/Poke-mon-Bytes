@@ -49,7 +49,7 @@ export function ejecutarSecuenciaAyudante(scene, onFin) {
 
   scene._secuencias.ejecutar(
     [
-      scene._secuencias.pasoDialogo(scene._dialogo, lineas),
+      scene._secuencias.pasoDialogo(scene._dialogo, lineas, { hablante: 'AYUDANTE' }),
       scene._secuencias.pasoStore(() => {
         const st = usarJuegoStore.getState();
         st.setPocionEntregada();
@@ -82,7 +82,7 @@ export function ejecutarSecuenciaElm(scene) {
   scene._secuencias.ejecutar(
     [
       scene._secuencias.pasoTween(scene._jugador, { x: targetX, y: targetY }, 800),
-      scene._secuencias.pasoDialogo(scene._dialogo, lineasElm),
+      scene._secuencias.pasoDialogo(scene._dialogo, lineasElm, { hablante: 'PROF. ELM' }),
     ],
     () => {
       usarJuegoStore.getState().setElmCharlaEleccionStarter();

@@ -22,6 +22,22 @@ import { lineasProfElmTrasStarter, lineasMadreTrasStarter } from '../mapas/dialo
 import { STATS_MENU_FALLBACK_POR_POKEDEX } from '../../config/statsCombateMenuFallback';
 import { volumenBgmParaPhaser, sfxPermitido } from '../../config/opcionesCliente';
 
+/** Etiqueta superior en la caja de diálogo (nombre Tiled del NPC → texto). */
+const ETIQUETA_HABLANTE_NPC = {
+  elm: 'PROF. ELM',
+  madre: 'MAMÁ',
+  ayudante: 'AYUDANTE',
+  rival: '???',
+  aldeano: 'ALDEANO',
+};
+
+function etiquetaHablanteNpc(name) {
+  if (!name) return null;
+  const key = String(name).toLowerCase();
+  if (ETIQUETA_HABLANTE_NPC[key]) return ETIQUETA_HABLANTE_NPC[key];
+  return String(name).replace(/[-_]/g, ' ').toUpperCase();
+}
+
 export default class EscenaOverworld extends Phaser.Scene {
   constructor() {
     super({ key: 'EscenaOverworld' });
@@ -238,12 +254,16 @@ export default class EscenaOverworld extends Phaser.Scene {
           }
 
           this.time.delayedCall(200, () => {
-            this._dialogo.mostrar([
-              '¡' + (usarJuegoStore.getState().nombreJugador || 'Tú') + '!',
-              '¡El Prof. Elm quiere\nverte! ¡Date prisa!',
-            ], () => {
-              this._iniciarJuego(configMapa.bgm);
-            });
+            this._dialogo.mostrar(
+              [
+                '¡' + (usarJuegoStore.getState().nombreJugador || 'Tú') + '!',
+                '¡El Prof. Elm quiere\nverte! ¡Date prisa!',
+              ],
+              () => {
+                this._iniciarJuego(configMapa.bgm);
+              },
+              { hablante: 'MAMÁ' },
+            );
           });
         },
       });
@@ -422,6 +442,7 @@ export default class EscenaOverworld extends Phaser.Scene {
               'Te explicará qué hacer\ncon los Pokémon de la mesa.',
             ],
             null,
+            { hablante: 'PROF. ELM' },
           );
           return;
         }
@@ -479,31 +500,35 @@ export default class EscenaOverworld extends Phaser.Scene {
       `¡Buena elección!\nCuida bien de ${starter.nombre}.`,
     ];
 
-    this._dialogo.mostrar(lineasObtenido, () => {
-      const stBase = STATS_MENU_FALLBACK_POR_POKEDEX[starter.id] ?? {
-        ataque: 12,
-        defensa: 10,
-        ataqueEspecial: 12,
-        defensaEspecial: 11,
-        velocidad: 10,
-      };
-      usarJuegoStore.getState().setStarterElegido({
-        id: starter.id,
-        nombre: starter.nombre,
-        esStarter: true,
-        nivel: 5,
-        hpActual: 20,
-        hpMax: 20,
-        ataque: stBase.ataque,
-        defensa: stBase.defensa,
-        ataqueEspecial: stBase.ataqueEspecial,
-        defensaEspecial: stBase.defensaEspecial,
-        velocidad: stBase.velocidad,
-      });
-      this._pokeballs.forEach((pb) => pb.setVisible(false));
-      this._jugador?.setInputBloqueado(false);
-      this._flujoEleccionStarter = false;
-    });
+    this._dialogo.mostrar(
+      lineasObtenido,
+      () => {
+        const stBase = STATS_MENU_FALLBACK_POR_POKEDEX[starter.id] ?? {
+          ataque: 12,
+          defensa: 10,
+          ataqueEspecial: 12,
+          defensaEspecial: 11,
+          velocidad: 10,
+        };
+        usarJuegoStore.getState().setStarterElegido({
+          id: starter.id,
+          nombre: starter.nombre,
+          esStarter: true,
+          nivel: 5,
+          hpActual: 20,
+          hpMax: 20,
+          ataque: stBase.ataque,
+          defensa: stBase.defensa,
+          ataqueEspecial: stBase.ataqueEspecial,
+          defensaEspecial: stBase.defensaEspecial,
+          velocidad: stBase.velocidad,
+        });
+        this._pokeballs.forEach((pb) => pb.setVisible(false));
+        this._jugador?.setInputBloqueado(false);
+        this._flujoEleccionStarter = false;
+      },
+      { hablante: 'PROF. ELM' },
+    );
   }
 
   // ── NPCs ──────────────────────────────────────────────────────────────
@@ -529,6 +554,12 @@ export default class EscenaOverworld extends Phaser.Scene {
     const nombreJugador = usarJuegoStore.getState().nombreJugador || 'Tú';
     const lineasBase = dialogo.replaceAll('[JUGADOR]', nombreJugador).split('|');
     const esRival = obj.name === 'rival';
+    const hablanteNpcProp = obj.properties?.find((p) => p.name === 'dialogo_hablante')?.value;
+    const etiquetaNpc =
+      hablanteNpcProp != null && String(hablanteNpcProp).trim() !== ''
+        ? String(hablanteNpcProp).trim()
+        : etiquetaHablanteNpc(obj.name);
+    const cajaNpcOpts = etiquetaNpc ? { hablante: etiquetaNpc } : {};
 
     // Registrar en el radar centralizado en lugar de anclar el teclado
     this._interactuables.push({
@@ -545,7 +576,7 @@ export default class EscenaOverworld extends Phaser.Scene {
                 150
               ),
             ]);
-          });
+          }, cajaNpcOpts);
         } else {
           const store = usarJuegoStore.getState();
           const mapa = store.mapaActual;
@@ -578,7 +609,7 @@ export default class EscenaOverworld extends Phaser.Scene {
                   }
                 }
               : null;
-          this._dialogo.mostrar(lineas, marcarCharlaElm);
+          this._dialogo.mostrar(lineas, marcarCharlaElm, cajaNpcOpts);
         }
       }
     });
@@ -638,6 +669,9 @@ export default class EscenaOverworld extends Phaser.Scene {
       .map((s) => s.trim())
       .filter(Boolean);
 
+    const hablanteReact = String(WarpSystem.prop(props, 'dialogo_hablante') ?? '').trim();
+    const optsReactTexto = hablanteReact ? { hablante: hablanteReact } : {};
+
     this._interactuables.push({
       sprite: marcador,
       tipo: 'react_texto',
@@ -645,7 +679,7 @@ export default class EscenaOverworld extends Phaser.Scene {
         if (this._reactTextoEstaticoActivo || !this._jugador) return;
         const cb = this.game.registry.get('callbacks')?.onTextoEstatico;
         if (!cb) {
-          this._dialogo.mostrar(lineas.length ? lineas : ['…'], null);
+          this._dialogo.mostrar(lineas.length ? lineas : ['…'], null, optsReactTexto);
           return;
         }
         this._reactTextoEstaticoActivo = true;
@@ -697,21 +731,29 @@ export default class EscenaOverworld extends Phaser.Scene {
   _flujoBuzonPc() {
     const store = usarJuegoStore.getState();
     if (store.pcPocionRetirada) {
-      this._dialogo.mostrar(['No hay objetos en el buzón.'], () => this._mostrarMenuPcPrincipal());
+      this._dialogo.mostrar(['No hay objetos en el buzón.'], () => this._mostrarMenuPcPrincipal(), {
+        hablante: 'PC',
+      });
       return;
     }
-    this._dialogo.mostrar(['Hay una POCION en el buzón.'], () => {
-      if (!this._uiSiNo) this._uiSiNo = new UIOpcionSiNo(this);
-      this._uiSiNo.mostrar('¿Retirar la POCION?', (si) => {
-        if (si) {
-          store.addInventario({ id: 'pocion', nombre: 'Poción', cantidad: 1 });
-          store.setPcPocionRetirada();
-          this._dialogo.mostrar(['Has retirado la POCION.'], () => this._mostrarMenuPcPrincipal());
-        } else {
-          this._mostrarMenuPcPrincipal();
-        }
-      });
-    });
+    this._dialogo.mostrar(
+      ['Hay una POCION en el buzón.'],
+      () => {
+        if (!this._uiSiNo) this._uiSiNo = new UIOpcionSiNo(this);
+        this._uiSiNo.mostrar('¿Retirar la POCION?', (si) => {
+          if (si) {
+            store.addInventario({ id: 'pocion', nombre: 'Poción', cantidad: 1 });
+            store.setPcPocionRetirada();
+            this._dialogo.mostrar(['Has retirado la POCION.'], () => this._mostrarMenuPcPrincipal(), {
+              hablante: 'PC',
+            });
+          } else {
+            this._mostrarMenuPcPrincipal();
+          }
+        });
+      },
+      { hablante: 'PC' },
+    );
   }
 
   _cerrarMenuPc() {

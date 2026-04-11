@@ -5,6 +5,7 @@ import menuFrameImg from "../../assets/game/title/menu/title_menu_frame_01.png";
 import menuCursorImg from "../../assets/game/title/menu/title_menu_cursor_01.png";
 import menuHighlightImg from "../../assets/game/title/menu/title_menu_highlight_01.png";
 import menuTexts from "../../assets/game/title/texts/menu_texts.es.json";
+import logoPokemonSvg from "../../assets/game/title/pokemon_logo.svg";
 import { existePartidaGuardadaLocal } from "../../store/usarJuegoStore";
 import { usarAutenticacionStore } from "../../store/usarAutenticacionStore";
 import {
@@ -17,19 +18,13 @@ import {
 } from "../../config/controlesJuego";
 import "./PantallaJuego.css";
 
-// Logo oficial para la pantalla de título.
-const LOGO_URL =
-  "https://upload.wikimedia.org/wikipedia/commons/9/98/International_Pok%C3%A9mon_logo.svg";
-
 // Manejar PantallaJuego.
 const PantallaJuego = ({ onStart, onContinue }) => {
   // Referencias para controlar la música del título.
   const audioRef = useRef(null);
   const startedRef = useRef(false);
 
-  // "phase" cambia entre título y menú.
   const [audioStarted, setAudioStarted] = useState(false);
-  const [phase, setPhase] = useState("title");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [panelOpcionesTitulo, setPanelOpcionesTitulo] = useState(false);
 
@@ -123,19 +118,8 @@ const PantallaJuego = ({ onStart, onContinue }) => {
   };
 
   useEffect(() => {
-    // Controles del menú principal.
+    // Controles del menú principal (logo + opciones desde el primer frame).
     const manejarTecla = (event) => {
-      if (phase === "title") {
-        if (esTeclaAceptar(event.code)) {
-          event.preventDefault();
-          setPhase("menu");
-          setSelectedIndex(0);
-        }
-        return;
-      }
-
-      if (phase !== "menu") return;
-
       if (esTeclaArriba(event.code) || esTeclaIzquierda(event.code)) {
         event.preventDefault();
         setSelectedIndex((prev) => (prev - 1 + menuOptions.length) % menuOptions.length);
@@ -165,17 +149,11 @@ const PantallaJuego = ({ onStart, onContinue }) => {
         }
         return;
       }
-
-      if (esTeclaAtras(event.code)) {
-        event.preventDefault();
-        setPhase("title");
-        setSelectedIndex(0);
-      }
     };
 
     document.addEventListener("keydown", manejarTecla);
     return () => document.removeEventListener("keydown", manejarTecla);
-  }, [menuOptions, onContinue, onStart, phase, selectedIndex]);
+  }, [menuOptions, onContinue, onStart, selectedIndex]);
 
   useEffect(() => {
     if (!panelOpcionesTitulo) return;
@@ -234,32 +212,29 @@ const PantallaJuego = ({ onStart, onContinue }) => {
       </div>
 
       <div className="gs-title-logo-wrap">
-        <img src={LOGO_URL} alt="Pokemon" className="gs-title-logo" />
+        <img src={logoPokemonSvg} alt="Pokemon" className="gs-title-logo" decoding="async" />
         <span className="gs-title-gold">GOLD VERSION</span>
       </div>
 
       <div className="gs-hooh-track">
         <img src={hoOhSprite} alt="Ho-Oh" className="gs-hooh" />
       </div>
-      {phase === "title" && <span className="gs-press-start">PRESS START</span>}
 
-      {phase === "menu" && (
-        <div className="gs-menu-wrap">
-          <div className="gs-menu-frame" style={{ backgroundImage: `url(${menuFrameImg})` }}>
-            {menuOptions.map((option, index) => (
-              <div key={option} className="gs-menu-row">
-                {index === selectedIndex && (
-                  <>
-                    <img src={menuCursorImg} alt="" className="gs-menu-cursor" />
-                    <img src={menuHighlightImg} alt="" className="gs-menu-highlight" />
-                  </>
-                )}
-                <span className="gs-menu-label">{option}</span>
-              </div>
-            ))}
-          </div>
+      <div className="gs-menu-wrap">
+        <div className="gs-menu-frame" style={{ backgroundImage: `url(${menuFrameImg})` }}>
+          {menuOptions.map((option, index) => (
+            <div key={option} className="gs-menu-row">
+              {index === selectedIndex && (
+                <>
+                  <img src={menuCursorImg} alt="" className="gs-menu-cursor" />
+                  <img src={menuHighlightImg} alt="" className="gs-menu-highlight" />
+                </>
+              )}
+              <span className="gs-menu-label">{option}</span>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
       {panelOpcionesTitulo && (
         <div

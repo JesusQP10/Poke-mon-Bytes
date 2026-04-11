@@ -62,7 +62,7 @@ export function ejecutarSecuenciaMadre(scene) {
   scene._secuencias.ejecutar(
     [
       scene._secuencias.pasoTween(spriteMadre, { x: scene._jugador.x, y: scene._jugador.y - 16 }, 800),
-      scene._secuencias.pasoDialogo(scene._dialogo, lineas),
+      scene._secuencias.pasoDialogo(scene._dialogo, lineas, { hablante: 'MAMÁ' }),
       scene._secuencias.pasoStore(() => usarJuegoStore.getState().setPokegearEntregado()),
     ],
     () => {
