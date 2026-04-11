@@ -266,6 +266,17 @@
   display: block;
 }
 
+.menu-ingame-team-slot-mini {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  object-fit: contain;
+  object-position: center bottom;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+}
+
 .menu-ingame-team-slot-names {
   flex: 1;
   min-width: 0;

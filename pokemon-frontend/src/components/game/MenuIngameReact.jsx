@@ -24,6 +24,7 @@ import {
   urlGifCrystalStarter,
   etiquetaTipoEspanol,
 } from "../../services/pokemonDetallePokeapi";
+import { urlMiniMenuInicialPorPokedexId } from "../../assets/pokemon/starters/portraitUrls";
 import { statCombateMenu } from "../../config/statsCombateMenuFallback";
 
 const OPCIONES = ["POKÉMON", "MOCHILA", "GUARDAR", "OPCIONES", "SALIR"];
@@ -68,6 +69,18 @@ function hpRatio(hpActual, hpMax) {
   return Math.max(0, Math.min(1, hpActual / hpMax));
 }
 
+/**
+ * @param {{ pokemonUsuarioId?: unknown, id?: unknown }} p
+ * @param {{ pokemonUsuarioId?: unknown, id?: unknown, pokedexId?: unknown } | null | undefined} starter
+ */
+function esMismoPokemonQueStarter(p, starter) {
+  if (!p || !starter) return false;
+  const sid = starter.pokemonUsuarioId;
+  const pid = p.pokemonUsuarioId;
+  if (sid != null && pid != null) return sid === pid;
+  return Number(p.id) === Number(starter.id ?? starter.pokedexId);
+}
+
 function pasoBgmPercent(actual, dir) {
   const steps = PASOS_VOLUMEN_BGM;
   let i = steps.indexOf(actual);
@@ -95,6 +108,7 @@ const MenuIngameReact = ({ onClose }) => {
 
   const inventario = usarJuegoStore((s) => s.inventario);
   const team = usarJuegoStore((s) => s.team);
+  const starter = usarJuegoStore((s) => s.starter);
   const token = usarAutenticacionStore((s) => s.token);
 
   /** Si RAM y Phaser divergieron del guardado en disco, recupera equipo/mochila sin tocar mapa/posición. */
@@ -111,22 +125,34 @@ const MenuIngameReact = ({ onClose }) => {
 
   useEffect(() => {
     if (vista !== "equipo-detalle" || detallePokedexId == null) {
-      setDetalleApi({ status: "idle" });
       return;
     }
+    const id = detallePokedexId;
     let cancelled = false;
-    setDetalleApi({ status: "loading" });
-    fetchResumenPokemonPokeapi(detallePokedexId)
+    fetchResumenPokemonPokeapi(id)
       .then((data) => {
-        if (!cancelled) setDetalleApi({ status: "ok", data });
+        if (!cancelled) setDetalleApi({ status: "ok", data, pokedexId: id });
       })
       .catch(() => {
-        if (!cancelled) setDetalleApi({ status: "err" });
+        if (!cancelled) setDetalleApi({ status: "err", pokedexId: id });
       });
     return () => {
       cancelled = true;
     };
   }, [vista, detallePokedexId]);
+
+  const detalleApiUi = useMemo(() => {
+    if (vista !== "equipo-detalle" || detallePokedexId == null) {
+      return { status: "idle" };
+    }
+    if (detalleApi.status === "ok" && detalleApi.pokedexId === detallePokedexId) {
+      return detalleApi;
+    }
+    if (detalleApi.status === "err" && detalleApi.pokedexId === detallePokedexId) {
+      return detalleApi;
+    }
+    return { status: "loading" };
+  }, [vista, detallePokedexId, detalleApi]);
 
   const selMochilaSafe = useMemo(
     () =>
@@ -363,13 +389,15 @@ const MenuIngameReact = ({ onClose }) => {
   const mostrarFichaPokemon = vista === "equipo-detalle" && pSel;
   const imgPokemonDetalle = mostrarFichaPokemon
     ? urlGifCrystalStarter(pSel.id) ||
-      (detalleApi.status === "ok" && detalleApi.data?.spriteUrl ? detalleApi.data.spriteUrl : null) ||
+      (detalleApiUi.status === "ok" && detalleApiUi.data?.spriteUrl
+        ? detalleApiUi.data.spriteUrl
+        : null) ||
       pSel.sprite ||
       null
     : null;
   const tiposDetalle =
-    mostrarFichaPokemon && detalleApi.status === "ok" && detalleApi.data?.tiposEs?.length
-      ? detalleApi.data.tiposEs.join(" / ")
+    mostrarFichaPokemon && detalleApiUi.status === "ok" && detalleApiUi.data?.tiposEs?.length
+      ? detalleApiUi.data.tiposEs.join(" / ")
       : mostrarFichaPokemon
         ? [etiquetaTipoEspanol(pSel.tipo1), pSel.tipo2 ? etiquetaTipoEspanol(pSel.tipo2) : ""]
             .filter(Boolean)
@@ -437,6 +465,9 @@ const MenuIngameReact = ({ onClose }) => {
               const hpA = p.hpActual ?? p.hpMax ?? 20;
               const hpM = p.hpMax ?? 20;
               const ratio = hpRatio(hpA, hpM);
+              const miniStarter =
+                esMismoPokemonQueStarter(p, starter) &&
+                urlMiniMenuInicialPorPokedexId(p.id ?? starter?.id ?? starter?.pokedexId);
               return (
                 <div
                   key={`slot-${i}`}
@@ -444,7 +475,16 @@ const MenuIngameReact = ({ onClose }) => {
                 >
                   <div className="menu-ingame-team-slot-head">
                     <span className="menu-ingame-cursor">{i === selEquipo ? "▶" : ""}</span>
-                    {i === 0 ? (
+                    {miniStarter ? (
+                      <img
+                        className="menu-ingame-team-slot-mini"
+                        src={miniStarter}
+                        alt=""
+                        width={14}
+                        height={14}
+                        draggable={false}
+                      />
+                    ) : i === 0 ? (
                       <img
                         className="menu-ingame-team-slot-icon"
                         src={iconSlotParty}
@@ -520,20 +560,20 @@ const MenuIngameReact = ({ onClose }) => {
               </div>
               <div className="menu-ingame-poke-detalle-seccion">
                 Stats base (Pokédex)
-                {detalleApi.status === "loading" ? " …" : ""}
+                {detalleApiUi.status === "loading" ? " …" : ""}
               </div>
-              {detalleApi.status === "ok" && detalleApi.data?.statsBase ? (
+              {detalleApiUi.status === "ok" && detalleApiUi.data?.statsBase ? (
                 <div className="menu-ingame-poke-detalle-stats menu-ingame-poke-detalle-stats--base">
-                  <span>PS {detalleApi.data.statsBase.ps ?? "—"}</span>
-                  <span>ATK {detalleApi.data.statsBase.ataque ?? "—"}</span>
-                  <span>DEF {detalleApi.data.statsBase.defensa ?? "—"}</span>
-                  <span>AT.ESP. {detalleApi.data.statsBase.ataqueEsp ?? "—"}</span>
-                  <span>DEF.ESP. {detalleApi.data.statsBase.defensaEsp ?? "—"}</span>
-                  <span>VEL {detalleApi.data.statsBase.velocidad ?? "—"}</span>
+                  <span>PS {detalleApiUi.data.statsBase.ps ?? "—"}</span>
+                  <span>ATK {detalleApiUi.data.statsBase.ataque ?? "—"}</span>
+                  <span>DEF {detalleApiUi.data.statsBase.defensa ?? "—"}</span>
+                  <span>AT.ESP. {detalleApiUi.data.statsBase.ataqueEsp ?? "—"}</span>
+                  <span>DEF.ESP. {detalleApiUi.data.statsBase.defensaEsp ?? "—"}</span>
+                  <span>VEL {detalleApiUi.data.statsBase.velocidad ?? "—"}</span>
                 </div>
-              ) : detalleApi.status === "err" ? (
+              ) : detalleApiUi.status === "err" ? (
                 <div className="menu-ingame-poke-detalle-aviso">No se pudo cargar PokéAPI.</div>
-              ) : detalleApi.status === "loading" ? (
+              ) : detalleApiUi.status === "loading" ? (
                 <div className="menu-ingame-poke-detalle-aviso">Cargando Pokédex…</div>
               ) : null}
             </div>
