@@ -83,5 +83,5 @@ El `.gitignore` en docs ignora:
 ## Próximos Pasos
 
 - [ ] Añadir más mapas TMX cuando los cree
-- [ ] Documentar el sistema de batalla
+- [ ] Mantener **NOTAS.md** al día con el código (batalla, guardado, mapas)
 - [ ] Crear diagramas de arquitectura

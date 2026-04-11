@@ -53,14 +53,14 @@ Ver detalles en: `backend/README.md`
 
 ### 📝 Desarrollo
 - **MEJORAS_ARQUITECTURA.md**: Análisis de problemas del código actual y soluciones propuestas (managers, slices, logging)
-- **NOTAS.md**: Notas rápidas, bugs conocidos, TODOs y referencias útiles
+- **NOTAS.md**: Estado del código frente a la doc (incluye registro por fecha), prioridades, bugs y referencias. Convive con el resumen del [`README.md`](../README.md) en la raíz del repo.
 
 ### 🗺️ Mapas (Tiled)
 Los archivos `.tmx` son mapas editables con [Tiled Map Editor](https://www.mapeditor.org/):
 - **elm_lab.tmx**: Laboratorio donde se elige el starter
 - **player_house.tmx**: Casa del jugador (planta baja)
 
-Para editar: Abrir con Tiled → Exportar como JSON → Colocar en `pokemon-frontend/public/assets/maps/`
+Para editar: Abrir con Tiled → Exportar como JSON → Colocar los `.json` en `pokemon-frontend/public/assets/game/overworld/tiles/exports/` (y registrar la clave en `EscenaPreload.js` si es un mapa nuevo).
 
 ### 📸 Screenshots
 Capturas de pantalla para el README principal y presentaciones
@@ -77,7 +77,7 @@ Capturas de pantalla para el README principal y presentaciones
 2. Abrir archivo `.tmx` desde `docs/tiled/`
 3. Editar capas, objetos, propiedades
 4. Exportar como JSON: File → Export As → JSON
-5. Guardar en `pokemon-frontend/public/assets/maps/`
+5. Guardar en `pokemon-frontend/public/assets/game/overworld/tiles/exports/`
 
 ### Testear API
 1. Instalar extensión "REST Client" en IDE

@@ -20,18 +20,22 @@
 
 ## ⚠️ Estado Actual del Proyecto
 
+> **Nota (2026-04-11):** El detalle de tareas está en [`docs/dev/NOTAS.md`](docs/dev/NOTAS.md). 
+Esta sección resume el estado del código.
+
 ### Frontend (En Desarrollo Activo)
 
-#### ✅ Funcionalidades Completadas
-- Pantalla de título con animación
-- Cinemática de introducción (Profesor Oak)
-- Sistema de entrada de nombre del jugador
-- Animación de transición (sprite encogimiento)
+#### ✅ Funcionalidades Completadas (además de título / intro / nombre)
+- Overworld con **varios mapas Tiled** (JSON), capas, colisiones y **warps** entre mapas (`WarpSystem`)
+- Pueblo Origen, habitación, casa y laboratorio en uso; **encuentros** en hierba donde hay tabla JSON. En el código hay también la clave `ruta-29` en preload (archivos en repo), **pero la Ruta 29 como tramo jugable tuya aún no está hecha** — no contarla como entregada.
+- **Menú in-game (Básico):** equipo, mochila, **guardado local y en servidor** (si hay sesión JWT)
+- **`EscenaBatalla`:** carga equipo/movimientos y resuelve turnos contra la **API** del backend
+- Estado de juego en **Zustand** con hidratación desde `GET /api/v1/juego/estado` y payload de `POST .../guardar`
 
 #### 🚧 En Desarrollo
-- **Sistema de mapas:** Los mapas tras la introducción están en fase de implementación
-- **Renderizado de tilesets:** Actualmente usando mapas json, en caso de no renderizar se usan placeholders visuales
-- **Sistema de colisiones:** En proceso de refinamiento (bugs)
+- **Cierre de batalla:** flujo completo (resultado, HP persistido, vuelta al mapa) y pulido UI
+- **Sistema de colisiones** y **diálogos** (bugs conocidos; ver abajo y `NOTAS.md`)
+- **Ruta 29** (diseño y contenido del tramo) y más mundo; tienda en overworld, Pokédex, etc.
 
 #### ⚠️ Problemas Conocidos
 
@@ -59,6 +63,7 @@
 - Sistema de economía (tienda + inventario)
 - Mecánica de captura
 - Data seeding automático desde PokéAPI
+- **API de estado de partida** (`/api/v1/juego`): `estado`, `starter`, `equipo`, `guardar` (mapa, posición, dinero, JSON de estado del cliente en `Usuario`)
 
 ---
 
@@ -132,9 +137,9 @@ El cliente web se centra en la fidelidad visual y la experiencia de usuario:
 
 | Integración UI  | Sistema de Combate |
 |:---:|:---:|
-| ![Starter](docs/screenshots/obtencion_starter.png) | ![Combate](docs/screenshots/ejemplo_combate.png) *(Visualización de ejemplo...Próximamente)* |
+| ![Starter](docs/screenshots/obtencion_starter.png) | ![Combate](docs/screenshots/ejemplo_combate.png) *(Ejemplo visual; en código hay escena de batalla conectada a la API.)* |
 
-| *UI montada en React leyendo el estado de Phaser.* | *En desarrollo...* |
+| *UI montada en React leyendo el estado de Phaser.* | *Integración por turnos en curso; ver `NOTAS.md`.* |
 
 
 ---
