@@ -49,11 +49,6 @@ export default class EscenaPreload extends Phaser.Scene {
     this.load.spritesheet('madre', '/assets/game/overworld/sprites/npcs/madre.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('nino', '/assets/game/overworld/sprites/npcs/nino.png', { frameWidth: 32, frameHeight: 32 });
 
-    // Pokémon starters (GIFs cargados como imagen estática)
-    this.load.image('chikorita', '/assets/game/overworld/sprites/pokemon/chikorita.gif');
-    this.load.image('cyndaquil', '/assets/game/overworld/sprites/pokemon/cyndaquil.gif');
-    this.load.image('totodile', '/assets/game/overworld/sprites/pokemon/totodile.gif');
-
     // ── Tilemaps (JSON exportados desde Tiled) ──────────────────────────
     this.load.tilemapTiledJSON('player-room', '/assets/game/overworld/tiles/exports/player_room.json');
     this.load.tilemapTiledJSON('player-house', '/assets/game/overworld/tiles/exports/player_house.json');

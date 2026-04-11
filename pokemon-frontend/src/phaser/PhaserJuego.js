@@ -48,6 +48,10 @@ export function crearJuegoPhaser(parent, callbacks = {}) {
     scale: {
       mode: Phaser.Scale.NONE, // React gestiona el escalado, Phaser NO
     },
+    // GIF animado del inicial: `<img>` en capa DOM.
+    dom: {
+      createContainer: true,
+    },
     audio: {
       disableWebAudio: false,
     },

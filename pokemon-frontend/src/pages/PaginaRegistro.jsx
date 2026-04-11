@@ -2,9 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { servicioAutenticacion } from "../services/autenticacion.servicios";
-import cyndaquilGif from "../assets/ui/sprites/crystal/Cyndaquil_cristal.gif";
-import totodileGif from "../assets/ui/sprites/crystal/Totodile_cristal.gif";
-import chikoritaGif from "../assets/ui/sprites/crystal/Chikorita_cristal.gif";
+import { PORTRAIT_URL_INICIAL } from "../assets/pokemon/starters/portraitUrls";
 
 const aparecer = (d = 0) => ({
   initial: { opacity: 0 },
@@ -32,9 +30,9 @@ const PokeballSvg = () => (
 );
 
 const STARTER_SPRITES = [
-  { name: "Cyndaquil", src: cyndaquilGif, delay: 0 },
-  { name: "Totodile", src: totodileGif, delay: 0.15 },
-  { name: "Chikorita", src: chikoritaGif, delay: 0.3 },
+  { name: "Cyndaquil", src: PORTRAIT_URL_INICIAL.cyndaquil, delay: 0 },
+  { name: "Totodile", src: PORTRAIT_URL_INICIAL.totodile, delay: 0.15 },
+  { name: "Chikorita", src: PORTRAIT_URL_INICIAL.chikorita, delay: 0.3 },
 ];
 
 const REGISTER_TAGS = ["NEW TRAINER", "SECURE", "JOHTO", "ONLINE"];

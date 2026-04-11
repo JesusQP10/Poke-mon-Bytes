@@ -17,6 +17,14 @@ import {
 } from "../../config/opcionesCliente";
 import "./MenuIngameReact.css";
 import "./DialogoRetro.css";
+import iconSlotParty from "../../assets/ui/menu/icon_slot_party.png";
+import iconPocion from "../../assets/ui/menu/icon_pocion.png";
+import {
+  fetchResumenPokemonPokeapi,
+  urlGifCrystalStarter,
+  etiquetaTipoEspanol,
+} from "../../services/pokemonDetallePokeapi";
+import { statCombateMenu } from "../../config/statsCombateMenuFallback";
 
 const OPCIONES = ["POKÉMON", "MOCHILA", "GUARDAR", "OPCIONES", "SALIR"];
 
@@ -36,6 +44,15 @@ function agregarInventarioAgrupado(inventario) {
   });
   lineas.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
   return lineas;
+}
+
+/** @param {{ clave: string, nombre: string }} linea */
+function esItemPocion(linea) {
+  const c = String(linea.clave || "").toLowerCase();
+  if (c === "pocion" || c === "poción") return true;
+  return String(linea.nombre || "")
+    .toLowerCase()
+    .includes("poci");
 }
 
 function colorHp(hpActual, hpMax) {
@@ -74,15 +91,42 @@ const MenuIngameReact = ({ onClose }) => {
   const [prefs, setPrefs] = useState(() => leerOpcionesCliente());
   const [dialogo, setDialogo] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [detalleApi, setDetalleApi] = useState({ status: "idle" });
 
   const inventario = usarJuegoStore((s) => s.inventario);
   const team = usarJuegoStore((s) => s.team);
   const token = usarAutenticacionStore((s) => s.token);
 
+  /** Si RAM y Phaser divergieron del guardado en disco, recupera equipo/mochila sin tocar mapa/posición. */
+  useEffect(() => {
+    usarJuegoStore.getState().rellenarEquipoYmochilaDesdeGuardadoLocal();
+  }, []);
+
   const lineasMochila = useMemo(() => agregarInventarioAgrupado(inventario), [inventario]);
   const equipo = useMemo(() => (Array.isArray(team) ? team : []), [team]);
 
-  const pokemonActivo = equipo[selEquipo] ?? null;
+  const pokemonSeleccionado = useMemo(() => equipo[selEquipo] ?? null, [equipo, selEquipo]);
+
+  const detallePokedexId = pokemonSeleccionado?.id;
+
+  useEffect(() => {
+    if (vista !== "equipo-detalle" || detallePokedexId == null) {
+      setDetalleApi({ status: "idle" });
+      return;
+    }
+    let cancelled = false;
+    setDetalleApi({ status: "loading" });
+    fetchResumenPokemonPokeapi(detallePokedexId)
+      .then((data) => {
+        if (!cancelled) setDetalleApi({ status: "ok", data });
+      })
+      .catch(() => {
+        if (!cancelled) setDetalleApi({ status: "err" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [vista, detallePokedexId]);
 
   const selMochilaSafe = useMemo(
     () =>
@@ -260,6 +304,14 @@ const MenuIngameReact = ({ onClose }) => {
         return;
       }
 
+      if (vista === "equipo-detalle") {
+        if (esTeclaAtras(e.code)) {
+          e.preventDefault();
+          setVista("equipo");
+        }
+        return;
+      }
+
       if (vista === "equipo") {
         if (esTeclaArriba(e.code)) {
           e.preventDefault();
@@ -270,13 +322,7 @@ const MenuIngameReact = ({ onClose }) => {
         } else if (esTeclaAceptar(e.code)) {
           e.preventDefault();
           const p = equipo[selEquipo];
-          if (p) {
-            const nom = p.nombre || "???";
-            const apo = p.nombreApodo && p.nombreApodo !== nom ? p.nombreApodo : null;
-            abrirDialogo(
-              `${apo ? `${apo} (${nom})` : nom}\nNv.${p.nivel || 5}\nHP ${p.hpActual ?? p.hpMax ?? 20}/${p.hpMax ?? 20}\n\nResumen completo\npróximamente.`,
-            );
-          }
+          if (p) setVista("equipo-detalle");
         } else if (esTeclaAtras(e.code)) {
           e.preventDefault();
           volverPrincipal();
@@ -306,11 +352,29 @@ const MenuIngameReact = ({ onClose }) => {
   const hint = (() => {
     if (dialogo || guardando) return "Z / Enter / X · continuar";
     if (vista === "principal") return "↑↓ · Z aceptar · X cerrar";
-    if (vista === "equipo") return "↑↓ · Z resumen · X menú";
+    if (vista === "equipo") return "↑↓ · Z datos · X menú";
+    if (vista === "equipo-detalle") return "X · volver al equipo";
     if (vista === "mochila") return "↑↓ · Z detalle · X menú";
     if (vista === "opciones") return "↑↓ · ←→ o Z · X menú";
     return "";
   })();
+
+  const pSel = pokemonSeleccionado;
+  const mostrarFichaPokemon = vista === "equipo-detalle" && pSel;
+  const imgPokemonDetalle = mostrarFichaPokemon
+    ? urlGifCrystalStarter(pSel.id) ||
+      (detalleApi.status === "ok" && detalleApi.data?.spriteUrl ? detalleApi.data.spriteUrl : null) ||
+      pSel.sprite ||
+      null
+    : null;
+  const tiposDetalle =
+    mostrarFichaPokemon && detalleApi.status === "ok" && detalleApi.data?.tiposEs?.length
+      ? detalleApi.data.tiposEs.join(" / ")
+      : mostrarFichaPokemon
+        ? [etiquetaTipoEspanol(pSel.tipo1), pSel.tipo2 ? etiquetaTipoEspanol(pSel.tipo2) : ""]
+            .filter(Boolean)
+            .join(" / ") || "—"
+        : "";
 
   return (
     <div className="menu-ingame-root" role="dialog" aria-modal="true">
@@ -341,6 +405,18 @@ const MenuIngameReact = ({ onClose }) => {
                 className={`menu-ingame-mochila-row${i === selMochilaSafe ? " menu-ingame-mochila-row--active" : ""}`}
               >
                 <span className="menu-ingame-cursor">{i === selMochilaSafe ? "▶" : ""}</span>
+                <span className="menu-ingame-mochila-icon-wrap" aria-hidden>
+                  {esItemPocion(l) ? (
+                    <img
+                      className="menu-ingame-mochila-icon"
+                      src={iconPocion}
+                      alt=""
+                      width={14}
+                      height={14}
+                      draggable={false}
+                    />
+                  ) : null}
+                </span>
                 <span className="menu-ingame-mochila-nombre">{l.nombre}</span>
                 <span className="menu-ingame-mochila-cant">×{l.cantidad}</span>
               </div>
@@ -368,7 +444,18 @@ const MenuIngameReact = ({ onClose }) => {
                 >
                   <div className="menu-ingame-team-slot-head">
                     <span className="menu-ingame-cursor">{i === selEquipo ? "▶" : ""}</span>
-                    <span className="menu-ingame-team-slot-num">{i + 1}</span>
+                    {i === 0 ? (
+                      <img
+                        className="menu-ingame-team-slot-icon"
+                        src={iconSlotParty}
+                        alt=""
+                        width={14}
+                        height={14}
+                        draggable={false}
+                      />
+                    ) : (
+                      <span className="menu-ingame-team-slot-num">{i + 1}</span>
+                    )}
                     <div className="menu-ingame-team-slot-names">
                       <div className="menu-ingame-team-etiqueta">{etiqueta}</div>
                       {apodo && (
@@ -392,29 +479,65 @@ const MenuIngameReact = ({ onClose }) => {
               );
             })}
           </div>
-          {pokemonActivo && (
-            <div className="menu-ingame-detail menu-ingame-detail--team">
-              {pokemonActivo.tipo1 && (
-                <div className="menu-ingame-detail-line">
-                  <span className="menu-ingame-detail-k">Tipo</span>
-                  <span>
-                    {pokemonActivo.tipo1}
-                    {pokemonActivo.tipo2 ? ` / ${pokemonActivo.tipo2}` : ""}
-                  </span>
+        </div>
+      )}
+
+      {mostrarFichaPokemon && (
+        <div className="menu-ingame-full menu-ingame-full--poke-detalle">
+          <div className="menu-ingame-full-title">POKÉMON</div>
+          <div className="menu-ingame-poke-detalle-cuerpo">
+            <div className="menu-ingame-poke-detalle-sprite-wrap">
+              {imgPokemonDetalle ? (
+                <img
+                  className="menu-ingame-poke-detalle-sprite"
+                  src={imgPokemonDetalle}
+                  alt=""
+                  draggable={false}
+                />
+              ) : (
+                <div className="menu-ingame-poke-detalle-sprite-vacio" aria-hidden>
+                  ?
                 </div>
               )}
-              <div className="menu-ingame-detail-line">
-                <span className="menu-ingame-detail-k">Ataque</span>
-                <span>{pokemonActivo.ataque ?? 12}</span>
-                <span className="menu-ingame-detail-k">Defensa</span>
-                <span>{pokemonActivo.defensa ?? 10}</span>
-              </div>
-              <div className="menu-ingame-detail-line">
-                <span className="menu-ingame-detail-k">Veloc.</span>
-                <span>{pokemonActivo.velocidad ?? 8}</span>
-              </div>
             </div>
-          )}
+            <div className="menu-ingame-poke-detalle-texto">
+              <div className="menu-ingame-poke-detalle-nombre">
+                {(pSel.nombreApodo && pSel.nombreApodo !== pSel.nombre
+                  ? `${pSel.nombreApodo} (${pSel.nombre})`
+                  : pSel.nombre) || "???"}
+              </div>
+              <div className="menu-ingame-poke-detalle-sub">
+                Nv.{pSel.nivel || 5} · HP {pSel.hpActual ?? pSel.hpMax ?? 20}/{pSel.hpMax ?? 20}
+              </div>
+              <div className="menu-ingame-poke-detalle-tipos">Tipo {tiposDetalle}</div>
+              <div className="menu-ingame-poke-detalle-seccion">En combate</div>
+              <div className="menu-ingame-poke-detalle-stats">
+                <span>ATK {statCombateMenu(pSel, "ataque") ?? "—"}</span>
+                <span>DEF {statCombateMenu(pSel, "defensa") ?? "—"}</span>
+                <span>AT.ESP. {statCombateMenu(pSel, "ataqueEspecial") ?? "—"}</span>
+                <span>DEF.ESP. {statCombateMenu(pSel, "defensaEspecial") ?? "—"}</span>
+                <span>VEL {statCombateMenu(pSel, "velocidad") ?? "—"}</span>
+              </div>
+              <div className="menu-ingame-poke-detalle-seccion">
+                Stats base (Pokédex)
+                {detalleApi.status === "loading" ? " …" : ""}
+              </div>
+              {detalleApi.status === "ok" && detalleApi.data?.statsBase ? (
+                <div className="menu-ingame-poke-detalle-stats menu-ingame-poke-detalle-stats--base">
+                  <span>PS {detalleApi.data.statsBase.ps ?? "—"}</span>
+                  <span>ATK {detalleApi.data.statsBase.ataque ?? "—"}</span>
+                  <span>DEF {detalleApi.data.statsBase.defensa ?? "—"}</span>
+                  <span>AT.ESP. {detalleApi.data.statsBase.ataqueEsp ?? "—"}</span>
+                  <span>DEF.ESP. {detalleApi.data.statsBase.defensaEsp ?? "—"}</span>
+                  <span>VEL {detalleApi.data.statsBase.velocidad ?? "—"}</span>
+                </div>
+              ) : detalleApi.status === "err" ? (
+                <div className="menu-ingame-poke-detalle-aviso">No se pudo cargar PokéAPI.</div>
+              ) : detalleApi.status === "loading" ? (
+                <div className="menu-ingame-poke-detalle-aviso">Cargando Pokédex…</div>
+              ) : null}
+            </div>
+          </div>
         </div>
       )}
 

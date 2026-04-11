@@ -50,65 +50,124 @@ export const usarJuegoStore = create((set, get) => ({
   /**
    * Hidrata desde GET /juego/estado: equipo en BD + `estadoCliente` (JSON guardado).
    * Si no hay Pokémon en BD pero sí `teamCliente` en el JSON, usa ese equipo (modo solo-cliente).
+   *
+   * Si `estadoCliente` no trae clave `inventario` / `teamCliente`, no se pisan los valores
+   * que ya hubiera en memoria.
    */
   setPlayerState: (data) => {
-    const ec = data?.estadoCliente && typeof data.estadoCliente === 'object'
-      ? data.estadoCliente
-      : {};
-    let teamRaw = Array.isArray(data?.team) ? data.team : [];
-    if (!teamRaw.length && Array.isArray(ec.teamCliente)) {
-      teamRaw = ec.teamCliente;
-    }
-    const team = teamRaw.map((p) => ({
-      ...p,
-      nombre: p.nombre ?? p.name ?? p.nombreApodo ?? '???',
-      nombreApodo: p.nombreApodo ?? p.nombre ?? p.name,
-      id: p.id ?? p.pokedexId,
-      pokemonUsuarioId: p.pokemonUsuarioId,
-      nivel: p.nivel ?? p.level ?? 5,
-      hpActual: p.hpActual ?? p.hp ?? 20,
-      hpMax: p.hpMax ?? 20,
-      ataque: p.ataque ?? p.attack,
-      defensa: p.defensa ?? p.defense,
-    }));
-    let starter = data?.starter ?? ec.starterCliente ?? (team[0] ?? null);
-    if (starter) {
-      starter = {
-        ...starter,
-        nombre: starter.nombre ?? starter.name ?? '???',
-        id: starter.id ?? starter.pokedexId,
-        pokemonUsuarioId: starter.pokemonUsuarioId,
+    set((state) => {
+      const ec = data?.estadoCliente && typeof data.estadoCliente === 'object'
+        ? data.estadoCliente
+        : {};
+      let teamRaw = Array.isArray(data?.team) ? data.team : [];
+      if (!teamRaw.length && Array.isArray(ec.teamCliente) && ec.teamCliente.length) {
+        teamRaw = ec.teamCliente;
+      }
+      if (
+        !teamRaw.length
+        && !('teamCliente' in ec)
+        && Array.isArray(state.team)
+        && state.team.length > 0
+      ) {
+        teamRaw = state.team;
+      }
+      const team = teamRaw.map((p) => ({
+        ...p,
+        nombre: p.nombre ?? p.name ?? p.nombreApodo ?? '???',
+        nombreApodo: p.nombreApodo ?? p.nombre ?? p.name,
+        id: p.id ?? p.pokedexId,
+        pokemonUsuarioId: p.pokemonUsuarioId,
+        nivel: p.nivel ?? p.level ?? 5,
+        hpActual: p.hpActual ?? p.hp ?? 20,
+        hpMax: p.hpMax ?? 20,
+        ataque: p.ataque ?? p.attack ?? p.ataqueStat,
+        defensa: p.defensa ?? p.defense ?? p.defensaStat,
+        ataqueEspecial: p.ataqueEspecial ?? p.ataqueEspecialStat,
+        defensaEspecial: p.defensaEspecial ?? p.defensaEspecialStat,
+        velocidad: p.velocidad ?? p.velocidadStat,
+        tipo1: p.tipo1 ?? p.type,
+        tipo2: p.tipo2 ?? null,
+      }));
+      let starter = data?.starter ?? ec.starterCliente ?? (team[0] ?? null);
+      if (starter) {
+        starter = {
+          ...starter,
+          nombre: starter.nombre ?? starter.name ?? '???',
+          id: starter.id ?? starter.pokedexId,
+          pokemonUsuarioId: starter.pokemonUsuarioId,
+        };
+      }
+      const inventario = 'inventario' in ec
+        ? (Array.isArray(ec.inventario) ? ec.inventario : [])
+        : (Array.isArray(state.inventario) ? state.inventario : []);
+      return {
+        playerState: data,
+        starter,
+        team,
+        badges: Array.isArray(ec.badges) ? ec.badges : (data.badges || []),
+        money: data.money ?? ec.money ?? 3000,
+        mapaActual: data.mapaActual || ec.mapaActual || 'new-bark-town',
+        posX: data.posX ?? ec.posX ?? 5,
+        posY: data.posY ?? ec.posY ?? 5,
+        loading: false,
+        gameStep: ec.gameStep ?? 'PLAYING',
+        hasStarter: Boolean(ec.hasStarter ?? data.starter ?? team.length > 0),
+        pcPocionRetirada: Boolean(ec.pcPocionRetirada),
+        nombreJugador: ec.nombreJugador ?? '',
+        inventario,
+        pokegearEntregado: Boolean(ec.pokegearEntregado),
+        starterElegido: Boolean(ec.starterElegido ?? team.length > 0),
+        elmCharlaEleccionStarter: Boolean(
+          ec.elmCharlaEleccionStarter ?? ec.starterElegido ?? team.length > 0,
+        ),
+        pocionEntregada: Boolean(ec.pocionEntregada),
+        esNuevaPartida: ec.esNuevaPartida === true,
+        reloj: ec.reloj && typeof ec.reloj === 'object'
+          ? {
+              hora: ec.reloj.hora ?? 12,
+              minutos: ec.reloj.minutos ?? 0,
+              diaSemana: ec.reloj.diaSemana ?? 0,
+            }
+          : { hora: 12, minutos: 0, diaSemana: 0 },
       };
-    }
-    set({
-      playerState: data,
-      starter,
-      team,
-      badges: Array.isArray(ec.badges) ? ec.badges : (data.badges || []),
-      money: data.money ?? ec.money ?? 3000,
-      mapaActual: data.mapaActual || ec.mapaActual || 'new-bark-town',
-      posX: data.posX ?? ec.posX ?? 5,
-      posY: data.posY ?? ec.posY ?? 5,
-      loading: false,
-      gameStep: ec.gameStep ?? 'PLAYING',
-      hasStarter: Boolean(ec.hasStarter ?? data.starter ?? team.length > 0),
-      pcPocionRetirada: Boolean(ec.pcPocionRetirada),
-      nombreJugador: ec.nombreJugador ?? '',
-      inventario: Array.isArray(ec.inventario) ? ec.inventario : [],
-      pokegearEntregado: Boolean(ec.pokegearEntregado),
-      starterElegido: Boolean(ec.starterElegido ?? team.length > 0),
-      elmCharlaEleccionStarter: Boolean(
-        ec.elmCharlaEleccionStarter ?? ec.starterElegido ?? team.length > 0,
-      ),
-      pocionEntregada: Boolean(ec.pocionEntregada),
-      esNuevaPartida: ec.esNuevaPartida === true,
-      reloj: ec.reloj && typeof ec.reloj === 'object'
-        ? {
-            hora: ec.reloj.hora ?? 12,
-            minutos: ec.reloj.minutos ?? 0,
-            diaSemana: ec.reloj.diaSemana ?? 0,
-          }
-        : { hora: 12, minutos: 0, diaSemana: 0 },
+    });
+  },
+
+  /**
+   * Si equipo o mochila están vacíos en RAM pero hay guardado en localStorage,
+   * restaura solo esos arrays.
+   */
+  rellenarEquipoYmochilaDesdeGuardadoLocal: () => {
+    set((state) => {
+      const tieneTeam = Array.isArray(state.team) && state.team.length > 0;
+      const tieneInv = Array.isArray(state.inventario) && state.inventario.length > 0;
+      if (tieneTeam && tieneInv) return {};
+      let raw;
+      try {
+        raw = localStorage.getItem(SAVE_STORAGE_KEY);
+      } catch {
+        return {};
+      }
+      if (!raw || !raw.trim()) return {};
+      let disk;
+      try {
+        disk = JSON.parse(raw);
+      } catch {
+        return {};
+      }
+      if (!disk || disk.v !== SAVE_VERSION) return {};
+      const teamDisk = Array.isArray(disk.team) ? disk.team : [];
+      const invDisk = Array.isArray(disk.inventario) ? disk.inventario : [];
+      const next = {};
+      if (!tieneTeam && teamDisk.length) next.team = teamDisk;
+      if (!tieneInv && invDisk.length) next.inventario = invDisk;
+      if (!Object.keys(next).length) return {};
+      if (!state.starter && disk.starter) next.starter = disk.starter;
+      if (!state.starterElegido && disk.starterElegido) next.starterElegido = true;
+      if (!state.hasStarter && (disk.hasStarter || disk.starterElegido || teamDisk.length)) {
+        next.hasStarter = true;
+      }
+      return next;
     });
   },
 

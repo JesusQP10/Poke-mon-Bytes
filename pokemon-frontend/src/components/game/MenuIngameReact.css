@@ -112,6 +112,97 @@
   background: linear-gradient(180deg, #e4ecfa 0%, #c4d0ec 100%);
 }
 
+.menu-ingame-full--poke-detalle {
+  background: linear-gradient(180deg, #e8eef8 0%, #c8d4ec 100%);
+}
+
+.menu-ingame-poke-detalle-cuerpo {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  align-items: flex-start;
+  flex: 1;
+  min-height: 0;
+}
+
+.menu-ingame-poke-detalle-sprite-wrap {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(20, 24, 32, 0.22);
+  border-radius: 2px;
+}
+
+.menu-ingame-poke-detalle-sprite {
+  max-width: 52px;
+  max-height: 52px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.menu-ingame-poke-detalle-sprite-vacio {
+  font-size: 14px;
+  color: rgba(40, 50, 70, 0.45);
+}
+
+.menu-ingame-poke-detalle-texto {
+  flex: 1;
+  min-width: 0;
+  font-size: 4px;
+  line-height: 1.45;
+  color: #1a2430;
+}
+
+.menu-ingame-poke-detalle-nombre {
+  font-size: 5px;
+  line-height: 1.35;
+  margin-bottom: 2px;
+  word-break: break-word;
+}
+
+.menu-ingame-poke-detalle-sub {
+  font-size: 4px;
+  color: #384858;
+  margin-bottom: 3px;
+}
+
+.menu-ingame-poke-detalle-tipos {
+  font-size: 4px;
+  margin-bottom: 4px;
+  color: #2a4058;
+}
+
+.menu-ingame-poke-detalle-seccion {
+  font-size: 4px;
+  color: #506070;
+  margin-top: 3px;
+  margin-bottom: 1px;
+}
+
+.menu-ingame-poke-detalle-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  font-size: 4px;
+}
+
+.menu-ingame-poke-detalle-stats--base {
+  color: #243040;
+}
+
+.menu-ingame-poke-detalle-aviso {
+  font-size: 4px;
+  color: #604040;
+  margin-top: 2px;
+}
+
 .menu-ingame-full-title {
   font-size: 7px;
   text-align: center;
@@ -162,6 +253,17 @@
   width: 8px;
   color: #506070;
   flex-shrink: 0;
+}
+
+/* Icono menú party (Gen 1/2) en el primer hueco en lugar del "1" */
+.menu-ingame-team-slot-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
 }
 
 .menu-ingame-team-slot-names {
@@ -277,6 +379,24 @@
 .menu-ingame-mochila-row--active {
   background: rgba(40, 100, 60, 0.18);
   outline: 1px solid rgba(30, 90, 50, 0.35);
+}
+
+.menu-ingame-mochila-icon-wrap {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-ingame-mochila-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
 }
 
 .menu-ingame-mochila-nombre {

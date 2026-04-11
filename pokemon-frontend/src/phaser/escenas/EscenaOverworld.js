@@ -6,6 +6,7 @@ import { usarJuegoStore } from '../../store/usarJuegoStore';
 import SistemaSecuencias from '../sistemas/SistemaSecuencias';
 import { STARTERS } from '../ui/UISeleccionStarter';
 import UIOpcionSiNo from '../ui/UIOpcionSiNo';
+import UIConfirmacionStarter from '../ui/UIConfirmacionStarter';
 import UIMenuLista from '../ui/UIMenuLista';
 import WarpSystem from '../sistemas/WarpSystem';
 import {
@@ -17,6 +18,8 @@ import {
   crearZonaTriggerElm,
   intentarWarpConSecuenciaAyudante,
 } from '../mapas';
+import { lineasProfElmTrasStarter, lineasMadreTrasStarter } from '../mapas/dialogosPostStarter';
+import { STATS_MENU_FALLBACK_POR_POKEDEX } from '../../config/statsCombateMenuFallback';
 import { volumenBgmParaPhaser, sfxPermitido } from '../../config/opcionesCliente';
 
 export default class EscenaOverworld extends Phaser.Scene {
@@ -33,6 +36,8 @@ export default class EscenaOverworld extends Phaser.Scene {
     this._cambiandoMapa = false; // Evita que el overlap dispare mil transiciones a la vez
     this._reactTextoEstaticoActivo = false;
     this._uiMenuLista = null;
+    this._uiConfirmStarter = null;
+    this._flujoEleccionStarter = false;
     this._interactuables = []; // Registro centralizado para que el input no se duplique
     this._tilemapPhaser = null;
     this._warpSystem = new WarpSystem(this, { tileSize: TAM_TILE, fadeMs: 250 });
@@ -145,10 +150,13 @@ export default class EscenaOverworld extends Phaser.Scene {
       this._secuencias?.activo ||
       this._reactTextoEstaticoActivo ||
       this._uiMenuLista?.activo ||
+      this._uiConfirmStarter?.esActiva() ||
       !this._jugador
     ) {
       return;
     }
+
+    if (this._flujoEleccionStarter) return;
 
     let objetivoMasCercano = null;
     let distanciaMinima = Infinity;
@@ -392,14 +400,12 @@ export default class EscenaOverworld extends Phaser.Scene {
     const depthPokeball = 15;
     const pokeball = this.add.sprite(obj.x + 8, obj.y + 8, 'pokeball').setDepth(depthPokeball);
     this._pokeballs.push(pokeball);
-    
-    const starterMap = { 'cyndaquil': 0, 'totodile': 1, 'chikorita': 2 };
+
+    const starterMap = { cyndaquil: 0, totodile: 1, chikorita: 2 };
     const starterIndex = starterMap[obj.name];
     const starter = STARTERS[starterIndex];
-    
-    const pokemonSprite = this.add.sprite(obj.x + 8, obj.y - 8, obj.name).setDepth(depthPokeball + 1).setVisible(false);
-    
-    // Registrar en el radar centralizado
+    const textureKey = obj.name;
+
     this._interactuables.push({
       sprite: pokeball,
       tipo: 'pokeball',
@@ -420,51 +426,83 @@ export default class EscenaOverworld extends Phaser.Scene {
           return;
         }
 
-        pokeball.setVisible(false);
-        pokemonSprite.setVisible(true);
+        if (this.tweens.isTweening(pokeball) || this._uiConfirmStarter?.esActiva()) return;
 
-        const lineasPresentacion = [`¡Es ${starter.nombre.toUpperCase()}!`];
-
-        this._dialogo.mostrar(lineasPresentacion, () => {
-          this._mostrarConfirmacionStarter(starter, pokeball, pokemonSprite);
+        this._flujoEleccionStarter = true;
+        this._jugador.setInputBloqueado(true);
+        this.tweens.add({
+          targets: pokeball,
+          scale: 0.2,
+          alpha: 0,
+          duration: 160,
+          ease: 'Quad.eIn',
+          onComplete: () => {
+            pokeball.setVisible(false);
+            pokeball.setScale(1);
+            pokeball.setAlpha(1);
+            if (!this._uiConfirmStarter) this._uiConfirmStarter = new UIConfirmacionStarter(this);
+            this._uiConfirmStarter.mostrar(starter, textureKey, (acepta) => {
+              if (acepta) {
+                this._finalizarEleccionStarter(starter);
+              } else {
+                pokeball.setVisible(true);
+                pokeball.setAlpha(0);
+                pokeball.setScale(0.35);
+                this.tweens.add({
+                  targets: pokeball,
+                  alpha: 1,
+                  scale: 1,
+                  duration: 200,
+                  ease: 'Back.easeOut',
+                });
+                this._dialogo.mostrar(['Está bien, tómate tu tiempo.'], () => {
+                  this._jugador?.setInputBloqueado(false);
+                  this._flujoEleccionStarter = false;
+                });
+              }
+            });
+          },
         });
       },
     });
   }
-  
-  _mostrarConfirmacionStarter(starter, pokeball, pokemonSprite) {
-    const store = usarJuegoStore.getState();
-    const nombreJugador = store.nombreJugador || 'Tú';
-    
-    if (!this._uiSiNo) this._uiSiNo = new UIOpcionSiNo(this);
-    
-    const pregunta = `¿Llevarás a\n${starter.nombre.toUpperCase()}?`;
-    
-    this._uiSiNo.mostrar(pregunta, (respuesta) => {
-      if (respuesta) {
-        if (sfxPermitido() && this.sound.get('sfx-obtener-starter')) {
-          this.sound.play('sfx-obtener-starter', { volume: 0.7 });
-        }
-        
-        const lineasObtenido = [
-          `¡${nombreJugador} obtuvo a ${starter.nombre.toUpperCase()}!`,
-          `¡Buena elección!\nCuida bien de ${starter.nombre}.`,
-        ];
-        
-        this._dialogo.mostrar(lineasObtenido, () => {
-          usarJuegoStore.getState().setStarterElegido({
-            id: starter.id, nombre: starter.nombre, esStarter: true,
-            nivel: 5, hpActual: 20, hpMax: 20, ataque: 12, defensa: 10,
-          });
-          
-          this._pokeballs.forEach(pb => pb.setVisible(false));
-          pokemonSprite.destroy();
-        });
-      } else {
-        pokeball.setVisible(true);
-        pokemonSprite.setVisible(false);
-        this._dialogo.mostrar(['Está bien, tómate tu tiempo.'], null);
-      }
+
+  _finalizarEleccionStarter(starter) {
+    const nombreJugador = usarJuegoStore.getState().nombreJugador || 'Tú';
+
+    if (sfxPermitido() && this.sound.get('sfx-obtener-starter')) {
+      this.sound.play('sfx-obtener-starter', { volume: 0.7 });
+    }
+
+    const lineasObtenido = [
+      `¡${nombreJugador} obtuvo a ${starter.nombre.toUpperCase()}!`,
+      `¡Buena elección!\nCuida bien de ${starter.nombre}.`,
+    ];
+
+    this._dialogo.mostrar(lineasObtenido, () => {
+      const stBase = STATS_MENU_FALLBACK_POR_POKEDEX[starter.id] ?? {
+        ataque: 12,
+        defensa: 10,
+        ataqueEspecial: 12,
+        defensaEspecial: 11,
+        velocidad: 10,
+      };
+      usarJuegoStore.getState().setStarterElegido({
+        id: starter.id,
+        nombre: starter.nombre,
+        esStarter: true,
+        nivel: 5,
+        hpActual: 20,
+        hpMax: 20,
+        ataque: stBase.ataque,
+        defensa: stBase.defensa,
+        ataqueEspecial: stBase.ataqueEspecial,
+        defensaEspecial: stBase.defensaEspecial,
+        velocidad: stBase.velocidad,
+      });
+      this._pokeballs.forEach((pb) => pb.setVisible(false));
+      this._jugador?.setInputBloqueado(false);
+      this._flujoEleccionStarter = false;
     });
   }
 
@@ -489,7 +527,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     if (!dialogo) return;
 
     const nombreJugador = usarJuegoStore.getState().nombreJugador || 'Tú';
-    const lineas = dialogo.replaceAll('[JUGADOR]', nombreJugador).split('|');
+    const lineasBase = dialogo.replaceAll('[JUGADOR]', nombreJugador).split('|');
     const esRival = obj.name === 'rival';
 
     // Registrar en el radar centralizado en lugar de anclar el teclado
@@ -498,7 +536,7 @@ export default class EscenaOverworld extends Phaser.Scene {
       tipo: 'npc',
       accion: () => {
         if (esRival) {
-          this._dialogo.mostrar(lineas, () => {
+          this._dialogo.mostrar(lineasBase, () => {
             const dir = this._calcularDireccionOpuesta(this._jugador, npc);
             this._secuencias.ejecutar([
               this._secuencias.pasoTween(
@@ -509,10 +547,26 @@ export default class EscenaOverworld extends Phaser.Scene {
             ]);
           });
         } else {
-          const mapa = usarJuegoStore.getState().mapaActual;
+          const store = usarJuegoStore.getState();
+          const mapa = store.mapaActual;
           const enLabElm = mapa === 'elm-lab' || mapa === 'elm_lab';
           const esProfElm = obj.name === 'elm';
-          const sinStarter = !usarJuegoStore.getState().starterElegido;
+          const esMadre = obj.name === 'madre';
+          const sinStarter = !store.starterElegido;
+          const nombrePokemon =
+            store.starter?.nombre ?? store.team[0]?.nombre ?? '';
+
+          let lineas = lineasBase;
+          if (esProfElm && enLabElm && store.starterElegido) {
+            lineas = lineasProfElmTrasStarter(
+              nombreJugador,
+              nombrePokemon,
+              store.pocionEntregada,
+            );
+          } else if (esMadre && store.starterElegido) {
+            lineas = lineasMadreTrasStarter(nombreJugador, nombrePokemon);
+          }
+
           const marcarCharlaElm =
             esProfElm && enLabElm && sinStarter
               ? () => {
@@ -690,7 +744,8 @@ export default class EscenaOverworld extends Phaser.Scene {
       this._secuencias?.activo ||
       this._cambiandoMapa ||
       this._reactTextoEstaticoActivo ||
-      this._uiMenuLista?.activo
+      this._uiMenuLista?.activo ||
+      this._uiConfirmStarter?.esActiva()
     ) {
       return;
     }

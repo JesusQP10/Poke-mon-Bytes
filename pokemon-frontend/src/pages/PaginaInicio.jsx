@@ -1,17 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
-import cyndaquilGif from "../assets/ui/sprites/crystal/Cyndaquil_cristal.gif";
-import totodileGif from "../assets/ui/sprites/crystal/Totodile_cristal.gif";
-import chikoritaGif from "../assets/ui/sprites/crystal/Chikorita_cristal.gif";
+import { PORTRAIT_URL_INICIAL } from "../assets/pokemon/starters/portraitUrls";
 import pikachuGif from "../assets/ui/sprites/crystal/Pikachu_cristal.gif";
 import lugiaGif from "../assets/ui/sprites/crystal/Lugia_cristal.gif";
 import hoohGif from "../assets/ui/sprites/crystal/Ho-Oh_cristal.gif";
 
 const SPRITES = {
-  cyndaquil: cyndaquilGif,
-  totodile: totodileGif,
-  chikorita: chikoritaGif,
+  ...PORTRAIT_URL_INICIAL,
   pikachu: pikachuGif,
   lugia: lugiaGif,
   hooh: hoohGif,

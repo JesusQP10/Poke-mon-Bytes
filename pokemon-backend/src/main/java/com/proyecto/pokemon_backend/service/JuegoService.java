@@ -177,18 +177,27 @@ public class JuegoService {
         Integer pokedexId = p.getPokedexId();
         Optional<PokedexMaestra> especie = pokedexId != null ? pokedexRepo.findById(pokedexId) : Optional.empty();
         String nombre = especie.map(PokedexMaestra::getNombre).orElse("???");
-        String tipo   = especie.map(PokedexMaestra::getTipo_1).orElse("normal");
+        String tipo1es = especie.map(PokedexMaestra::getTipo_1).orElse("normal");
+        String tipo1en = normalizarTipoParaFrontend(tipo1es);
 
         Map<String, Object> dto = new HashMap<>();
         dto.put("pokemonUsuarioId", p.getId());
         dto.put("id",               p.getPokedexId());
         dto.put("name",             nombre);
-        dto.put("type",             normalizarTipoParaFrontend(tipo));
+        dto.put("type",             tipo1en);
+        dto.put("tipo1",            tipo1en);
+        especie.map(PokedexMaestra::getTipo_2).filter(t -> t != null && !t.isBlank())
+            .ifPresent(t2 -> dto.put("tipo2", normalizarTipoParaFrontend(t2)));
         dto.put("sprite",           String.format(SPRITE_URL, p.getPokedexId()));
         dto.put("nivel",            p.getNivel());
         dto.put("hpActual",         p.getHpActual());
         dto.put("hpMax",            p.getHpMax());
         dto.put("posicionEquipo",   p.getPosicionEquipo());
+        dto.put("ataque",           p.getAtaqueStat());
+        dto.put("defensa",          p.getDefensaStat());
+        dto.put("ataqueEspecial",   p.getAtaqueEspecialStat());
+        dto.put("defensaEspecial",  p.getDefensaEspecialStat());
+        dto.put("velocidad",        p.getVelocidadStat());
         return dto;
     }
 
