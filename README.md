@@ -25,11 +25,11 @@ Esta sección resume el estado del código.
 
 ### Frontend (En Desarrollo Activo)
 
-#### ✅ Funcionalidades Completadas (además de título / intro / nombre)
+#### ✅ Funcionalidades Completadas
 - Overworld con **varios mapas Tiled** (JSON), capas, colisiones y **warps** entre mapas (`WarpSystem`)
-- New Bark Town, habitación, casa y laboratorio en uso; **encuentros** en hierba donde hay tabla JSON. **Ruta 29 como tramo jugable tuya aún no está hecha**
+- New Bark Town, habitación, casa y laboratorio en uso; **encuentros** en hierba donde hay tabla JSON. **Ruta 29 como tramo jugable aún no hecho**
 - **Lógica por mapa modularizada** en `pokemon-frontend/src/phaser/mapas/` (p. ej. `casaJugador.js`, `labElm.js`, `johtoOverworld.js`, `dialogosPostStarter.js`) para aligerar `EscenaOverworld.js`.
-- **Diálogo in-world estilo retro:** `SistemaDialogo` con marco GBC (`marcoDialogoRetro.js`), texto y **nombre de hablante**.
+- **Diálogo in-world:** `SistemaDialogo` con marco GBC (`marcoDialogoRetro.js`), texto y **nombre de hablante**.
 - **Menú in-game en React (`MenuIngameReact`):** equipo con **retratos y mini sprites** de los iniciales (`portraitUrls.js`, GIFs en `assets/pokemon/starters/`), datos extra de especie vía **`pokemonDetallePokeapi.js`** (PokéAPI), **stats de combate** que el backend ya envía en el DTO del equipo (`ataque`, `defensa`, `ataqueEspecial`, `defensaEspecial`, `velocidad`, `tipo1` / `tipo2`); mochila y **guardado local y en servidor** (si hay sesión JWT). Opciones de cliente en `config/opcionesCliente.js`.
 - **Confirmación de starter** en Phaser (`UIConfirmacionStarter.js`) y diálogos posteriores centralizados en parte en `dialogosPostStarter.js`.
 - **`EscenaBatalla`:** carga equipo/movimientos y resuelve turnos contra la **API** del backend
@@ -43,20 +43,11 @@ Esta sección resume el estado del código.
 #### ⚠️ Problemas Conocidos
 
 > **Nota de Desarrollo:** El frontend está en fase de aprendizaje e implementación. Actualmente sigo estudiando y dominando la integración de **React con Phaser 3** y el uso de **Tiled Map Editor**, lo cual está llevando tiempo de investigación y experimentación.
-
+> El proyecto mejorará conforme domine estas herramientas. Los bugs actuales son parte del proceso de aprendizaje.
 **Bugs visuales actuales:**
 - **Colisiones:** Sistema en proceso de refinamiento mientras aprendo las mejores prácticas de Phaser
-- **Elección starter:** Actualmente al seleccionar un starter, puede no dar opción a cancelar
-- **Evento de Elm:** Según el movimiento del personaje, la activación del evento provoca cambios de posición dentro del mismo laboratorio
 - **Casa jugador:** En el diálogo con la madre aparece un placeHolder rosa (entrega del PokeGear). Esto será eliminado, pues no se adapta al juego original dicha acción
 
-**Tecnologías en aprendizaje:**
-- 🎮 **Phaser 3:** Motor de juego 2D (sistema de escenas, sprites, física)
-- 🗺️ **Tiled Map Editor:** Creación y exportación de mapas
-- ⚛️ **React + Phaser:** Integración de ambos frameworks sin conflictos
-- 🎨 **Pixel Art Pipeline:** Workflow desde diseño hasta implementación
-
-> El proyecto mejorará conforme domine estas herramientas. Los bugs actuales son parte del proceso de aprendizaje.
 
 ### Backend (Funcional)
 
@@ -73,7 +64,7 @@ Esta sección resume el estado del código.
 
 ## 🚀 Arquitectura del Proyecto
 
-El sistema se divide en dos grandes bloques desacoplados: una **API REST (Backend)** robusta que gestiona la lógica de negocio y una **SPA (Frontend)** moderna que recrea la experiencia visual de la Game Boy Color.
+El sistema se divide en dos grandes bloques desacoplados: una **API REST (Backend)** que gestiona la lógica de negocio y una **SPA (Frontend)** que recrea la experiencia de Game Boy Color.
 
 ### 🧠 Backend (Spring Boot Core)
 El servidor gestiona la persistencia, seguridad y cálculos matemáticos en 5 fases:
