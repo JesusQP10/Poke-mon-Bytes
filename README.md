@@ -154,7 +154,7 @@ root/
 
 ---
 
-## 🎓 Desafíos Técnicos y Aprendizaje
+## 🎓 Desafíos Técnicos
 
 Este proyecto esta representando un desafío técnico al combinar tecnologías que no suelen trabajar juntas:
 
