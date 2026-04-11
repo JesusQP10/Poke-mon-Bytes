@@ -110,31 +110,30 @@ El cliente web se centra en la fidelidad visual y la experiencia de usuario:
 ## 📸 Galería del Proyecto
 
 
-| Landing Page & Portada | Pantalla de Título Original |
+| Habitación del jugador | Ejemplo de combate |
 |:---:|:---:|
-| ![Landing](docs/screenshots/landing.png) | ![Título](docs/screenshots/titulo.png) |
-| *Página de inicio con la "carcasa" de GBC.* | *Recreación pixel de la intro de Oro.* |
+| ![Habitación](docs/screenshots/player_room.png) | ![Combate](docs/screenshots/ejemplo_combate.png) |
+| *Interior Tiled: capas, movimiento por grid y colisiones.* | *`EscenaBatalla` y turnos resueltos vía API (ejemplo visual).* |
 
-| Cinemática de Introducción | Sistema de Entrada de Nombre |
+| Diálogo en casa | Diálogo en el laboratorio |
 |:---:|:---:|
-| ![Profesor Oak](docs/screenshots/oak.png) | ![Name Input](docs/screenshots/nombre.png) |
-| *Diálogo narrativo  Profesor Oak.* | *Teclado en pantalla y sprite del jugador.* |
+| ![Diálogo con mamá](docs/screenshots/captura-dialogo-mama.png) | ![Diálogo Prof. Elm](docs/screenshots/captura-dialogo-profesor-elm.png) |
+| *Secuencia narrativa en interiores (NPC / familia).* | *Diálogo con el Prof. Elm y seguimiento de la aventura.* |
 
-| Habitación del Jugador | Casa del Jugador |
+| Menú in-game | Equipo Pokémon |
 |:---:|:---:|
-| ![Habitación](docs/screenshots/player_room.png) | ![Casa](docs/screenshots/player_house.png) |
-| *Renderizado base, grid movement y físicas.* | *Gestión de capas dinámicas y colisiones.* |
+| ![Menú principal](docs/screenshots/captura-menu-principal.png) | ![Equipo Pokémon](docs/screenshots/captura-equipo-pokemon.png) |
+| *Menú pausado sobre el mapa (UI en React).* | *Lista del equipo: nivel, PS y navegación estilo clásico.* |
 
-| Interacción en Exteriores | Diálogos en Interiores |
+| Ficha de Pokémon | Mochila |
 |:---:|:---:|
-| ![Radar NPC](docs/screenshots/interaccion_new_nark_town_1.png) | ![Diálogos](docs/screenshots/interaccion_cientifico_lab_elm.png) |
-| *Detección de NPCs y barrido espacial continuo.* | *Sistema de secuencias narrativas in-game.* |
+| ![Ficha Totodile](docs/screenshots/captura-ficha-totodile.png) | ![Mochila](docs/screenshots/captura-mochila.png) |
+| *Detalle de stats, tipo y datos de combate / Pokédex.* | *Inventario de objetos y cantidades.* |
 
-| Integración UI  | Sistema de Combate |
+| Opciones | Guardado |
 |:---:|:---:|
-| ![Starter](docs/screenshots/obtencion_starter.png) | ![Combate](docs/screenshots/ejemplo_combate.png) *(Ejemplo visual; en código hay escena de batalla conectada a la API.)* |
-
-| *UI montada en React leyendo el estado de Phaser.* | *Integración por turnos en curso; ver `NOTAS.md`.* |
+| ![Opciones](docs/screenshots/captura-opciones.png) | ![Guardado](docs/screenshots/captura-guardado.png) |
+| *Música, sonidos y ritmo del texto.* | *Confirmación de partida guardada (local y servidor).* |
 
 
 ---

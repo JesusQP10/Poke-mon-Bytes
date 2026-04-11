@@ -27,11 +27,17 @@ docs/
 ├── planning/                     # Planificación del proyecto
 │   └── PLAN_PARTE_1_POKEMON_ORO.txt  # Plan inicial del juego
 │
-├── screenshots/                  # Capturas de pantalla del juego
-│   ├── landing.png              # Página de inicio
-│   ├── titulo.png               # Pantalla de título
-│   ├── oak.png                  # Intro del Profesor Oak
-│   └── nombre.png               # Sistema de entrada de nombre
+├── screenshots/                  # Capturas para README / presentaciones (renovar cuando cambie la UI)
+│   ├── player_room.png           # Interior habitación (Tiled)
+│   ├── ejemplo_combate.png       # Escena de batalla (API)
+│   ├── captura-dialogo-mama.png
+│   ├── captura-dialogo-profesor-elm.png
+│   ├── captura-menu-principal.png
+│   ├── captura-equipo-pokemon.png
+│   ├── captura-ficha-totodile.png
+│   ├── captura-mochila.png
+│   ├── captura-opciones.png
+│   └── captura-guardado.png
 │
 ├── tiled/                        # Archivos fuente de Tiled Map Editor
 │   ├── elm_lab.tmx              # Laboratorio del Prof. Elm

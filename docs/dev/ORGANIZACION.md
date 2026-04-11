@@ -33,11 +33,7 @@ root/
 │   ├── planning/                      ✅ Planificación
 │   │   └── PLAN_PARTE_1_POKEMON_ORO.txt
 │   │
-│   ├── screenshots/                   ✅ Capturas
-│   │   ├── landing.png
-│   │   ├── titulo.png
-│   │   ├── oak.png
-│   │   └── nombre.png
+│   ├── screenshots/                   ✅ Capturas (README; p. ej. habitación, combate, menús in-game)
 │   │
 │   ├── api-tests.http                 ✅ Tests API
 │   ├── README.md                      ✅ Índice de docs
