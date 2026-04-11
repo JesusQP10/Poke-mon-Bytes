@@ -120,6 +120,23 @@ El cliente web se centra en la fidelidad visual y la experiencia de usuario:
 | ![Profesor Oak](docs/screenshots/oak.png) | ![Name Input](docs/screenshots/nombre.png) |
 | *Diálogo narrativo  Profesor Oak.* | *Teclado en pantalla y sprite del jugador.* |
 
+| Habitación del Jugador | Casa del Jugador |
+|:---:|:---:|
+| ![Habitación](docs/screenshots/player_room.png) | ![Casa](docs/screenshots/player_house.png) |
+| *Renderizado base, grid movement y físicas.* | *Gestión de capas dinámicas y colisiones.* |
+
+| Interacción en Exteriores | Diálogos en Interiores |
+|:---:|:---:|
+| ![Radar NPC](docs/screenshots/interaccion_new_nark_town_1.png) | ![Diálogos](docs/screenshots/interaccion_cientifico_lab_elm.png) |
+
+| *Detección de NPCs y barrido espacial continuo.* | *Sistema de secuencias narrativas in-game.* |
+| Integración UI  | Sistema de Combate |
+|:---:|:---:|
+| ![Starter](docs/screenshots/obtencion_starter.png) | ![Combate]() *(Próximamente)* |
+
+| *UI montada en React leyendo el estado de Phaser.* | *En desarrollo...* |
+
+
 ---
 ---
 ## 📂 Estructura del Proyecto
