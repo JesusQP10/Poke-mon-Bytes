@@ -10,6 +10,7 @@
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react&logoColor=black)
 ![Vite](https://img.shields.io/badge/Vite-Bundler-646CFF?style=flat&logo=vite)
+![Phaser](https://img.shields.io/badge/Phaser-3.80-8B5CF6?style=flat&logo=phaser)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat&logo=tailwindcss)
 ![Zustand](https://img.shields.io/badge/State-Zustand-orange?style=flat)
 
@@ -96,10 +97,12 @@ El cliente web se centra en la fidelidad visual y la experiencia de usuario:
 
 ### 🔜 Frontend
 * **Core:** React 19 + Vite
+* **Motor de Juego:** Phaser 3.80
 * **Estilos:** Tailwind CSS + CSS Modules
 * **Estado:** Zustand (con Middleware Persist)
 * **HTTP Client:** Axios (con Interceptores JWT)
-* **Motion:** Framer Motion v12
+* **Animaciones:** Framer Motion v12
+* **Mapas:** Tiled Map Editor (exportación JSON)
 
 
 ---
@@ -154,7 +157,7 @@ root/
 
 ---
 
-## 🎓 Desafíos Técnicos y Aprendizaje
+## 🎓 Desafíos Técnicos
 
 Este proyecto esta representando un desafío técnico al combinar tecnologías que no suelen trabajar juntas:
 
@@ -181,7 +184,7 @@ Este proyecto esta representando un desafío técnico al combinar tecnologías q
 > **Transparencia:** Los bugs visuales actuales son resultado directo de este proceso de aprendizaje. Cada error es una me permite entender mejor cómo funcionan estas herramientas juntas.
 
 
-### ¿Por qué no cambiar a herramientas más simples?
+### ¿Por qué no cambio a herramientas más simples?
 
 A pesar de los desafíos, he decidido mantener este stack tecnológico por :
 
