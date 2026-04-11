@@ -29,6 +29,7 @@ export default class Jugador extends Phaser.GameObjects.Sprite {
     this.body.setOffset(3, 6);
 
     // Estado interno
+    this._inputBloqueado = false;
     this._moviendose = false;
     this._tileX = tileX;
     this._tileY = tileY;
@@ -85,8 +86,15 @@ export default class Jugador extends Phaser.GameObjects.Sprite {
 
   // ── Update ─────────────────────────────────────────────────────────────
 
+  /**
+   * Bloquea movimiento (menús React, PC, etc.). No afecta a colisiones ni posición.
+   */
+  setInputBloqueado(bloqueado) {
+    this._inputBloqueado = Boolean(bloqueado);
+  }
+
   update(teclado) {
-    if (this._moviendose) return;
+    if (this._inputBloqueado || this._moviendose) return;
 
     let dx = 0;
     let dy = 0;

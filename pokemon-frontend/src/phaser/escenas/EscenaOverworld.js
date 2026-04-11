@@ -6,6 +6,7 @@ import { usarJuegoStore } from '../../store/usarJuegoStore';
 import SistemaSecuencias from '../sistemas/SistemaSecuencias';
 import { STARTERS } from '../ui/UISeleccionStarter';
 import UIOpcionSiNo from '../ui/UIOpcionSiNo';
+import UIMenuLista from '../ui/UIMenuLista';
 import WarpSystem from '../sistemas/WarpSystem';
 
 const TAM_TILE = 16;
@@ -42,6 +43,8 @@ export default class EscenaOverworld extends Phaser.Scene {
   create() {
     this._introActiva = false;
     this._cambiandoMapa = false; // Evita que el overlap dispare mil transiciones a la vez
+    this._reactTextoEstaticoActivo = false;
+    this._uiMenuLista = null;
     this._interactuables = []; // Registro centralizado para que el input no se duplique
     this._tilemapPhaser = null;
     this._warpSystem = new WarpSystem(this, { tileSize: TAM_TILE, fadeMs: 250 });
@@ -96,7 +99,9 @@ export default class EscenaOverworld extends Phaser.Scene {
     return Boolean(
       this._introActiva ||
       this._secuencias?.activo ||
-      this._cambiandoMapa
+      this._cambiandoMapa ||
+      this._reactTextoEstaticoActivo ||
+      this._uiMenuLista?.activo
     );
   }
 
@@ -134,17 +139,29 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   // Sistema de radar. Busca el interactuable más cercano y ejecuta su lógica.
   _manejarInteraccion() {
-    if (this._dialogo?.activo || this._introActiva || this._secuencias?.activo || !this._jugador) return;
+    if (
+      this._dialogo?.activo ||
+      this._introActiva ||
+      this._secuencias?.activo ||
+      this._reactTextoEstaticoActivo ||
+      this._uiMenuLista?.activo ||
+      !this._jugador
+    ) {
+      return;
+    }
 
     let objetivoMasCercano = null;
-    let distanciaMinima = TAM_TILE * 1.8; // Distancia máxima de alcance
+    let distanciaMinima = Infinity;
 
-    this._interactuables.forEach(obj => {
-      // Ignoramos Pokéballs invisibles (ya elegidas)
+    this._interactuables.forEach((obj) => {
       if (obj.sprite && !obj.sprite.visible && obj.tipo === 'pokeball') return;
 
       const dist = Phaser.Math.Distance.Between(this._jugador.x, this._jugador.y, obj.sprite.x, obj.sprite.y);
-      if (dist < distanciaMinima) {
+      const alcanceMax =
+        obj.tipo === 'react_texto' || obj.tipo === 'pc'
+          ? TAM_TILE * 3.25
+          : TAM_TILE * 1.8;
+      if (dist <= alcanceMax && dist < distanciaMinima) {
         distanciaMinima = dist;
         objetivoMasCercano = obj;
       }
@@ -284,25 +301,28 @@ export default class EscenaOverworld extends Phaser.Scene {
     try {
       const mapa = this.make.tilemap({ key: mapaKey });
       this._tilemapPhaser = mapa;
-      const tilesetData = mapa.tilesets[0];
-      if (!tilesetData) throw new Error(`No tileset found in map ${mapaKey}`);
+      if (!mapa.tilesets?.length) throw new Error(`No tileset found in map ${mapaKey}`);
 
-      const tilesetName = tilesetData.name;
       const tilesetKey = TILESET_POR_MAPA[mapaKey] || 'new_bark_town';
-      const tileset = mapa.addTilesetImage(tilesetName, tilesetKey);
-      
-      if (!tileset) throw new Error(`Failed to load tileset: ${tilesetName} -> ${tilesetKey}`);
+      // Enlazar cada tileset del JSON a la textura cargada (mismo PNG puede repetirse con distinto firstgid en Tiled).
+      const tilesetsEnlazados = [];
+      for (const ts of mapa.tilesets) {
+        const enlazado = mapa.addTilesetImage(ts.name, tilesetKey);
+        if (!enlazado) throw new Error(`Failed to load tileset: ${ts.name} -> ${tilesetKey}`);
+        tilesetsEnlazados.push(enlazado);
+      }
+      const tilesetCapas = tilesetsEnlazados.length === 1 ? tilesetsEnlazados[0] : tilesetsEnlazados;
 
       // Evita posX/posY fuera del mapa (p. ej. fila 9 en mapa de 9 filas → desalineación)
       tileX = Phaser.Math.Clamp(tileX, 0, mapa.width - 1);
       tileY = Phaser.Math.Clamp(tileY, 0, mapa.height - 1);
 
-      if (mapa.getLayer('suelo')) mapa.createLayer('suelo', tileset, 0, 0);
-      if (mapa.getLayer('decoracion_bajo')) mapa.createLayer('decoracion_bajo', tileset, 0, 0);
+      if (mapa.getLayer('suelo')) mapa.createLayer('suelo', tilesetCapas, 0, 0);
+      if (mapa.getLayer('decoracion_bajo')) mapa.createLayer('decoracion_bajo', tilesetCapas, 0, 0);
       
-      const capaHierba = mapa.getLayer('hierba_alta') ? mapa.createLayer('hierba_alta', tileset, 0, 0) : null;
-      const capaColisiones = mapa.getLayer('colisiones') ? mapa.createLayer('colisiones', tileset, 0, 0) : null;
-      const capaAlto = mapa.getLayer('decoracion_alto') ? mapa.createLayer('decoracion_alto', tileset, 0, 0) : null;
+      const capaHierba = mapa.getLayer('hierba_alta') ? mapa.createLayer('hierba_alta', tilesetCapas, 0, 0) : null;
+      const capaColisiones = mapa.getLayer('colisiones') ? mapa.createLayer('colisiones', tilesetCapas, 0, 0) : null;
+      const capaAlto = mapa.getLayer('decoracion_alto') ? mapa.createLayer('decoracion_alto', tilesetCapas, 0, 0) : null;
       
       if (capaColisiones) {
         capaColisiones.setCollisionByExclusion([-1]);
@@ -328,8 +348,8 @@ export default class EscenaOverworld extends Phaser.Scene {
 
       this._npcs = [];
       this._pokeballs = []; 
-      mapa.getObjectLayer('npcs')?.objects.forEach(obj => this._crearNpc(obj));
-      mapa.getObjectLayer('eventos')?.objects.forEach(obj => {
+      mapa.getObjectLayer('npcs')?.objects?.forEach((obj) => this._crearNpc(obj));
+      mapa.getObjectLayer('eventos')?.objects?.forEach((obj) => {
         if (obj.name === 'chikorita' || obj.name === 'cyndaquil' || obj.name === 'totodile') {
           this._crearPokeball(obj);
         } else {
@@ -381,6 +401,8 @@ export default class EscenaOverworld extends Phaser.Scene {
   _configurarMenu() {
     this.input.keyboard.on('keydown-X', () => {
       if (this._dialogo?.activo || this._introActiva || this._secuencias?.activo) return;
+      if (this._uiMenuLista?.activo) return;
+      if (this._reactTextoEstaticoActivo) return;
       this.scene.launch('EscenaMenu');
       this.scene.pause();
     });
@@ -463,14 +485,16 @@ export default class EscenaOverworld extends Phaser.Scene {
   _crearPokeball(obj) {
     if (usarJuegoStore.getState().starterElegido) return;
 
-    const pokeball = this.add.sprite(obj.x + 8, obj.y + 8, 'pokeball').setDepth(5);
+    // Por encima de `decoracion_alto` (depth 10); si no, la mesa tapa las Poké Balls.
+    const depthPokeball = 15;
+    const pokeball = this.add.sprite(obj.x + 8, obj.y + 8, 'pokeball').setDepth(depthPokeball);
     this._pokeballs.push(pokeball);
     
     const starterMap = { 'cyndaquil': 0, 'totodile': 1, 'chikorita': 2 };
     const starterIndex = starterMap[obj.name];
     const starter = STARTERS[starterIndex];
     
-    const pokemonSprite = this.add.sprite(obj.x + 8, obj.y - 8, obj.name).setDepth(6).setVisible(false);
+    const pokemonSprite = this.add.sprite(obj.x + 8, obj.y - 8, obj.name).setDepth(depthPokeball + 1).setVisible(false);
     
     // Registrar en el radar centralizado
     this._interactuables.push({
@@ -594,6 +618,16 @@ export default class EscenaOverworld extends Phaser.Scene {
       return;
     }
 
+    if (tipo === 'react_texto_estatico') {
+      this._registrarInteraccionReactTexto(obj, props);
+      return;
+    }
+
+    if (tipo === 'pc_jugador') {
+      this._registrarInteraccionPc(obj);
+      return;
+    }
+
     if (WarpSystem.esWarpViaje(obj)) {
       this._warpSystem.registrarZonaWarp(
         obj,
@@ -602,6 +636,101 @@ export default class EscenaOverworld extends Phaser.Scene {
         (parsed) => this._activarWarpDesdeObjeto(parsed)
       );
     }
+  }
+
+  /** Texto estático en React (`onTextoEstatico`); prop Tiled `dialogo` con líneas separadas por `|`. */
+  _registrarInteraccionReactTexto(obj, props) {
+    const w = obj.width ?? TAM_TILE;
+    const h = obj.height ?? TAM_TILE;
+    const cx = obj.x + w / 2;
+    const cy = obj.y + h / 2;
+    const marcador = this.add.rectangle(cx, cy, Math.max(8, w), Math.max(8, h), 0x000000, 0).setDepth(1);
+
+    const dialogoRaw = WarpSystem.prop(props, 'dialogo');
+    const lineas = String(dialogoRaw ?? '…')
+      .split('|')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    this._interactuables.push({
+      sprite: marcador,
+      tipo: 'react_texto',
+      accion: () => {
+        if (this._reactTextoEstaticoActivo || !this._jugador) return;
+        const cb = this.game.registry.get('callbacks')?.onTextoEstatico;
+        if (!cb) {
+          this._dialogo.mostrar(lineas.length ? lineas : ['…'], null);
+          return;
+        }
+        this._reactTextoEstaticoActivo = true;
+        this._jugador.setInputBloqueado(true);
+        cb({
+          lineas: lineas.length ? lineas : ['…'],
+          onCerrar: () => {
+            this._reactTextoEstaticoActivo = false;
+            this._jugador?.setInputBloqueado(false);
+          },
+        });
+      },
+    });
+  }
+
+  /** PC de la habitación: menú Phaser + buzón con poción (store `pcPocionRetirada`). */
+  _registrarInteraccionPc(obj) {
+    const w = obj.width ?? TAM_TILE;
+    const h = obj.height ?? TAM_TILE;
+    const cx = obj.x + w / 2;
+    const cy = obj.y + h / 2;
+    const marcador = this.add.rectangle(cx, cy, Math.max(8, w), Math.max(8, h), 0x000000, 0).setDepth(1);
+
+    this._interactuables.push({
+      sprite: marcador,
+      tipo: 'pc',
+      accion: () => this._abrirMenuPc(),
+    });
+  }
+
+  _abrirMenuPc() {
+    if (!this._jugador || this._uiMenuLista?.activo || this._dialogo?.activo) return;
+    if (!this._uiMenuLista) this._uiMenuLista = new UIMenuLista(this);
+    this._jugador.setInputBloqueado(true);
+    this._mostrarMenuPcPrincipal();
+  }
+
+  _mostrarMenuPcPrincipal() {
+    if (!this._uiMenuLista) return;
+    this._uiMenuLista.mostrar('PC', ['Buzón de objetos', 'Salir'], {
+      onPick: (i) => {
+        if (i === 0) this._flujoBuzonPc();
+        else this._cerrarMenuPc();
+      },
+      onCancel: () => this._cerrarMenuPc(),
+    });
+  }
+
+  _flujoBuzonPc() {
+    const store = usarJuegoStore.getState();
+    if (store.pcPocionRetirada) {
+      this._dialogo.mostrar(['No hay objetos en el buzón.'], () => this._mostrarMenuPcPrincipal());
+      return;
+    }
+    this._dialogo.mostrar(['Hay una POCION en el buzón.'], () => {
+      if (!this._uiSiNo) this._uiSiNo = new UIOpcionSiNo(this);
+      this._uiSiNo.mostrar('¿Retirar la POCION?', (si) => {
+        if (si) {
+          store.addInventario({ id: 'pocion', nombre: 'Poción', cantidad: 1 });
+          store.setPcPocionRetirada();
+          this._dialogo.mostrar(['Has retirado la POCION.'], () => this._mostrarMenuPcPrincipal());
+        } else {
+          this._mostrarMenuPcPrincipal();
+        }
+      });
+    });
+  }
+
+  _cerrarMenuPc() {
+    this._uiMenuLista?.ocultar();
+    this._jugador?.setInputBloqueado(false);
   }
 
   _crearZonaTriggerElm(obj) {
@@ -650,7 +779,16 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   update() {
     if (!this._jugador || !this._teclado) return;
-    if (this._dialogo?.activo || this._introActiva || this._secuencias?.activo || this._cambiandoMapa) return;
+    if (
+      this._dialogo?.activo ||
+      this._introActiva ||
+      this._secuencias?.activo ||
+      this._cambiandoMapa ||
+      this._reactTextoEstaticoActivo ||
+      this._uiMenuLista?.activo
+    ) {
+      return;
+    }
     this._jugador.update(normalizarTeclado(this._teclado));
   }
 

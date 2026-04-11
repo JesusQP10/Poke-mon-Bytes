@@ -39,6 +39,14 @@ public class Usuario implements UserDetails {
     private int posX = 5;
     private int posY = 5;
 
+    /**
+     * JSON del front (inventario, flags, nombre jugador, reloj, equipo espejo…).
+     * En MySQL usar LONGTEXT sin {@code @Lob}: {@code @Lob} en {@code String} suele mapear a tipos JDBC
+     * que hacen que el valor se guarde o se lea como {@code null}.
+     */
+    @Column(name = "estado_cliente_json", columnDefinition = "LONGTEXT")
+    private String estadoClienteJson;
+
     // --- UserDetails ---
 
     @Override

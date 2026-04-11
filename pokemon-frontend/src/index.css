@@ -997,7 +997,8 @@ img {
 }
 
 .login2-pika {
-  filter: drop-shadow(0 2px 0 rgba(15, 56, 15, 0.3));
+  filter: none;
+  box-shadow: inset 0px 4px 12px 0px rgba(0, 0, 0, 0.15);
 }
 
 .login2-status-row {

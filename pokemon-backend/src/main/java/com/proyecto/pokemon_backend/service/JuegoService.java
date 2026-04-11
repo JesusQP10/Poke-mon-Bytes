@@ -1,5 +1,7 @@
 package com.proyecto.pokemon_backend.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proyecto.pokemon_backend.exception.ErrorNegocio;
 import com.proyecto.pokemon_backend.exception.RecursoNoEncontrado;
 import com.proyecto.pokemon_backend.model.PokedexMaestra;
@@ -23,6 +25,8 @@ import java.util.Optional;
  */
 @Service
 public class JuegoService {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private static final List<Integer> STARTERS_JOHTO = List.of(152, 155, 158);
     private static final String SPRITE_URL =
@@ -56,7 +60,66 @@ public class JuegoService {
         estado.put("mapaActual", usuario.getMapaActual());
         estado.put("posX",       usuario.getPosX());
         estado.put("posY",       usuario.getPosY());
+
+        String blob = usuario.getEstadoClienteJson();
+        if (blob != null && !blob.isBlank()) {
+            try {
+                estado.put("estadoCliente", JSON.readValue(blob, new TypeReference<Map<String, Object>>() {}));
+            } catch (Exception ignored) {
+                estado.put("estadoCliente", Map.of());
+            }
+        }
         return estado;
+    }
+
+    @Transactional
+    public Map<String, Object> guardarPartida(String username, Map<String, Object> body) {
+        if (body == null) {
+            body = Map.of();
+        }
+        Usuario u = cargarUsuario(username);
+
+        Object px = body.get("posX");
+        Object py = body.get("posY");
+        if (px instanceof Number) {
+            u.setPosX(((Number) px).intValue());
+        }
+        if (py instanceof Number) {
+            u.setPosY(((Number) py).intValue());
+        }
+        Object mapa = body.get("mapaActual");
+        if (mapa != null && !String.valueOf(mapa).isBlank()) {
+            u.setMapaActual(String.valueOf(mapa));
+        }
+        Object money = body.get("money");
+        if (money instanceof Number) {
+            u.setDinero(((Number) money).intValue());
+        }
+
+        Object ec = body.get("estadoCliente");
+        if (ec != null) {
+            try {
+                if (ec instanceof String s && !s.isBlank()) {
+                    u.setEstadoClienteJson(s);
+                } else if (ec instanceof Map<?, ?> map) {
+                    u.setEstadoClienteJson(JSON.writeValueAsString(map));
+                } else {
+                    u.setEstadoClienteJson(JSON.writeValueAsString(ec));
+                }
+            } catch (Exception e) {
+                throw new ErrorNegocio("No se pudo guardar el estado del cliente.");
+            }
+        }
+
+        userRepo.save(u);
+
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("success", true);
+        resp.put("message", "Partida guardada.");
+        resp.put("posX", u.getPosX());
+        resp.put("posY", u.getPosY());
+        resp.put("mapaActual", u.getMapaActual());
+        return resp;
     }
 
     @Transactional

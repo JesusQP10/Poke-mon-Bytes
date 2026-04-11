@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import PuenteApi from '../puentes/PuenteApi';
 import { usarJuegoStore } from '../../store/usarJuegoStore';
+import { usarAutenticacionStore } from '../../store/usarAutenticacionStore';
 
 const OPCIONES = ['POKÉMON', 'MOCHILA', 'GUARDAR', 'OPCIONES', 'SALIR'];
 
@@ -107,13 +108,15 @@ export default class EscenaMenu extends Phaser.Scene {
         this._mostrarEquipo();
         break;
       case 'MOCHILA':
-        this._mostrarMensaje('Mochila próximamente.');
+        this._mostrarMochila();
         break;
       case 'GUARDAR':
         await this._guardar();
         break;
       case 'OPCIONES':
-        this._mostrarMensaje('Opciones próximamente.');
+        this._mostrarMensaje(
+          'OPCIONES\n\nSin ajustes aún\n(volumen, textos…).\n\nPróximamente.',
+        );
         break;
       case 'SALIR':
         this._cerrar();
@@ -122,23 +125,96 @@ export default class EscenaMenu extends Phaser.Scene {
   }
 
   async _guardar() {
-    this._inputBloqueado = true; // Bloqueamos para que no spamee guardar
-    const store = usarJuegoStore.getState();
-    
-    // Mostramos mensaje sin esperar tecla para cerrarlo aún
+    this._inputBloqueado = true;
     this._crearCajaTexto('Guardando...');
-    
+
     try {
-      await PuenteApi.guardarJuego(store.posX, store.posY, store.mapaActual);
-      // Reemplazamos la caja y ahora sí pedimos input para cerrar
-      this._cajaMensaje?.destroy();
-      this._textoMsg?.destroy();
-      this._mostrarMensaje('¡Partida guardada!');
+      usarJuegoStore.getState().guardarPartidaLocal();
     } catch {
       this._cajaMensaje?.destroy();
       this._textoMsg?.destroy();
-      this._mostrarMensaje('Error al guardar.');
+      this._mostrarMensaje('No se pudo guardar\nen el navegador.');
+      return;
     }
+
+    const payload = usarJuegoStore.getState().construirPayloadGuardado();
+    let servidorOk = false;
+    if (usarAutenticacionStore.getState().token) {
+      try {
+        await PuenteApi.guardarJuegoEnServidor(payload);
+        servidorOk = true;
+      } catch {
+        /* Error de red o 401 */
+      }
+    }
+
+    this._cajaMensaje?.destroy();
+    this._textoMsg?.destroy();
+    const msg = servidorOk
+      ? '¡Partida guardada!\n(En el ordenador\ny en el servidor.)'
+      : '¡Partida guardada!\n(Solo en este ordenador.)';
+    this._mostrarMensaje(msg);
+  }
+
+  _mostrarMochila() {
+    const inv = usarJuegoStore.getState().inventario ?? [];
+    if (!inv.length) {
+      this._mostrarMensaje('La mochila está vacía.');
+      return;
+    }
+
+    const conteo = new Map();
+    for (const it of inv) {
+      const clave = it.id || it.nombre || '?';
+      const n = Number.isFinite(Number(it.cantidad)) ? Number(it.cantidad) : 1;
+      conteo.set(clave, (conteo.get(clave) || 0) + n);
+    }
+
+    const lineas = [];
+    conteo.forEach((cant, clave) => {
+      const muestra = inv.find((x) => (x.id || x.nombre) === clave);
+      const nombre = muestra?.nombre || clave;
+      lineas.push(`×${cant}  ${nombre}`);
+    });
+
+    this._mostrarPantallaMochila(lineas);
+  }
+
+  _mostrarPantallaMochila(lineas) {
+    this.tweens.killAll();
+    this.children.removeAll();
+
+    this.add.rectangle(0, 0, 160, 144, 0x183018).setOrigin(0);
+
+    this.add.text(80, 8, 'MOCHILA', {
+      fontFamily: '"Press Start 2P"',
+      fontSize: '8px',
+      fill: '#e8f8e8',
+    }).setOrigin(0.5);
+
+    this.add.text(8, 22, lineas.join('\n'), {
+      fontFamily: '"Press Start 2P"',
+      fontSize: '6px',
+      fill: '#ffffff',
+      lineSpacing: 6,
+      wordWrap: { width: 146 },
+    }).setOrigin(0);
+
+    this.add.text(80, 130, 'X · Volver al menú', {
+      fontFamily: '"Press Start 2P"',
+      fontSize: '4px',
+      fill: '#9aba9a',
+    }).setOrigin(0.5);
+
+    this.input.keyboard.off('keydown', this._manejarInput, this);
+    this._handlerMochila = (event) => {
+      if (event.code === 'KeyX' || event.code === 'Escape') {
+        this.input.keyboard.off('keydown', this._handlerMochila);
+        this._handlerMochila = null;
+        this._volverAlMenuPrincipal();
+      }
+    };
+    this.input.keyboard.on('keydown', this._handlerMochila);
   }
 
   _mostrarEquipo() {
@@ -301,6 +377,10 @@ export default class EscenaMenu extends Phaser.Scene {
 
   _volverAlMenuPrincipal() {
     this.input.keyboard.off('keydown', this._manejarInputEquipo, this);
+    if (this._handlerMochila) {
+      this.input.keyboard.off('keydown', this._handlerMochila);
+      this._handlerMochila = null;
+    }
     this.children.removeAll();
     this.create(); // Reinicia el menú principal limpio
   }
@@ -338,6 +418,10 @@ export default class EscenaMenu extends Phaser.Scene {
   _cerrar() {
     this.tweens.killAll(); // Limpiar animaciones al salir
     this.input.keyboard.off('keydown', this._manejarInput, this);
+    if (this._handlerMochila) {
+      this.input.keyboard.off('keydown', this._handlerMochila);
+      this._handlerMochila = null;
+    }
     this.scene.stop();
     this.scene.resume('EscenaOverworld');
   }

@@ -22,9 +22,12 @@ export const gameService = {
     return response.data;
   },
 
-  // Guardar partida
-  guardarJuego: async () => {
-    const response = await api.post('/api/v1/juego/guardar');
+  /**
+   * Guardar partida en servidor (requiere JWT).
+   * @param {Record<string, unknown>} [payload] - posX, posY, mapaActual, money, estadoCliente
+   */
+  guardarJuego: async (payload = {}) => {
+    const response = await api.post('/api/v1/juego/guardar', payload);
     return response.data;
   },
 };

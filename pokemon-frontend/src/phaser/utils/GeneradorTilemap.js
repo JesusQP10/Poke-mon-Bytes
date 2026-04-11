@@ -179,10 +179,37 @@ const GeneradorTilemap = {
       this._crearCapaObjetos(6, 'eventos', [
         // Misma geometría que exports/player_room.json (Tiled)
         this._crearWarpPixels(5, 'warp_player_house', 144, 0, 16, 32, 'player-house', 9, 2),
+        {
+          id: 6,
+          name: 'radio_estatica',
+          type: '',
+          x: 128,
+          y: 80,
+          width: 16,
+          height: 16,
+          rotation: 0,
+          visible: true,
+          properties: [
+            { name: 'tipo', type: 'string', value: 'react_texto_estatico' },
+            { name: 'dialogo', type: 'string', value: '¡Es la radio!|Sintonías suaves de Johto…' },
+          ],
+        },
+        {
+          id: 7,
+          name: 'pc_habitacion',
+          type: '',
+          x: 72,
+          y: 96,
+          width: 32,
+          height: 16,
+          rotation: 0,
+          visible: true,
+          properties: [{ name: 'tipo', type: 'string', value: 'pc_jugador' }],
+        },
       ]),
     ];
 
-    const mapa = this._crearCabecera(ANCHO, ALTO, tilesets, 6, 5);
+    const mapa = this._crearCabecera(ANCHO, ALTO, tilesets, 6, 7);
     mapa.layers = capas;
     return mapa;
   },

@@ -5,7 +5,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -38,11 +37,10 @@ public class JuegoController {
     }
 
     @PostMapping("/guardar")
-    public ResponseEntity<Map<String, Object>> guardar() {
-        return ResponseEntity.ok(Map.of(
-            "success",   true,
-            "message",   "Partida guardada correctamente.",
-            "savedAt",   Instant.now().toString()
-        ));
+    public ResponseEntity<Map<String, Object>> guardar(
+        @RequestBody(required = false) Map<String, Object> body,
+        Authentication auth
+    ) {
+        return ResponseEntity.ok(juegoService.guardarPartida(auth.getName(), body));
     }
 }

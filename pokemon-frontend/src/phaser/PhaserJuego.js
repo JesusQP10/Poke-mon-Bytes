@@ -11,7 +11,8 @@ import EscenaTransicion from './escenas/EscenaTransicion';
  * El escalado pixel-perfect lo gestiona PaginaJuego.jsx con CSS transform.
  *
  * @param {HTMLElement} parent - Elemento DOM donde se monta el canvas.
- * @param {Object} callbacks - { onOverworld, onBattle } para notificar a React.
+ * @param {Object} callbacks - { onCambioPantalla, onTextoEstatico } para notificar a React.
+ *   `onTextoEstatico({ lineas: string[], onCerrar })` — texto estático fuera del canvas Phaser.
  */
 export function crearJuegoPhaser(parent, callbacks = {}) {
   const config = {

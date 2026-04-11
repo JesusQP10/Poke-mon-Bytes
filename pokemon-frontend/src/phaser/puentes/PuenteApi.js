@@ -18,11 +18,23 @@ const PuenteApi = {
     return res.data;
   },
 
-  async guardarJuego(posX, posY, mapaActual) {
-    const res = await api.post('/api/v1/juego/guardar', { posX, posY, mapaActual });
-    // Actualizar el store de React
-    usarJuegoStore.getState().setPosition(posX, posY, mapaActual);
+  /**
+   * Guarda partida en servidor (posición, dinero, mapa + JSON `estadoCliente`).
+   * Requiere JWT. El backend persiste en `USUARIOS.estado_cliente_json`.
+   */
+  async guardarJuegoEnServidor(payload) {
+    const res = await api.post('/api/v1/juego/guardar', payload);
+    if (payload?.posX != null && payload?.mapaActual != null) {
+      usarJuegoStore.getState().setPosition(payload.posX, payload.posY, payload.mapaActual);
+    }
     return res.data;
+  },
+
+  /** GET /estado y aplica al store (multi-dispositivo). */
+  async sincronizarEstadoDesdeServidor() {
+    const data = await this.getEstadoJugador();
+    usarJuegoStore.getState().setPlayerState(data);
+    return data;
   },
 
   // ── Batalla ────────────────────────────────────────────────────────────

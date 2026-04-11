@@ -2,27 +2,30 @@ import { useEffect, useRef } from 'react';
 import { crearJuegoPhaser } from '../../phaser/PhaserJuego';
 
 /**
- * Monta y desmonta una instancia de Phaser.Game dentro del div 160×144
- * que gestiona PaginaJuego.jsx.
+ * Monta Phaser.Game en el div 160×144.
  *
- * onCambioPantalla(pantalla) → notifica a PaginaJuego para cambiar de escena React.
+ * @param {{ current: { onCambioPantalla?: (p: string) => void, onTextoEstatico?: (p: { lineas: string[], onCerrar: () => void }) => void } }} callbacksRef
+ *        Ref actualizada por el padre en cada render para que los callbacks no queden obsoletos.
  */
-const CanvasPhaser = ({ onCambioPantalla }) => {
+const CanvasPhaser = ({ callbacksRef }) => {
   const contenedorRef = useRef(null);
   const juegoRef = useRef(null);
 
   useEffect(() => {
-    // Evitar crear múltiples instancias de Phaser
     if (!contenedorRef.current || juegoRef.current) return;
 
-    juegoRef.current = crearJuegoPhaser(contenedorRef.current, { onCambioPantalla });
+    const ref = callbacksRef ?? { current: {} };
+    juegoRef.current = crearJuegoPhaser(contenedorRef.current, {
+      onCambioPantalla: (pantalla) => ref.current.onCambioPantalla?.(pantalla),
+      onTextoEstatico: (payload) => ref.current.onTextoEstatico?.(payload),
+    });
 
     return () => {
       juegoRef.current?.destroy(true);
       juegoRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Solo al montar/desmontar — Phaser gestiona su propio ciclo de vida
+  }, []);
 
   return (
     <div

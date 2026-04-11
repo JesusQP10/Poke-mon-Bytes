@@ -5,6 +5,8 @@ import menuFrameImg from "../../assets/game/title/menu/title_menu_frame_01.png";
 import menuCursorImg from "../../assets/game/title/menu/title_menu_cursor_01.png";
 import menuHighlightImg from "../../assets/game/title/menu/title_menu_highlight_01.png";
 import menuTexts from "../../assets/game/title/texts/menu_texts.es.json";
+import { existePartidaGuardadaLocal } from "../../store/usarJuegoStore";
+import { usarAutenticacionStore } from "../../store/usarAutenticacionStore";
 import {
   esTeclaAceptar,
   esTeclaAtras,
@@ -20,7 +22,7 @@ const LOGO_URL =
   "https://upload.wikimedia.org/wikipedia/commons/9/98/International_Pok%C3%A9mon_logo.svg";
 
 // Manejar PantallaJuego.
-const PantallaJuego = ({ onStart }) => {
+const PantallaJuego = ({ onStart, onContinue }) => {
   // Referencias para controlar la música del título.
   const audioRef = useRef(null);
   const startedRef = useRef(false);
@@ -29,23 +31,14 @@ const PantallaJuego = ({ onStart }) => {
   const [audioStarted, setAudioStarted] = useState(false);
   const [phase, setPhase] = useState("title");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [panelOpcionesTitulo, setPanelOpcionesTitulo] = useState(false);
 
-  // Detectar si hay partida guardada para mostrar CONTINUE .
-  const hasSave = useMemo(() => {
-    if (typeof window === "undefined") return false;
-
-    const saveKeys = [
-      "pokemon_bytes_save",
-      "pokemon-bytes-save",
-      "pokemon_bytes_game_state",
-      "pokemon-game-save",
-    ];
-
-    return saveKeys.some((key) => {
-      const value = window.localStorage.getItem(key);
-      return value && value.trim().length > 0;
-    });
-  }, []);
+  const token = usarAutenticacionStore((s) => s.token);
+  // Partida local o sesión iniciada (el servidor puede tener progreso aunque no haya caché).
+  const hasSave = useMemo(
+    () => existePartidaGuardadaLocal() || Boolean(token),
+    [token],
+  );
 
   const menuOptions = hasSave ? menuTexts.with_save : menuTexts.no_save;
 
@@ -158,8 +151,17 @@ const PantallaJuego = ({ onStart }) => {
       if (esTeclaAceptar(event.code)) {
         event.preventDefault();
         const currentOption = menuOptions[selectedIndex];
+        if (currentOption === "CONTINUAR") {
+          onContinue?.();
+          return;
+        }
         if (currentOption === "NUEVA PARTIDA") {
           onStart?.();
+          return;
+        }
+        if (currentOption === "OPCIONES") {
+          setPanelOpcionesTitulo(true);
+          return;
         }
         return;
       }
@@ -173,7 +175,23 @@ const PantallaJuego = ({ onStart }) => {
 
     document.addEventListener("keydown", manejarTecla);
     return () => document.removeEventListener("keydown", manejarTecla);
-  }, [menuOptions, onStart, phase, selectedIndex]);
+  }, [menuOptions, onContinue, onStart, phase, selectedIndex]);
+
+  useEffect(() => {
+    if (!panelOpcionesTitulo) return;
+    const cerrar = (e) => {
+      if (
+        esTeclaAceptar(e.code) ||
+        esTeclaAtras(e.code) ||
+        e.code === "Escape"
+      ) {
+        e.preventDefault();
+        setPanelOpcionesTitulo(false);
+      }
+    };
+    document.addEventListener("keydown", cerrar);
+    return () => document.removeEventListener("keydown", cerrar);
+  }, [panelOpcionesTitulo]);
 
   return (
     // Render del título + Ho-Oh + menú.
@@ -239,6 +257,44 @@ const PantallaJuego = ({ onStart }) => {
                 <span className="gs-menu-label">{option}</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {panelOpcionesTitulo && (
+        <div
+          className="gs-title-opciones-overlay"
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 30,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.65)",
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: 9,
+            lineHeight: 1.7,
+            color: "#f4f4f4",
+            textAlign: "center",
+            padding: "16px 20px",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 280,
+              border: "2px solid #bcd",
+              background: "rgba(12,18,28,0.92)",
+              padding: "14px 16px 18px",
+            }}
+          >
+            <div style={{ marginBottom: 10, color: "#dfe8f5" }}>OPCIONES</div>
+            <div style={{ fontSize: 7, color: "#a8b4c4", marginBottom: 12 }}>
+              Aún no hay ajustes (volumen, idioma, etc.). Se irán añadiendo aquí.
+            </div>
+            <div style={{ fontSize: 6, color: "#7a8a9e" }}>Z / Enter / X · cerrar</div>
           </div>
         </div>
       )}
