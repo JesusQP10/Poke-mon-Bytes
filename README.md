@@ -17,6 +17,50 @@
 
 ---
 
+## ⚠️ Estado Actual del Proyecto
+
+### Frontend (En Desarrollo Activo)
+
+#### ✅ Funcionalidades Completadas
+- Pantalla de título con animación
+- Cinemática de introducción (Profesor Oak)
+- Sistema de entrada de nombre del jugador
+- Animación de transición (sprite encogimiento)
+
+#### 🚧 En Desarrollo
+- **Sistema de mapas:** Los mapas tras la introducción están en fase de implementación
+- **Renderizado de tilesets:** Actualmente usando mapas json, en caso de no renderizar se usan placeholders visuales
+- **Sistema de colisiones:** En proceso de refinamiento (bugs)
+
+#### ⚠️ Problemas Conocidos
+
+> **Nota de Desarrollo:** El frontend está en fase de aprendizaje e implementación. Actualmente estoy estudiando y dominando la integración de **React con Phaser 3** y el uso de **Tiled Map Editor**, lo cual está llevando tiempo de investigación y experimentación.
+
+**Bugs visuales actuales:**
+- **Después de introducir el nombre:** La transición al overworld puede mostrar gráficos placeholder o bugs visuales debido a la configuración de tilesets
+- **Colisiones:** Sistema en proceso de refinamiento mientras aprendo las mejores prácticas de Phaser
+- **Elección starter:** Actualmente al seleccionar un starter, no hay opción de cancelar 
+- **Evento de Elm:** Según el movimiento del personaje, la activación del evento provoca cambios de posición dentro del mismo laboratorio
+
+**Tecnologías en aprendizaje:**
+- 🎮 **Phaser 3:** Motor de juego 2D (sistema de escenas, sprites, física)
+- 🗺️ **Tiled Map Editor:** Creación y exportación de mapas
+- ⚛️ **React + Phaser:** Integración de ambos frameworks sin conflictos
+- 🎨 **Pixel Art Pipeline:** Workflow desde diseño hasta implementación
+
+> El proyecto mejorará conforme domine estas herramientas. Los bugs actuales son parte del proceso de aprendizaje.
+
+### Backend (Funcional)
+
+#### ✅ Completado
+- Sistema de autenticación JWT
+- Motor de batalla con fórmulas Gen II
+- Sistema de economía (tienda + inventario)
+- Mecánica de captura
+- Data seeding automático desde PokéAPI
+
+---
+
 ## 🚀 Arquitectura del Proyecto
 
 El sistema se divide en dos grandes bloques desacoplados: una **API REST (Backend)** robusta que gestiona la lógica de negocio y una **SPA (Frontend)** moderna que recrea la experiencia visual de la Game Boy Color.
@@ -106,3 +150,59 @@ root/
     │   └── store/           # Estado Global (Zustand)
     ├── package.json
     └── vite.config.js
+
+
+---
+
+## 🎓 Desafíos Técnicos y Aprendizaje
+
+Este proyecto esta representando un desafío técnico al combinar tecnologías que no suelen trabajar juntas:
+
+### Integración React + Phaser
+- **Desafío:** React y Phaser manejan el DOM de formas diferentes
+- **Aprendizaje:** Gestión del ciclo de vida de Phaser dentro de componentes React
+- **Estado:** En proceso de dominio
+
+### Tiled Map Editor
+- **Desafío:** Exportar mapas JSON compatibles con Phaser
+- **Aprendizaje:** Configuración de tilesets, capas, propiedades de objetos
+- **Estado:** Curva de aprendizaje en progreso
+
+### Phaser 3 Game Engine
+- **Desafío:** Sistema de escenas, física, sprites, animaciones
+- **Aprendizaje:** Arquitectura de juegos 2D, optimización de rendimiento
+- **Estado:** Implementación iterativa
+
+### Pixel Art Pipeline
+- **Desafío:** Mantener fidelidad visual de Game Boy Color
+- **Aprendizaje:** Escalado pixel-perfect, paletas de colores, tilesets
+- **Estado:** Refinamiento continuo
+
+> **Transparencia:** Los bugs visuales actuales son resultado directo de este proceso de aprendizaje. Cada error es una me permite entender mejor cómo funcionan estas herramientas juntas.
+
+
+### ¿Por qué no cambiar a herramientas más simples?
+
+A pesar de los desafíos, he decidido mantener este stack tecnológico por :
+
+#### 1. **Fidelidad a la Visión Original**
+- Phaser 3 es el motor más adecuado para recrear la experiencia de Game Boy Color en navegador
+- Tiled es el estándar de la industria para diseño de mapas 2D
+- React permite una arquitectura moderna y escalable
+
+#### 2. **Aprendizaje**
+- Estas herramientas son **ampliamente usadas en la industria** del desarrollo de juegos web
+- Dominar la integración React + Phaser es una habilidad diferenciadora
+- El conocimiento adquirido es transferible a otros proyectos
+
+#### 3. **Escalabilidad del Proyecto**
+- Phaser permite añadir fácilmente: animaciones complejas, partículas, efectos visuales
+- Tiled facilita la creación de nuevos mapas sin tocar código
+- React + Zustand permiten gestionar estados complejos de forma predecible
+
+#### 4. **Desafío Técnico Real**
+- Resolver estos problemas me permite crecer en capacidad de **investigación y resolución de problemas**
+- Trabajar con documentación oficial y comunidades
+- Aprender a debuggear sistemas con múltiples capas
+
+> **Prefiero enfrentar desafíos técnicos reales y aprender herramientas profesionales, aunque tome más tiempo, que optar por soluciones simples que limiten el potencial del proyecto.**
