@@ -1,4 +1,6 @@
 import { usarJuegoStore } from '../../store/usarJuegoStore';
+import { usarAutenticacionStore } from '../../store/usarAutenticacionStore';
+import PuenteApi from '../puentes/PuenteApi';
 import { dibujarInteriorGenerico } from './placeholders';
 import { TAM_TILE } from './constantes';
 
@@ -50,10 +52,25 @@ export function ejecutarSecuenciaAyudante(scene, onFin) {
   scene._secuencias.ejecutar(
     [
       scene._secuencias.pasoDialogo(scene._dialogo, lineas, { hablante: 'AYUDANTE' }),
-      scene._secuencias.pasoStore(() => {
+      scene._secuencias.pasoAsync(async () => {
         const st = usarJuegoStore.getState();
         st.setPocionEntregada();
-        st.addInventario({ id: 'pocion', nombre: 'Poción', cantidad: 1 });
+        const token = usarAutenticacionStore.getState().token;
+        if (token) {
+          try {
+            await PuenteApi.anadirInventarioServidor({ nombreItem: 'Potion', cantidad: 1 });
+            try {
+              await PuenteApi.guardarJuegoEnServidor(st.construirPayloadGuardado());
+            } catch (e) {
+              console.warn('[ayudante] guardar flags tras poción', e);
+            }
+          } catch (e) {
+            usarJuegoStore.setState({ pocionEntregada: false });
+            console.error('[ayudante] inventario servidor', e);
+          }
+        } else {
+          st.addInventario({ id: 'pocion', nombre: 'Poción', cantidad: 1 });
+        }
       }),
     ],
     onFin

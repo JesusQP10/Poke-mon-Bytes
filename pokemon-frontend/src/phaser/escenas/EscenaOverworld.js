@@ -774,11 +774,43 @@ export default class EscenaOverworld extends Phaser.Scene {
         if (!this._uiSiNo) this._uiSiNo = new UIOpcionSiNo(this);
         this._uiSiNo.mostrar('¿Retirar la POCION?', (si) => {
           if (si) {
-            store.addInventario({ id: 'pocion', nombre: 'Poción', cantidad: 1 });
-            store.setPcPocionRetirada();
-            this._dialogo.mostrar(['Has retirado la POCION.'], () => this._mostrarMenuPcPrincipal(), {
-              hablante: 'PC',
-            });
+            void (async () => {
+              const token = usarAutenticacionStore.getState().token;
+              try {
+                if (token) {
+                  store.setPcPocionRetirada();
+                  try {
+                    await PuenteApi.anadirInventarioServidor({ nombreItem: 'Potion', cantidad: 1 });
+                  } catch (e) {
+                    usarJuegoStore.setState({ pcPocionRetirada: false });
+                    throw e;
+                  }
+                  try {
+                    await PuenteApi.guardarJuegoEnServidor(
+                      usarJuegoStore.getState().construirPayloadGuardado(),
+                    );
+                  } catch (e) {
+                    console.warn('[PC] guardar flags tras retirar poción', e);
+                  }
+                } else {
+                  store.setPcPocionRetirada();
+                  store.addInventario({ id: 'pocion', nombre: 'Poción', cantidad: 1 });
+                  try {
+                    usarJuegoStore.getState().guardarPartidaLocal();
+                  } catch {
+                    /* opcional */
+                  }
+                }
+                this._dialogo.mostrar(['Has retirado la POCION.'], () => this._mostrarMenuPcPrincipal(), {
+                  hablante: 'PC',
+                });
+              } catch (e) {
+                console.error('[PC] inventario servidor', e);
+                this._dialogo.mostrar(['No se pudo retirar', 'el objeto.'], () => this._mostrarMenuPcPrincipal(), {
+                  hablante: 'PC',
+                });
+              }
+            })();
           } else {
             this._mostrarMenuPcPrincipal();
           }

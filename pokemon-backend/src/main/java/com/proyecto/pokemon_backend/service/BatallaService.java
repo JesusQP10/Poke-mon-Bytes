@@ -40,13 +40,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * Motor de combate por turnos (Gen II - Pokémon Oro/Plata).
- *
- * Responsabilidades:
- *   - Ejecutar un turno de combate aplicando la fórmula de daño Gen II.
- *   - Gestionar estados alterados (pre-turno y post-turno).
- *   - Gestionar el moveset activo con PP persistidos en BD.
- *   - Resolver la mecánica de captura con Poké Balls.
+ * Motor de combate Gen II: daño y efectividad vía {@link CalculoService}, estados alterados, PP por movimiento
+ * en tabla auxiliar, y captura reutilizando inventario de Balls. Los salvajes viven bajo un usuario técnico
+ * hasta captura o {@link #liberarInstanciaSalvaje}.
  */
 @Service
 public class BatallaService {
@@ -95,6 +91,7 @@ public class BatallaService {
         this.moveStateRepo = moveStateRepo;
     }
 
+    /** Resuelve una vez el {@code id_usuario} de la fila técnica {@link CuentaSalvajes#USERNAME}. */
     private Long idUsuarioCuentaSalvajes() {
         Long cached = cachedSalvajesUserId;
         if (cached != null) {
@@ -114,8 +111,8 @@ public class BatallaService {
     // =========================================================================
 
     /**
-     * Crea un Pokémon salvaje en BD para combate/captura.
-     * El cliente debe llamar a {@link #liberarInstanciaSalvaje} al terminar el combate si no hubo captura.
+     * Inserta un salvaje con stats base escaladas al nivel; {@code posicionEquipo = 100} lo marca fuera del
+     * orden 0–5 del jugador. El moveset se materializa al listar/ejecutar turno (learnset + PokeAPI, con caché).
      */
     @Transactional
     public Map<String, Object> prepararInstanciaSalvaje(Integer pokedexId, Integer nivel) {
@@ -132,7 +129,7 @@ public class BatallaService {
         p.setPokedexId(pokedexId);
         p.setNivel(niv);
         p.setExperiencia(0);
-        p.setPosicionEquipo(100);
+        p.setPosicionEquipo(100); // no compite con huecos 0–5 del equipo del jugador
         p.setEstado(Estado.SALUDABLE);
         p.setTurnosConfusion(0);
         p.setContadorToxico(0);
@@ -162,6 +159,7 @@ public class BatallaService {
         return dto;
     }
 
+    /** Borra fila de Pokémon y PP solo si sigue perteneciendo al pool de salvajes. */
     @Transactional
     public void liberarInstanciaSalvaje(Long pokemonUsuarioId) {
         if (pokemonUsuarioId == null) {
@@ -175,6 +173,10 @@ public class BatallaService {
         pokemonRepo.delete(p);
     }
 
+    /**
+     * Expone los 4 huecos (o menos) con PP persistido. Permite consultar al rival salvaje recién creado
+     * aunque no sea del {@code username}, siempre que el Pokémon sea del pool técnico.
+     */
     public List<Map<String, Object>> listarMovimientos(String username, Long pokemonId) {
         Usuario usuario = cargarUsuario(username);
         PokemonUsuario pokemon = cargarPokemon(pokemonId);
@@ -201,6 +203,11 @@ public class BatallaService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Camino feliz: validar dueños → resolver movimiento (id, legacy o primer slot con PP) → bloqueos de estado
+     * → precisión → rama daño o estado → persistir HP/PP y textos. Los efectos residuales de fin de turno
+     * se aplican a ambos bandos según el caso.
+     */
     @Transactional
     public RespuestaTurno ejecutarTurno(String username, SolicitudTurno request) {
         Usuario usuario = cargarUsuario(username);
@@ -303,6 +310,11 @@ public class BatallaService {
             .build();
     }
 
+    /**
+     * Comprueba que el defensor no sea ya del usuario, descuenta la Ball del inventario y tira el RNG de captura.
+     * Si sale bien, mueve el {@link PokemonUsuario} al usuario y le asigna la siguiente posición de equipo libre.
+     * Falla lógica -> Resolver -> Puede tener 2 pokemon iguales
+     */
     @Transactional
     public String intentarCaptura(String username, SolicitudCaptura request) {
         Usuario usuario = cargarUsuario(username);

@@ -8,15 +8,13 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 
 /**
- * Servicio Cliente HTTP para la comunicación con la PokéAPI externa.
- * Este servicio utiliza WebClient, que es parte de Spring WebFlux, para realizar peticiones HTTP de manera reactiva.
+ * WebClient contra {@code https://pokeapi.co/api/v2/}: sprites u otros recursos sin acoplar
+ * el dominio al JSON de la API. El buffer grande evita cortes en respuestas pesadas.
  */
-
 @Service
 public class ServicioPokeApi {
     private final WebClient webClient;
 
-    // ServicioPokeApi.
     public ServicioPokeApi(WebClient.Builder webClientBuilder) {
         // 1. Configuración para aumentar el límite del buffer (Solución al DataBufferLimitException)
         final int maxBufferSize = 16 * 1024 * 1024; // 16 MB (más que suficiente)

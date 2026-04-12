@@ -5,6 +5,9 @@ import com.proyecto.pokemon_backend.exception.RecursoNoEncontrado;
 import com.proyecto.pokemon_backend.model.PokedexMaestra;
 import com.proyecto.pokemon_backend.model.PokemonUsuario;
 import com.proyecto.pokemon_backend.model.Usuario;
+import com.proyecto.pokemon_backend.repository.RepositorioEstadoMovimientoPokemon;
+import com.proyecto.pokemon_backend.repository.RepositorioInventarioUsuario;
+import com.proyecto.pokemon_backend.repository.RepositorioObjeto;
 import com.proyecto.pokemon_backend.repository.RepositorioPokedexMaestra;
 import com.proyecto.pokemon_backend.repository.RepositorioPokemonUsuario;
 import com.proyecto.pokemon_backend.repository.RepositorioUsuario;
@@ -36,12 +39,18 @@ class JuegoServiceTest {
     private RepositorioPokemonUsuario pokemonRepo;
     @Mock
     private RepositorioPokedexMaestra pokedexRepo;
+    @Mock
+    private RepositorioInventarioUsuario inventarioRepo;
+    @Mock
+    private RepositorioObjeto itemRepo;
+    @Mock
+    private RepositorioEstadoMovimientoPokemon estadoMovimientoRepo;
 
     private JuegoService juegoService;
 
     @BeforeEach
     void setUp() {
-        juegoService = new JuegoService(userRepo, pokemonRepo, pokedexRepo);
+        juegoService = new JuegoService(userRepo, pokemonRepo, pokedexRepo, inventarioRepo, itemRepo, estadoMovimientoRepo);
     }
 
     @Test

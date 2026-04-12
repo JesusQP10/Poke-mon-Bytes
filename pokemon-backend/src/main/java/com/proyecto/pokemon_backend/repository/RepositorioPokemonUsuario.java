@@ -17,5 +17,7 @@ import java.util.List;
 @Repository
 public interface RepositorioPokemonUsuario extends JpaRepository<PokemonUsuario, Long> {
     List<PokemonUsuario> findByUsuarioId(Long usuarioId);
+
+    void deleteByUsuarioId(Long usuarioId);
 }
 

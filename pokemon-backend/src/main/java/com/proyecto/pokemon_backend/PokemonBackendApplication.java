@@ -8,6 +8,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * Arranque de Spring Boot. Registra {@link PropiedadesJwt} y el bean de
+ * {@link com.proyecto.pokemon_backend.component.InicializadorTipos} 
+ */
 @SpringBootApplication
 @EnableConfigurationProperties(PropiedadesJwt.class)
 public class PokemonBackendApplication {
@@ -18,7 +22,7 @@ public class PokemonBackendApplication {
 
     /**
      * InicializadorTipos se registra aquí como @Bean (sin @Component en la clase)
-     * para evitar el doble registro que causaría tener ambas anotaciones.
+     * para evitar el doble registro por tener ambas anotaciones.
      */
     @Bean
     public InicializadorTipos inicializadorTipos(RepositorioTipo tipoRepository) {

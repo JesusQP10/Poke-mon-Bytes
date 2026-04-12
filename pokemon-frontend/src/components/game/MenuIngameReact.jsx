@@ -51,9 +51,8 @@ function agregarInventarioAgrupado(inventario) {
 function esItemPocion(linea) {
   const c = String(linea.clave || "").toLowerCase();
   if (c === "pocion" || c === "poción") return true;
-  return String(linea.nombre || "")
-    .toLowerCase()
-    .includes("poci");
+  const n = String(linea.nombre || "").toLowerCase();
+  return n.includes("poci") || n.includes("potion");
 }
 
 function colorHp(hpActual, hpMax) {

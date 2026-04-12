@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Prueba del cableado: registro, starter en BD, instancia salvaje,
- * turno jugador → rival, turno rival → jugador, liberar salvaje.
+ * turno jugador → rival, turno rival → jugador, liberar salvaje, reiniciar partida.
  * No usa PokéAPI ni MySQL (perfil {@code test}, H2).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -57,7 +57,8 @@ class FlujoCableadoBatallaIT {
     @Autowired
     private RepositorioPokemonUsuario pokemonRepo;
 
-    @BeforeEach
+    @SuppressWarnings("null")
+	@BeforeEach
     void sembrarCatalogoMinimo() {
         if (!pokedexRepo.existsById(155)) {
             pokedexRepo.save(especie(155, "Cyndaquil", "Fuego", null, 39, 52, 43, 60, 50, 65));
@@ -118,7 +119,8 @@ class FlujoCableadoBatallaIT {
         return a;
     }
 
-    @Test
+    @SuppressWarnings("null")
+	@Test
     void registro_starter_salvaje_dosTurnos_liberar() throws Exception {
         String user = "itest_" + UUID.randomUUID().toString().substring(0, 8);
         String pass = "pw123456";
@@ -152,6 +154,18 @@ class FlujoCableadoBatallaIT {
             String.class
         );
         assertThat(starterResp.getStatusCode().is2xxSuccessful()).isTrue();
+
+        ResponseEntity<String> estadoResp = rest.exchange(
+            "/api/v1/juego/estado",
+            HttpMethod.GET,
+            new HttpEntity<>(auth),
+            String.class
+        );
+        assertThat(estadoResp.getStatusCode().is2xxSuccessful()).isTrue();
+        JsonNode estado = objectMapper.readTree(estadoResp.getBody());
+        assertThat(estado.has("inventario")).isTrue();
+        assertThat(estado.get("inventario").isArray()).isTrue();
+        assertThat(estado.has("money")).isTrue();
 
         ResponseEntity<String> equipoResp = rest.exchange(
             "/api/v1/juego/equipo",
@@ -235,5 +249,20 @@ class FlujoCableadoBatallaIT {
         assertThat(libResp.getStatusCode().is2xxSuccessful()).isTrue();
 
         assertThat(pokemonRepo.findById(salvajeId)).isEmpty();
+
+        ResponseEntity<String> reinResp = rest.postForEntity(
+            "/api/v1/juego/reiniciar",
+            new HttpEntity<>(auth),
+            String.class
+        );
+        assertThat(reinResp.getStatusCode().is2xxSuccessful()).isTrue();
+        JsonNode rein = objectMapper.readTree(reinResp.getBody());
+        assertThat(rein.get("starter").isNull()).isTrue();
+        assertThat(rein.get("team").isArray()).isTrue();
+        assertThat(rein.get("team").size()).isEqualTo(0);
+        assertThat(rein.get("money").asInt()).isEqualTo(300);
+        assertThat(rein.get("inventario").isArray()).isTrue();
+        assertThat(rein.get("inventario").size()).isEqualTo(0);
+        assertThat(rein.get("mapaActual").asText()).isEqualTo("player-room");
     }
 }

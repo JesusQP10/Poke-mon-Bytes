@@ -1,5 +1,7 @@
 package com.proyecto.pokemon_backend.exception;
 
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -26,16 +29,19 @@ public class ManejadorGlobalExcepciones {
 
     private static final Logger log = LoggerFactory.getLogger(ManejadorGlobalExcepciones.class);
 
+    /** Reglas de negocio violadas (starter ilegal, sin Ball, movimiento ilegal…). */
     @ExceptionHandler(ErrorNegocio.class)
     public ResponseEntity<Map<String, Object>> manejarErrorNegocio(ErrorNegocio ex) {
         return respuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    /** {@code orElseThrow} de repositorios: usuario, ítem, Pokémon id… */
     @ExceptionHandler(RecursoNoEncontrado.class)
     public ResponseEntity<Map<String, Object>> manejarRecursoNoEncontrado(RecursoNoEncontrado ex) {
         return respuesta(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
+    /** Login con password incorrecto (antes de emitir JWT). */
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> manejarCredencialesInvalidas(BadCredentialsException ex) {
         return respuesta(HttpStatus.UNAUTHORIZED, "Credenciales inválidas.");
@@ -50,6 +56,29 @@ public class ManejadorGlobalExcepciones {
         return respuesta(HttpStatus.BAD_REQUEST, errores);
     }
 
+    /** Duplicados / NOT NULL / FK al persistir (p. ej. usuario ya existente a nivel SQL). */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> manejarIntegridad(DataIntegrityViolationException ex) {
+        log.error("Violación de integridad al persistir", ex);
+        String root = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : "";
+        String lower = root.toLowerCase(Locale.ROOT);
+        if (lower.contains("duplicate") || lower.contains("unique")) {
+            return respuesta(HttpStatus.CONFLICT, "Ese dato ya existe en la base de datos (p. ej. nombre de usuario).");
+        }
+        return respuesta(HttpStatus.BAD_REQUEST, "Restricción en base de datos: " + root);
+    }
+
+    /** Conexión rechazada, timeout, tabla inexistente con validate, etc. */
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<Map<String, Object>> manejarAccesoDatos(DataAccessException ex) {
+        log.error("Error de acceso a datos", ex);
+        return respuesta(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            "No se pudo usar la base de datos. Comprueba que MySQL está en marcha, la URL/usuario/clave en application.properties y que el esquema coincide con las entidades JPA."
+        );
+    }
+
+    /** Red 500 genérica: bug no previsto; el mensaje al cliente es fijo para no filtrar stack. */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> manejarGenerico(Exception ex) {
         log.error("Excepción no controlada en la API", ex);

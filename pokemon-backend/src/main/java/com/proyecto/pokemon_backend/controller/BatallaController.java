@@ -13,6 +13,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Combate: turnos con daño Gen II, PP persistidos, captura con consumo de Ball y ciclo de vida de salvajes
+ * (crear instancia bajo usuario técnico → liberar o capturar).
+ */
 @RestController
 @RequestMapping("/api/v1/batalla")
 public class BatallaController {
@@ -23,6 +27,12 @@ public class BatallaController {
         this.batallaService = batallaService;
     }
 
+    // --- Moveset ---
+
+    /**
+     * Cuatro huecos con PP actual/máximo; el {@code pokemonUsuarioId} debe ser del usuario autenticado
+     * o de la cuenta pool de salvajes tras {@code /salvaje/preparar}.
+     */
     @GetMapping("/movimientos/{pokemonUsuarioId}")
     public ResponseEntity<List<Map<String, Object>>> movimientos(
         @PathVariable Long pokemonUsuarioId,
@@ -31,6 +41,10 @@ public class BatallaController {
         return ResponseEntity.ok(batallaService.listarMovimientos(auth.getName(), pokemonUsuarioId));
     }
 
+    /**
+     * Un ataque del atacante al defensor. Valida propiedad/participación, baja PP, aplica daño o ramas de
+     * estado y devuelve HP restantes + texto para la UI.
+     */
     @PostMapping("/turno")
     public ResponseEntity<RespuestaTurno> turno(
         @Valid @RequestBody SolicitudTurno request,
@@ -39,6 +53,10 @@ public class BatallaController {
         return ResponseEntity.ok(batallaService.ejecutarTurno(auth.getName(), request));
     }
 
+    /**
+     * Gasta 1 Ball del inventario, tira la probabilidad Gen II y, si toca, reasigna el salvaje al jugador
+     * con hueco en el equipo.
+     */
     @PostMapping("/captura")
     public ResponseEntity<Map<String, String>> captura(
         @Valid @RequestBody SolicitudCaptura request,
@@ -48,9 +66,11 @@ public class BatallaController {
         return ResponseEntity.ok(Map.of("mensaje", resultado));
     }
 
+    // --- Salvajes ---
+
     /**
-     * Crea una instancia de Pokémon salvaje en BD para combate.
-     * El cliente debe liberarla con {@code /salvaje/liberar} al terminar si no hubo captura.
+     * Crea una fila en {@code POKEMON_USUARIO} propiedad del usuario {@link com.proyecto.pokemon_backend.support.CuentaSalvajes}.
+     * El cliente debe llamar a {@code /salvaje/liberar} al salir del combate si no hubo captura.
      */
     @PostMapping("/salvaje/preparar")
     public ResponseEntity<Map<String, Object>> prepararSalvaje(
@@ -65,6 +85,7 @@ public class BatallaController {
         return ResponseEntity.ok(batallaService.prepararInstanciaSalvaje(pokedexId, nivel));
     }
 
+    /** Elimina la instancia salvaje y sus PP persistidos; no acepta Pokémon del jugador real. */
     @PostMapping("/salvaje/liberar")
     public ResponseEntity<Map<String, String>> liberarSalvaje(
         @RequestBody(required = false) Map<String, Object> body,
@@ -78,6 +99,7 @@ public class BatallaController {
         return ResponseEntity.ok(Map.of("mensaje", "Instancia salvaje eliminada."));
     }
 
+    /** Acepta número o string desde JSON laxo del cliente. */
     private static Integer enteroOpcional(Object raw) {
         if (raw == null) {
             return null;
@@ -92,6 +114,7 @@ public class BatallaController {
         }
     }
 
+    /** Igual que {@link #enteroOpcional} pero para {@code pokemonUsuarioId}. */
     private static Long idLargoOpcional(Object raw) {
         if (raw == null) {
             return null;

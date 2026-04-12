@@ -13,6 +13,8 @@ import com.proyecto.pokemon_backend.repository.RepositorioUsuario;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+
 /**
  * Lógica de negocio de la tienda Pokémon.
  *
@@ -25,20 +27,27 @@ public class TiendaService {
     private final RepositorioUsuario userRepository;
     private final RepositorioObjeto itemRepository;
     private final RepositorioInventarioUsuario inventarioRepository;
+    private final JuegoService juegoService;
 
     public TiendaService(
         RepositorioUsuario userRepository,
         RepositorioObjeto itemRepository,
-        RepositorioInventarioUsuario inventarioRepository
+        RepositorioInventarioUsuario inventarioRepository,
+        JuegoService juegoService
     ) {
         this.userRepository = userRepository;
         this.itemRepository = itemRepository;
         this.inventarioRepository = inventarioRepository;
+        this.juegoService = juegoService;
     }
 
+    /**
+     * Descuenta dinero y suma cantidad al par (usuario, ítem). Todo en una transacción: si el {@code save}
+     * del inventario fallara, el update de dinero hace rollback.
+     */
     @Transactional
     @SuppressWarnings("null")
-    public String comprarItem(String username, SolicitudCompra request) {
+    public Map<String, Object> comprarItem(String username, SolicitudCompra request) {
         Usuario usuario = userRepository.findByUsername(username)
             .orElseThrow(() -> new RecursoNoEncontrado("Usuario no encontrado."));
 
@@ -62,7 +71,12 @@ public class TiendaService {
         entrada.setCantidad(entrada.getCantidad() + request.getCantidad());
         inventarioRepository.save(entrada);
 
-        return String.format("Compraste %d x %s. Dinero restante: %d₽.",
+        String mensaje = String.format("Compraste %d x %s. Dinero restante: %d₽.",
             request.getCantidad(), item.getNombre(), usuario.getDinero());
+        return Map.of(
+            "mensaje", mensaje,
+            "money", usuario.getDinero(),
+            "inventario", juegoService.listarInventarioDtos(username)
+        );
     }
 }

@@ -3,7 +3,7 @@ import PantallaJuego from "../components/game/PantallaJuego";
 import EscenaApertura from "../components/game/EscenaApertura";
 import CanvasPhaser from "../components/game/CanvasPhaser";
 import MenuIngameReact from "../components/game/MenuIngameReact";
-import { usarJuegoStore } from "../store/usarJuegoStore";
+import { SAVE_STORAGE_KEY, usarJuegoStore } from "../store/usarJuegoStore";
 import { usarAutenticacionStore } from "../store/usarAutenticacionStore";
 import PuenteApi from "../phaser/puentes/PuenteApi";
 import "../components/game/DialogoRetro.css";
@@ -123,7 +123,30 @@ const PaginaJuego = () => {
           />
         )}
         {scene === "opening" && (
-          <EscenaApertura onContinue={() => setScene("overworld")} />
+          <EscenaApertura
+            onContinue={async (nombreJugador) => {
+              const nombre = typeof nombreJugador === "string" ? nombreJugador : "";
+              if (usarAutenticacionStore.getState().token) {
+                try {
+                  await PuenteApi.reiniciarPartidaEnServidor();
+                } catch (e) {
+                  console.error("[nueva partida] reiniciar servidor", e);
+                  window.alert(
+                    "No se pudo reiniciar la partida en el servidor (inventario, equipo, etc.). " +
+                      "Revisa la conexión o vuelve a iniciar sesión. No se ha iniciado la nueva partida.",
+                  );
+                  return;
+                }
+              }
+              usarJuegoStore.getState().setNuevaPartida(nombre);
+              try {
+                window.localStorage?.removeItem(SAVE_STORAGE_KEY);
+              } catch {
+                /* no-op */
+              }
+              setScene("overworld");
+            }}
+          />
         )}
         {scene === "overworld" && (
           <div

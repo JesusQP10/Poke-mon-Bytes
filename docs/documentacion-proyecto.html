@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Documentación – Pokémon Bytes</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 11pt;
+      color: #000;
+      background: #ccc;
+    }
+
+    /* ── Página A4 ── */
+    .pagina {
+      width: 21cm;
+      min-height: 29.7cm;
+      margin: 1cm auto;
+      background: #fff;
+      padding-top: 3cm;
+      padding-bottom: 2.2cm;
+      padding-left: 2.5cm;
+      padding-right: 1.5cm;
+      position: relative;
+      box-shadow: 0 0 8px rgba(0,0,0,.25);
+      page-break-after: always;
+    }
+
+    /* ── Encabezado y pie ── */
+    .encabezado {
+      position: absolute;
+      top: 0.9cm; left: 2.5cm; right: 1.5cm;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9pt;
+      border-bottom: 1px solid #000;
+      padding-bottom: 3px;
+    }
+    .pie {
+      position: absolute;
+      bottom: 0.7cm; left: 2.5cm; right: 1.5cm;
+      text-align: center;
+      font-size: 9pt;
+      border-top: 1px solid #000;
+      padding-top: 3px;
+    }
+
+    /* ── Portada ── */
+    .portada {
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      text-align:center; min-height:29.7cm;
+    }
+    .portada-icono   { font-size:56pt; margin-bottom:.6cm; }
+    .portada-titulo  { font-size:26pt; font-weight:bold; color:#cc0000; margin-bottom:.3cm; }
+    .portada-sub     { font-size:14pt; font-weight:bold; color:#333; margin-bottom:2.5cm; }
+    .portada-sep     { width:55%; border-top:2px solid #cc0000; margin-bottom:1cm; }
+    .portada-autor   { font-size:13pt; line-height:2; }
+    .portada-curso   { font-size:11pt; color:#555; margin-top:1.5cm; }
+
+    /* ── Tipografía ── */
+    h1 { font-size:12pt; font-weight:bold; margin:0.5cm 0 0.2cm; }
+    h2 { font-size:12pt; font-weight:bold; margin:0.4cm 0 0.15cm; }
+    h3 { font-size:11pt; font-weight:bold; margin:0.3cm 0 0.1cm; }
+
+    p {
+      text-indent: 1.25cm;
+      text-align: justify;
+      line-height: 1.5;
+      margin-bottom: 0.25cm;
+    }
+    p.sin { text-indent:0; }
+
+    ul, ol { margin-left:1.8cm; margin-bottom:.25cm; line-height:1.5; }
+    li { text-align:justify; margin-bottom:.05cm; }
+
+    hr { border:none; border-top:1px solid #bbb; margin:.3cm 0; }
+
+    /* ── Tablas ── */
+    table { width:100%; border-collapse:collapse; margin:.2cm 0; font-size:10pt; }
+    th { background:#cc0000; color:#fff; font-weight:bold; padding:4px 7px; border:1px solid #999; text-align:left; }
+    td { padding:3px 7px; border:1px solid #ccc; vertical-align:top; }
+    tr:nth-child(even) td { background:#f7f7f7; }
+
+    /* ── Código ── */
+    pre, code {
+      font-family: 'Courier New', monospace;
+      font-size: 8.5pt;
+      background: #f4f4f4;
+      border: 1px solid #ddd;
+    }
+    pre { padding:.25cm; margin:.15cm 0; white-space:pre-wrap; word-break:break-word; }
+    code { padding:1px 4px; }
+
+    /* ── Figura ── */
+    .figura { text-align:center; margin:.35cm 0; }
+    .figura-cap { font-size:9.5pt; font-style:italic; color:#555; margin-top:.1cm; }
+    .placeholder-fig {
+      background:#f4f4f4;
+      border:2px dashed #cc0000;
+      padding:.6cm .4cm;
+      font-size:9.5pt; color:#666;
+    }
+
+    /* ── Nota ── */
+    .nota {
+      background:#fffde7;
+      border-left:3px solid #cc0000;
+      padding:.15cm .3cm;
+      font-size:10pt;
+      margin:.2cm 0;
+    }
+
+    /* ── Índice ── */
+    .idx { display:flex; justify-content:space-between; margin-bottom:.13cm; line-height:1.4; }
+    .idx-h2 { padding-left:.9cm; }
+    .idx-h3 { padding-left:1.8cm; }
+    .idx-dots { flex:1; border-bottom:1px dotted #999; margin:0 .2cm; position:relative; top:-4px; }
+
+    @media print {
+      body { background:#fff; }
+      .pagina { margin:0; box-shadow:none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     PORTADA
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="portada">
+    <div class="portada-icono">&#x1F4BE;</div>
+    <div class="portada-titulo">POKÉMON BYTES</div>
+    <div class="portada-sub">Proyecto Fin de Grado</div>
+    <hr class="portada-sep"/>
+    <div class="portada-autor">
+      <strong>Jesús Quintero</strong><br/>
+      Desarrollo de Aplicaciones Web (DAW)
+    </div>
+    <div class="portada-curso">
+      Curso escolar 2025 – 2026<br/>
+      CESUR – Centro Oficial de FP
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     ÍNDICE
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>Índice de Contenidos</h1><hr/>
+
+  <div class="idx"><span>1. Introducción</span><span class="idx-dots"></span><span>3</span></div>
+  <div class="idx idx-h2"><span>1.1 Descripción y motivación</span><span class="idx-dots"></span><span>3</span></div>
+  <div class="idx idx-h2"><span>1.2 Problema que resuelve</span><span class="idx-dots"></span><span>3</span></div>
+
+  <div class="idx" style="margin-top:.2cm"><span>2. Actores y Roles</span><span class="idx-dots"></span><span>4</span></div>
+
+  <div class="idx" style="margin-top:.2cm"><span>3. Casos de Uso y Funcionalidades</span><span class="idx-dots"></span><span>4</span></div>
+
+  <div class="idx" style="margin-top:.2cm"><span>4. Requisitos del Sistema</span><span class="idx-dots"></span><span>5</span></div>
+  <div class="idx idx-h2"><span>4.1 Requisitos funcionales</span><span class="idx-dots"></span><span>5</span></div>
+  <div class="idx idx-h2"><span>4.2 Requisitos no funcionales</span><span class="idx-dots"></span><span>6</span></div>
+
+  <div class="idx" style="margin-top:.2cm"><span>5. Tecnologías Utilizadas</span><span class="idx-dots"></span><span>6</span></div>
+
+  <div class="idx" style="margin-top:.2cm"><span>6. Arquitectura del Sistema</span><span class="idx-dots"></span><span>7</span></div>
+  <div class="idx idx-h2"><span>6.1 Visión general</span><span class="idx-dots"></span><span>7</span></div>
+  <div class="idx idx-h2"><span>6.2 Capas del backend</span><span class="idx-dots"></span><span>8</span></div>
+  <div class="idx idx-h2"><span>6.3 Flujo de datos – turno de combate</span><span class="idx-dots"></span><span>8</span></div>
+
+  <div class="idx" style="margin-top:.2cm"><span>7. Diseño de la Base de Datos</span><span class="idx-dots"></span><span>9</span></div>
+  <div class="idx idx-h2"><span>7.1 Diagrama E-R</span><span class="idx-dots"></span><span>9</span></div>
+  <div class="idx idx-h2"><span>7.2 Descripción de entidades</span><span class="idx-dots"></span><span>9</span></div>
+
+  <div class="idx" style="margin-top:.2cm"><span>8. Backend – API REST</span><span class="idx-dots"></span><span>11</span></div>
+  <div class="idx idx-h2"><span>8.1 Controladores y endpoints</span><span class="idx-dots"></span><span>11</span></div>
+  <div class="idx idx-h2"><span>8.2 Seguridad JWT y CORS</span><span class="idx-dots"></span><span>12</span></div>
+  <div class="idx idx-h2"><span>8.3 Inicialización automática de datos</span><span class="idx-dots"></span><span>12</span></div>
+  <div class="idx idx-h2"><span>8.4 Manejo global de excepciones</span><span class="idx-dots"></span><span>13</span></div>
+
+  <div class="idx" style="margin-top:.2cm"><span>9. Frontend – React + Phaser 3</span><span class="idx-dots"></span><span>13</span></div>
+  <div class="idx idx-h2"><span>9.1 Mapa de navegación</span><span class="idx-dots"></span><span>13</span></div>
+  <div class="idx idx-h2"><span>9.2 Gestión de estado – Zustand</span><span class="idx-dots"></span><span>14</span></div>
+  <div class="idx idx-h2"><span>9.3 Motor Phaser 3 – escenas y sistemas</span><span class="idx-dots"></span><span>14</span></div>
+  <div class="idx idx-h2"><span>9.4 PuenteApi – comunicación Phaser ↔ Backend</span><span class="idx-dots"></span><span>15</span></div>
+
+  <div class="idx" style="margin-top:.2cm"><span>10. Identidad Visual</span><span class="idx-dots"></span><span>15</span></div>
+
+  <div class="idx" style="margin-top:.2cm"><span>11. Implementación – Mecánicas de Juego</span><span class="idx-dots"></span><span>16</span></div>
+  <div class="idx idx-h2"><span>11.1 Sistema de combate Gen II</span><span class="idx-dots"></span><span>16</span></div>
+  <div class="idx idx-h2"><span>11.2 Sistema de captura</span><span class="idx-dots"></span><span>17</span></div>
+  <div class="idx idx-h2"><span>11.3 Economía e ítems de tienda</span><span class="idx-dots"></span><span>17</span></div>
+  <div class="idx idx-h2"><span>11.4 Sistema de guardado híbrido</span><span class="idx-dots"></span><span>17</span></div>
+
+  <div class="idx" style="margin-top:.2cm"><span>12. Pruebas</span><span class="idx-dots"></span><span>18</span></div>
+
+  <div class="idx" style="margin-top:.2cm"><span>13. Diario de Desarrollo</span><span class="idx-dots"></span><span>19</span></div>
+
+  <div class="idx" style="margin-top:.2cm"><span>14. Conclusiones</span><span class="idx-dots"></span><span>21</span></div>
+
+  <div class="pie">2</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     1. INTRODUCCIÓN
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>1. Introducción</h1><hr/>
+
+  <h2>1.1 Descripción y Motivación</h2>
+  <p>
+    Pokémon Bytes es una aplicación web de rol y aventura por turnos inspirada en la segunda
+    generación de la franquicia Pokémon (Pokémon Oro y Plata, 1999). El proyecto recrea la
+    experiencia de explorar la región de Johto desde cualquier navegador web moderno, permitiendo
+    al jugador elegir un Pokémon inicial, explorar mapas en 2D con estilo Game Boy Color, encontrarse
+    con Pokémon salvajes, combatir por turnos y gestionar un equipo de hasta seis criaturas.
+  </p>
+  <p>
+    El nombre <em>Bytes</em> es un guiño consciente a la naturaleza digital del proyecto y a la
+    terminología informática, fusionando el universo Pokémon con el mundo del desarrollo de software.
+    El proyecto integra los conocimientos de todas las asignaturas del ciclo formativo DAW: diseño de
+    bases de datos relacionales, programación de APIs REST, seguridad mediante JWT, desarrollo de
+    interfaces reactivas con React y gestión de un motor de videojuegos en tiempo real con Phaser 3.
+  </p>
+
+  <h2>1.2 Problema que Resuelve</h2>
+  <p>
+    Los videojuegos de Pokémon originales funcionan exclusivamente en consolas portátiles Nintendo,
+    lo que limita su acceso a quienes disponen del hardware específico. Pokémon Bytes democratiza
+    esa experiencia: cualquier persona con un navegador moderno puede jugar sin instalar nada.
+  </p>
+  <p>
+    Técnicamente, el proyecto demuestra cómo integrar un motor de videojuegos en tiempo real
+    (Phaser 3) dentro de una SPA React, delegando toda la lógica crítica de juego (fórmulas de
+    daño, captura, economía) al servidor Spring Boot para garantizar integridad y prevenir trampas
+    desde el cliente.
+  </p>
+
+  <div class="pie">3</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     2. ACTORES  /  3. CASOS DE USO
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>2. Actores y Roles</h1><hr/>
+
+  <table>
+    <tr><th>Actor</th><th>Descripción</th><th>Privilegios</th></tr>
+    <tr>
+      <td><strong>Usuario no registrado</strong></td>
+      <td>Visitante que accede por primera vez.</td>
+      <td>Ver landing, registrarse e iniciar sesión (<code>/auth/**</code> público).</td>
+    </tr>
+    <tr>
+      <td><strong>Jugador autenticado</strong></td>
+      <td>Usuario con JWT válido (24 h).</td>
+      <td>Explorar el overworld, combatir, capturar Pokémon, gestionar equipo e inventario, comprar en tienda y guardar partida.</td>
+    </tr>
+    <tr>
+      <td><strong>Sistema (<em>cuenta salvajes</em>)</strong></td>
+      <td>Actor interno del servidor, no un usuario humano. Usuario técnico creado por <code>SembradorUsuarioSalvajes</code>.</td>
+      <td>Propietario temporal de los Pokémon salvajes en BD durante una batalla. Se gestiona vía <code>BatallaService</code>.</td>
+    </tr>
+  </table>
+
+  <br/>
+  <h1>3. Casos de Uso y Funcionalidades</h1><hr/>
+
+  <div class="figura">
+    <div class="placeholder-fig">[ Figura 1 – Diagrama de Casos de Uso UML ]<br/><em>Ver: docs/backend/fases/Diagramas/Diagrama Casos de Uso.png</em></div>
+    <div class="figura-cap">Figura 1. Diagrama de casos de uso del sistema Pokémon Bytes.</div>
+  </div>
+
+  <h3>Autenticación</h3>
+  <ul>
+    <li><strong>CU-01 Registrarse:</strong> usuario introduce nombre y contraseña; el sistema crea la cuenta con hash BCrypt y devuelve 201 Created.</li>
+    <li><strong>CU-02 Iniciar sesión:</strong> el sistema valida credenciales vía <code>AuthenticationManager</code> y devuelve un token JWT firmado HS256 válido 24 horas.</li>
+  </ul>
+
+  <h3>Gestión de Partida</h3>
+  <ul>
+    <li><strong>CU-03 Crear nueva partida:</strong> el jugador introduce su nombre (hasta 10 caracteres; opciones predefinidas: Jesús, Oro, Ethan) y elige uno de los tres iniciales de Johto (Chikorita 152, Cyndaquil 155, Totodile 158).</li>
+    <li><strong>CU-04 Continuar partida:</strong> el sistema carga el estado desde BD (<code>GET /api/v1/juego/estado</code>) y, si no hay red, desde localStorage (<code>pokemon_bytes_save_v1</code>).</li>
+    <li><strong>CU-05 Guardar partida:</strong> persiste posición, mapa y JSON de estado cliente en MySQL (<code>POST /api/v1/juego/guardar</code>), y también en localStorage como copia local.</li>
+    <li><strong>CU-06 Reiniciar partida:</strong> borra equipo, inventario y PP en BD; restablece dinero a 300 y posición a <em>player-room (5,7)</em> (<code>POST /api/v1/juego/reiniciar</code>).</li>
+  </ul>
+
+  <h3>Exploración</h3>
+  <ul>
+    <li><strong>CU-07 Moverse por el mapa:</strong> jugador se mueve tile a tile con WASD/Flechas; colisiones verificadas antes del movimiento.</li>
+    <li><strong>CU-08 Interactuar con NPCs:</strong> activa diálogos estilo GBC con nombre del hablante (Prof. Elm, Mamá, Ayudante, Rival, Aldeano).</li>
+    <li><strong>CU-09 Cambiar de mapa:</strong> los warps Tiled disparan <code>WarpSystem</code> con transición fade.</li>
+  </ul>
+
+  <h3>Combate y Captura</h3>
+  <ul>
+    <li><strong>CU-10 Encuentro salvaje:</strong> al caminar sobre hierba, <code>SistemaEncuentros</code> determina si hay encuentro según tabla de apariciones del mapa.</li>
+    <li><strong>CU-11 Ejecutar turno:</strong> el jugador selecciona un movimiento; el servidor calcula daño, estados y PP (<code>POST /api/v1/batalla/turno</code>).</li>
+    <li><strong>CU-12 Capturar Pokémon:</strong> el jugador lanza una Ball; el servidor ejecuta el algoritmo Gen II.</li>
+    <li><strong>CU-13 Ver equipo y mochila:</strong> menú in-game muestra stats de cada Pokémon y agrupación de ítems.</li>
+  </ul>
+
+  <h3>Economía</h3>
+  <ul>
+    <li><strong>CU-14 Comprar ítems:</strong> transacción ACID que descuenta dinero y añade ítem al inventario (<code>POST /api/v1/tienda/comprar</code>).</li>
+    <li><strong>CU-15 Añadir ítems por evento:</strong> recompensas del juego (p.ej. poción del PC) añadidas por el servidor (<code>POST /api/v1/juego/inventario/anadir</code>).</li>
+  </ul>
+
+  <div class="pie">4</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     4. REQUISITOS
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>4. Requisitos del Sistema</h1><hr/>
+
+  <h2>4.1 Requisitos Funcionales</h2>
+
+  <table>
+    <tr><th>ID</th><th>Requisito</th><th>Prioridad</th></tr>
+    <tr><td>RF-01</td><td>Registro de usuarios con nombre único y contraseña; hash BCrypt obligatorio.</td><td>Alta</td></tr>
+    <tr><td>RF-02</td><td>Autenticación mediante JWT; el token debe incluir el <em>username</em> como subject.</td><td>Alta</td></tr>
+    <tr><td>RF-03</td><td>Todos los endpoints bajo <code>/api/v1/**</code> deben requerir JWT válido.</td><td>Alta</td></tr>
+    <tr><td>RF-04</td><td>El jugador debe poder elegir uno de los tres Pokémon iniciales de Johto (152, 155, 158).</td><td>Alta</td></tr>
+    <tr><td>RF-05</td><td>El sistema debe persistir el estado completo de la partida en MySQL.</td><td>Alta</td></tr>
+    <tr><td>RF-06</td><td>El jugador debe moverse tile a tile con comprobación de colisiones previa.</td><td>Alta</td></tr>
+    <tr><td>RF-07</td><td>El sistema debe generar encuentros aleatorios con Pokémon salvajes en hierba.</td><td>Alta</td></tr>
+    <tr><td>RF-08</td><td>El servidor debe resolver turnos de combate con la fórmula de daño de Gen II.</td><td>Alta</td></tr>
+    <tr><td>RF-09</td><td>El motor debe gestionar los seis estados alterados persistentes (SALUDABLE, PARALIZADO, QUEMADO, DORMIDO, ENVENENADO, CONGELADO).</td><td>Media</td></tr>
+    <tr><td>RF-10</td><td>El sistema debe implementar el algoritmo de captura Gen II con bonus de estado.</td><td>Alta</td></tr>
+    <tr><td>RF-11</td><td>Inventario gestionado como relación M:N con cantidad; CRUD transaccional.</td><td>Alta</td></tr>
+    <tr><td>RF-12</td><td>Tienda con 17 ítems Gen II precargados desde PokéAPI con sus efectos codificados.</td><td>Media</td></tr>
+    <tr><td>RF-13</td><td>Diálogos in-game con nombre del hablante y avance por pulsación de tecla.</td><td>Media</td></tr>
+    <tr><td>RF-14</td><td>La cinemática de apertura debe mostrar al Prof. Oak y permitir elegir nombre de jugador.</td><td>Media</td></tr>
+    <tr><td>RF-15</td><td>La base de datos debe inicializarse automáticamente (251 Pokémon, movimientos, ítems) desde PokéAPI al arrancar el servidor por primera vez.</td><td>Alta</td></tr>
+    <tr><td>RF-16</td><td>El jugador debe poder reiniciar su partida borrando equipo, inventario y PP en BD.</td><td>Media</td></tr>
+  </table>
+
+  <h2>4.2 Requisitos No Funcionales</h2>
+
+  <table>
+    <tr><th>ID</th><th>Requisito</th><th>Categoría</th></tr>
+    <tr><td>RNF-01</td><td>Contraseñas almacenadas con BCryptPasswordEncoder (factor coste por defecto).</td><td>Seguridad</td></tr>
+    <tr><td>RNF-02</td><td>El servidor debe ser completamente stateless: sin sesiones HTTP.</td><td>Seguridad / Escalabilidad</td></tr>
+    <tr><td>RNF-03</td><td>CORS configurado para permitir solo orígenes locales (localhost:*, 192.168.*, 10.*, 172.*).</td><td>Seguridad</td></tr>
+    <tr><td>RNF-04</td><td>El servidor debe correr en el puerto 8081 (configurable por variable de entorno <code>SERVER_PORT</code>).</td><td>Configurabilidad</td></tr>
+    <tr><td>RNF-05</td><td>Las operaciones de inventario y compra deben ser transacciones ACID (<code>@Transactional</code>).</td><td>Integridad</td></tr>
+    <tr><td>RNF-06</td><td>El backend debe seguir el patrón Controller → Service → Repository.</td><td>Mantenibilidad</td></tr>
+    <tr><td>RNF-07</td><td>El perfil <code>test</code> debe usar H2 en memoria para no depender de MySQL en CI.</td><td>Testabilidad</td></tr>
+    <tr><td>RNF-08</td><td>La API debe documentarse con Swagger (habilitado solo con perfil <code>dev</code>).</td><td>Documentación</td></tr>
+    <tr><td>RNF-09</td><td>El juego debe mantener al menos 30 FPS en overworld y batalla.</td><td>Rendimiento</td></tr>
+    <tr><td>RNF-10</td><td>El sistema de guardado debe ser consistente: servidor es fuente de verdad; localStorage es caché de emergencia.</td><td>Consistencia</td></tr>
+  </table>
+
+  <div class="pie">5</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     5. TECNOLOGÍAS
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>5. Tecnologías Utilizadas</h1><hr/>
+
+  <h2>5.1 Backend (<code>pokemon-backend/pom.xml</code>)</h2>
+  <table>
+    <tr><th>Tecnología</th><th>Versión</th><th>Uso en el proyecto</th></tr>
+    <tr><td><strong>Java</strong></td><td>21 (LTS)</td><td>Lenguaje principal del backend.</td></tr>
+    <tr><td><strong>Spring Boot</strong></td><td>3.5.13</td><td>Framework base para el servidor REST.</td></tr>
+    <tr><td><strong>Spring Security 6.x</strong></td><td>Incluida</td><td>Autenticación, autorización y cadenas de filtros (<code>SecurityFilterChain</code>).</td></tr>
+    <tr><td><strong>Spring Data JPA / Hibernate</strong></td><td>Incluida</td><td>ORM para mapear entidades Java a tablas MySQL.</td></tr>
+    <tr><td><strong>Spring WebFlux</strong></td><td>Incluida</td><td>Cliente HTTP reactivo (<code>WebClient</code>) para consumir PokéAPI con concurrencia controlada.</td></tr>
+    <tr><td><strong>JJWT</strong></td><td>0.12.5</td><td>Generación y validación de tokens JWT firmados con HMAC-SHA256.</td></tr>
+    <tr><td><strong>Lombok</strong></td><td>Incluida</td><td>Reducción de boilerplate (<code>@Data</code>, <code>@NoArgsConstructor</code>).</td></tr>
+    <tr><td><strong>SpringDoc OpenAPI</strong></td><td>2.8.9</td><td>Swagger UI disponible en perfil <code>dev</code>.</td></tr>
+    <tr><td><strong>MySQL Connector/J</strong></td><td>8.0</td><td>Driver JDBC para MySQL.</td></tr>
+    <tr><td><strong>H2 Database</strong></td><td>Incluida</td><td>Base de datos en memoria para el perfil <code>test</code>.</td></tr>
+    <tr><td><strong>JUnit 5 + Mockito</strong></td><td>Incluida</td><td>Pruebas unitarias e integración.</td></tr>
+    <tr><td><strong>Maven</strong></td><td>3.x</td><td>Gestión de dependencias y build.</td></tr>
+  </table>
+
+  <h2>5.2 Frontend (<code>pokemon-frontend/package.json</code>)</h2>
+  <table>
+    <tr><th>Tecnología</th><th>Versión</th><th>Uso en el proyecto</th></tr>
+    <tr><td><strong>React</strong></td><td>19.2.0</td><td>UI: menús, formularios, overlay de juego.</td></tr>
+    <tr><td><strong>Vite</strong></td><td>7.3.1</td><td>Bundler y servidor de desarrollo.</td></tr>
+    <tr><td><strong>Phaser 3</strong></td><td>3.90.0</td><td>Motor de videojuegos: tilemap, sprites, colisiones, audio, bucle de juego.</td></tr>
+    <tr><td><strong>React Router</strong></td><td>7.13.0</td><td>Enrutado SPA (4 rutas: /, /iniciarSesion, /registrar, /game).</td></tr>
+    <tr><td><strong>Zustand</strong></td><td>5.0.11</td><td>Estado global (autenticación y estado del juego); persist a localStorage.</td></tr>
+    <tr><td><strong>Axios</strong></td><td>1.13.5</td><td>Cliente HTTP con interceptor JWT automático.</td></tr>
+    <tr><td><strong>Framer Motion</strong></td><td>12.34.0</td><td>Animaciones de la cinemática de apertura (Prof. Oak).</td></tr>
+    <tr><td><strong>Tailwind CSS</strong></td><td>3.4.17</td><td>Utilidades CSS para la capa React.</td></tr>
+  </table>
+
+  <h2>5.3 Infraestructura y Herramientas</h2>
+  <table>
+    <tr><th>Herramienta</th><th>Uso</th></tr>
+    <tr><td><strong>MySQL 8.0</strong></td><td>Base de datos relacional de producción (<code>pokemon_web_db</code>).</td></tr>
+    <tr><td><strong>PokéAPI v2</strong></td><td>Fuente de datos para Pokédex, movimientos e ítems (seeding inicial).</td></tr>
+    <tr><td><strong>Tiled Map Editor</strong></td><td>Diseño de mapas exportados en JSON para Phaser.</td></tr>
+    <tr><td><strong>Git / GitHub</strong></td><td>Control de versiones y repositorio remoto.</td></tr>
+    <tr><td><strong>IntelliJ IDEA / VS Code</strong></td><td>IDEs para backend y frontend respectivamente.</td></tr>
+  </table>
+
+  <div class="pie">6</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     6. ARQUITECTURA
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>6. Arquitectura del Sistema</h1><hr/>
+
+  <h2>6.1 Visión General</h2>
+  <p>
+    Pokémon Bytes sigue una arquitectura cliente-servidor con separación clara de responsabilidades.
+    El cliente es una SPA que corre en el navegador; el servidor expone una API REST stateless
+    en el <strong>puerto 8081</strong>. Ambos se comunican mediante JWT en el header
+    <code>Authorization: Bearer &lt;token&gt;</code>.
+  </p>
+
+  <div class="figura">
+<pre>
+┌─────────────────────────────────────────────────────────────┐
+│                    NAVEGADOR (Cliente)                       │
+│  ┌──────────────────┐      ┌─────────────────────────────┐  │
+│  │   React SPA      │◄────►│     Phaser 3 Engine         │  │
+│  │ (Menús, Formularios│    │  (Mapas Tiled, Batallas,    │  │
+│  │  Zustand, Axios) │      │   Sprites, Diálogos GBC)   │  │
+│  └────────┬─────────┘      └─────────────┬───────────────┘  │
+│           │     PuenteApi (Axios+JWT)     │                  │
+└───────────┼──────────────────────────────┼──────────────────┘
+            │                              │
+            ▼         :8081                ▼
+┌─────────────────────────────────────────────────────────────┐
+│                SPRING BOOT – API REST                        │
+│  ┌────────────┐  ┌─────────────┐  ┌────────────────────┐   │
+│  │/auth       │  │/api/v1/juego│  │/api/v1/batalla     │   │
+│  │Registro    │  │/api/v1/tienda│ │/api/v1/tienda      │   │
+│  │Login (JWT) │  └──────┬──────┘  └─────────┬──────────┘   │
+│  └────────────┘         │                   │               │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │  FiltroAutenticacionJwt → ServicioJwt (HMAC-SHA256)    │ │
+│  └───────────────────────────────┬────────────────────────┘ │
+│  ┌──────────────────┐  ┌─────────▼────────────────────────┐ │
+│  │  Services        │  │  Spring Data JPA (Repositories)  │ │
+│  │  (Lógica negocio)│  └─────────────────┬────────────────┘ │
+│  └──────────────────┘                    │                   │
+└─────────────────────────────────────────┼───────────────────┘
+                                          │
+                          ┌───────────────▼──────────┐
+                          │     MySQL 8.0             │
+                          │  (pokemon_web_db, :3306)  │
+                          └──────────────────────────┘
+</pre>
+    <div class="figura-cap">Figura 2. Arquitectura general del sistema Pokémon Bytes.</div>
+  </div>
+
+  <h2>6.2 Capas del Backend</h2>
+  <ul>
+    <li><strong>Controller:</strong> recibe peticiones HTTP, delega en servicios. Sin lógica de negocio.</li>
+    <li><strong>Service:</strong> lógica de negocio (combate, captura, economía). Usa <code>@Transactional</code>.</li>
+    <li><strong>Repository:</strong> interfaces JPA que abstraen el acceso a MySQL.</li>
+    <li><strong>Model/Entity:</strong> clases Java anotadas con JPA que mapean las tablas.</li>
+    <li><strong>Security:</strong> <code>FiltroAutenticacionJwt</code> valida el token en cada petición y establece el <code>SecurityContext</code>.</li>
+    <li><strong>Component:</strong> <code>CommandLineRunner</code> para seeding inicial (Pokédex, movimientos, ítems, usuario-salvajes).</li>
+  </ul>
+
+  <h2>6.3 Flujo de Datos – Turno de Combate</h2>
+  <div class="figura">
+<pre>
+[EscenaBatalla.js]  →  PuenteApi.ejecutarTurno({atacanteId, defensorId, movimientoId})
+                                │  POST /api/v1/batalla/turno  (Bearer JWT)
+                                ▼
+[FiltroAutenticacionJwt]  →  valida token HS256  →  extrae username
+                                │
+                                ▼
+[BatallaController.turno()]  →  BatallaService.ejecutarTurno(username, solicitud)
+  ├─ Recupera PokemonUsuario atacante y defensor (RepositorioPokemonUsuario)
+  ├─ Verifica PP del movimiento (RepositorioEstadoMovimientoPokemon)
+  ├─ Aplica efectos pre-turno (parálisis: 25% falla; sueño: espera turnos)
+  ├─ CalculoService.verificaImpacto(precision)
+  ├─ CalculoService.fueGolpeCritico()  →  x2.0 si sí
+  ├─ TipoService.calcularEfectividad(tipoMov, tipo1Def, tipo2Def)
+  ├─ CalculoService.calcularDanio(N, A, D, P, efectividad, stab, estado, esFisico)
+  ├─ Aplica efectos post-turno (quemadura, tóxico, drenadoras)
+  ├─ Actualiza hpActual defensor en BD (save)
+  └─ Retorna RespuestaTurno {danioInfligido, hpRestante, critico, efectividad, mensaje}
+                                │
+[EscenaBatalla.js]  ←  Actualiza barras HP y muestra mensajes de batalla
+</pre>
+    <div class="figura-cap">Figura 3. Diagrama de secuencia del flujo de un turno de combate.</div>
+  </div>
+
+  <div class="pie">7</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     7. BASE DE DATOS
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>7. Diseño de la Base de Datos</h1><hr/>
+
+  <h2>7.1 Diagrama Entidad-Relación</h2>
+  <p>
+    La base de datos <code>pokemon_web_db</code> se conecta vía MySQL en <code>localhost:3306</code>.
+    Hibernate valida el esquema al arrancar (<code>ddl-auto=validate</code>); no crea ni modifica tablas
+    en producción. El esquema se generó en la fase inicial y está estabilizado.
+  </p>
+  <div class="figura">
+    <div class="placeholder-fig">[ Figura 4 – Diagrama Entidad-Relación ]<br/><em>Ver: docs/backend/fases/Diagramas/ER Inventario.png</em></div>
+    <div class="figura-cap">Figura 4. Diagrama E-R de la base de datos pokemon_web_db.</div>
+  </div>
+
+  <h2>7.2 Descripción de Entidades</h2>
+
+  <h3>USUARIOS (tabla: <code>USUARIOS</code>)</h3>
+  <table>
+    <tr><th>Campo</th><th>Tipo JPA</th><th>Descripción</th></tr>
+    <tr><td>idUsuario</td><td>Long (PK, AI)</td><td>Identificador único auto-generado.</td></tr>
+    <tr><td>username</td><td>String (UNIQUE, NOT NULL)</td><td>Nombre de usuario para login.</td></tr>
+    <tr><td>passwordHash</td><td>String (NOT NULL)</td><td>Hash BCrypt. Nunca se almacena en texto plano.</td></tr>
+    <tr><td>dinero</td><td>int (default: 300)</td><td>Moneda del juego (Pokédólares). Se restablece a 300 al reiniciar.</td></tr>
+    <tr><td>mapaActual</td><td>String (default: "Pueblo Inicial")</td><td>Identificador del mapa donde está el jugador.</td></tr>
+    <tr><td>posX / posY</td><td>int (default: 5)</td><td>Posición en coordenadas de tile.</td></tr>
+    <tr><td>estadoClienteJson</td><td>LONGTEXT</td><td>JSON con estado del cliente: nombre del jugador, flags narrativos (starterElegido, pokegearEntregado, etc.), reloj, teamCliente, badges.</td></tr>
+  </table>
+
+  <div class="nota"><strong>Nota:</strong> La clase <code>Usuario</code> implementa <code>UserDetails</code> de Spring Security directamente, eliminando la necesidad de un wrapper <code>UsuarioPrincipal</code>.</div>
+
+  <h3>POKEMON_USUARIO (tabla: <code>POKEMON_USUARIO</code>)</h3>
+  <table>
+    <tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr>
+    <tr><td>id (id_pokemon_usuario)</td><td>Long (PK, AI)</td><td>Identificador único del Pokémon del jugador.</td></tr>
+    <tr><td>usuarioId (id_usuario)</td><td>Long (FK → USUARIOS)</td><td>Propietario. Guardado como Long directo para evitar cargar el Usuario completo en cada consulta de batalla.</td></tr>
+    <tr><td>pokedexId (id_pokedex)</td><td>Integer (FK → POKEDEX_MAESTRA)</td><td>Especie del Pokémon.</td></tr>
+    <tr><td>nivel</td><td>Integer (default: 5)</td><td>Nivel actual (1-100).</td></tr>
+    <tr><td>experiencia</td><td>Integer (default: 0)</td><td>XP acumulada en el nivel actual.</td></tr>
+    <tr><td>hpMax / hpActual</td><td>Integer (NOT NULL)</td><td>Puntos de salud máximos y actuales.</td></tr>
+    <tr><td>posicionEquipo</td><td>Integer (NOT NULL)</td><td>0-5: equipo activo. ≥6: caja (PC).</td></tr>
+    <tr><td>ataqueStat, defensaStat, ataqueEspecialStat, defensaEspecialStat, velocidadStat</td><td>Integer</td><td>Estadísticas calculadas al nivel actual.</td></tr>
+    <tr><td>estado</td><td>ENUM (STRING)</td><td>SALUDABLE, PARALIZADO, QUEMADO, DORMIDO, ENVENENADO, CONGELADO.</td></tr>
+    <tr><td>turnosConfusion</td><td>Integer (default: 0)</td><td>Turnos de confusión restantes (se resetea al salir de batalla).</td></tr>
+    <tr><td>contadorToxico</td><td>Integer (default: 0)</td><td>Contador para Tóxico (daño progresivo: 1/16, 2/16, 3/16…).</td></tr>
+    <tr><td>turnosSueno</td><td>Integer (default: 0)</td><td>Turnos restantes de sueño (asignados al dormirse).</td></tr>
+    <tr><td>tieneDrenadoras</td><td>Boolean (default: false)</td><td>Indica si tiene Drenadoras activas.</td></tr>
+  </table>
+
+  <div class="pie">8</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     7 cont. — Más entidades
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h3>POKEDEX_MAESTRA (tabla: <code>POKEDEX_MAESTRA</code>)</h3>
+  <table>
+    <tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr>
+    <tr><td>id_pokedex</td><td>Integer (PK)</td><td>Número Nacional Pokédex (1-251, Gen II completa).</td></tr>
+    <tr><td>nombre</td><td>String</td><td>Nombre de la especie (en inglés, tal como lo devuelve PokéAPI).</td></tr>
+    <tr><td>tipo_1 / tipo_2</td><td>String</td><td>Tipo primario y secundario. <code>tipo_2</code> puede ser null.</td></tr>
+    <tr><td>stat_base_hp, stat_base_ataque, stat_base_defensa, stat_base_atq_especial, stat_base_def_especial, stat_base_velocidad</td><td>Integer × 6</td><td>Estadísticas base de la especie. Usadas para calcular stats al nivel dado.</td></tr>
+    <tr><td>xp_base</td><td>Integer</td><td>Experiencia base cedida al ser derrotado. Fórmula: <code>xpBase × nivel / 7</code>.</td></tr>
+    <tr><td>id_evolucion</td><td>Integer (FK, nullable)</td><td>Especie a la que evoluciona (autorreferencial).</td></tr>
+    <tr><td>ratioCaptura</td><td>Integer</td><td>Tasa de captura base (0-255). Más alto = más fácil de capturar.</td></tr>
+  </table>
+
+  <h3>ATAQUES (tabla: <code>ATAQUES</code>)</h3>
+  <table>
+    <tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr>
+    <tr><td>idAtaque</td><td>Integer (PK)</td><td>ID oficial de PokéAPI.</td></tr>
+    <tr><td>nombre</td><td>String</td><td>Nombre del movimiento.</td></tr>
+    <tr><td>tipo</td><td>String</td><td>Tipo del movimiento (fire, water, grass…).</td></tr>
+    <tr><td>categoria</td><td>String</td><td><code>physical</code>, <code>special</code> o <code>status</code>.</td></tr>
+    <tr><td>potencia</td><td>Integer</td><td>Potencia base. 0 para movimientos de estado.</td></tr>
+    <tr><td>precisionBase</td><td>Integer</td><td>Precisión base (0-100). ≥100 nunca falla por este cálculo.</td></tr>
+    <tr><td>ppBase</td><td>Integer</td><td>Puntos de Poder máximos del movimiento.</td></tr>
+  </table>
+
+  <h3>ITEMS (tabla: <code>ITEMS</code>)</h3>
+  <table>
+    <tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr>
+    <tr><td>idItem</td><td>Integer (PK, AI)</td><td>Identificador del ítem.</td></tr>
+    <tr><td>nombre</td><td>String (UNIQUE)</td><td>Nombre del ítem.</td></tr>
+    <tr><td>precio</td><td>Integer</td><td>Precio en Pokédólares.</td></tr>
+    <tr><td>efecto</td><td>String</td><td>Código de efecto interno: <code>HEAL_20</code>, <code>HEAL_50</code>, <code>HEAL_200</code>, <code>HEAL_MAX</code>, <code>HEAL_MAX_STATUS</code>, <code>CAPTURE_1.0</code>, <code>CAPTURE_1.5</code>, <code>CAPTURE_2.0</code>, <code>CAPTURE_MAX</code>, <code>CURE_PSN</code>, <code>CURE_BRN</code>, <code>CURE_FRZ</code>, <code>CURE_SLP</code>, <code>CURE_PAR</code>, <code>CURE_ALL</code>.</td></tr>
+  </table>
+
+  <h3>INVENTARIO_USUARIO</h3>
+  <p>Relación M:N entre USUARIOS e ITEMS con clave compuesta embebida (<code>@EmbeddedId InventarioId</code> que contiene <code>usuarioId + itemId</code>) y campo <code>cantidad</code>.</p>
+
+  <h3>TIPOS</h3>
+  <p>Matriz de efectividad de tipos: pares atacante/defensor con multiplicador (<code>0.0, 0.5, 1.0, 2.0, 4.0</code>). Usada por <code>TipoService</code>.</p>
+
+  <h3>ESTADO_MOVIMIENTO_POKEMON</h3>
+  <p>Persiste los PP actuales de cada movimiento por Pokémon del jugador. Se actualiza en cada turno que usa el movimiento.</p>
+
+  <div class="pie">9</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     8. BACKEND – API REST
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>8. Backend – API REST</h1><hr/>
+
+  <h2>8.1 Controladores y Endpoints</h2>
+
+  <h3>ControladorAutenticacion (<code>/auth</code>) – Sin JWT</h3>
+  <table>
+    <tr><th>Método</th><th>Ruta</th><th>Body</th><th>Respuesta</th></tr>
+    <tr><td>POST</td><td>/auth/registrar</td><td><code>{username, password}</code></td><td>201 Created: <code>{message: "Usuario registrado: X"}</code></td></tr>
+    <tr><td>POST</td><td>/auth/iniciarSesion</td><td><code>{username, password}</code></td><td>200: <code>{token, user: {username}}</code></td></tr>
+  </table>
+
+  <h3>JuegoController (<code>/api/v1/juego</code>) – Requiere JWT</h3>
+  <table>
+    <tr><th>Método</th><th>Ruta</th><th>Body / Params</th><th>Respuesta</th></tr>
+    <tr><td>GET</td><td>/api/v1/juego/estado</td><td>—</td><td>Estado completo: equipo BD, dinero, inventario, mapa, posición y estadoCliente (JSON).</td></tr>
+    <tr><td>POST</td><td>/api/v1/juego/starter</td><td><code>{starterId: 152|155|158}</code></td><td>Datos del starter: pokemonUsuarioId, id, nombre, tipos, nivel, HP, stats, sprite URL.</td></tr>
+    <tr><td>GET</td><td>/api/v1/juego/equipo</td><td>—</td><td>Lista de Pokémon del equipo activo (posicion_equipo 0-5).</td></tr>
+    <tr><td>POST</td><td>/api/v1/juego/guardar</td><td><code>{posX, posY, mapaActual, estadoCliente}</code></td><td><code>{success, message, posX, posY, mapaActual}</code></td></tr>
+    <tr><td>POST</td><td>/api/v1/juego/reiniciar</td><td>—</td><td>Borra equipo, inventario, PP en BD; restablece dinero y posición.</td></tr>
+    <tr><td>POST</td><td>/api/v1/juego/inventario/anadir</td><td><code>{itemId?|nombreItem?, cantidad?}</code></td><td><code>{inventario: [{itemId, nombre, cantidad, efecto}]}</code></td></tr>
+  </table>
+
+  <h3>BatallaController (<code>/api/v1/batalla</code>) – Requiere JWT</h3>
+  <table>
+    <tr><th>Método</th><th>Ruta</th><th>Body</th><th>Respuesta</th></tr>
+    <tr><td>GET</td><td>/movimientos/{pokemonUsuarioId}</td><td>—</td><td>Lista de movimientos con PP actuales del Pokémon.</td></tr>
+    <tr><td>POST</td><td>/turno</td><td><code>{atacanteId, defensorId, movimientoId?}</code></td><td><code>RespuestaTurno</code>: daño, HP restante, crítico, efectividad, mensaje, defensorDerrotado.</td></tr>
+    <tr><td>POST</td><td>/captura</td><td><code>{pokemonUsuarioId, itemId}</code></td><td><code>{mensaje}</code> con resultado de la captura.</td></tr>
+    <tr><td>POST</td><td>/salvaje/preparar</td><td><code>{pokedexId?, nivel?}</code></td><td>Crea instancia salvaje en BD bajo la cuenta técnica <em>salvajes</em>.</td></tr>
+    <tr><td>POST</td><td>/salvaje/liberar</td><td><code>{pokemonUsuarioId?}</code></td><td>Elimina la instancia salvaje de BD al terminar la batalla sin captura.</td></tr>
+  </table>
+
+  <h3>TiendaController (<code>/api/v1/tienda</code>) – Requiere JWT</h3>
+  <table>
+    <tr><th>Método</th><th>Ruta</th><th>Body</th><th>Respuesta</th></tr>
+    <tr><td>POST</td><td>/comprar</td><td><code>{itemId, cantidad}</code></td><td>Inventario actualizado, dinero restante y mensaje de confirmación.</td></tr>
+  </table>
+
+  <div class="nota"><strong>Actuator:</strong> <code>GET /actuator/health</code> y <code>/actuator/info</code> son públicos (cadena de seguridad separada con <code>@Order(1)</code>).</div>
+
+  <div class="pie">10</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     8 cont. — Seguridad, Seeding, Excepciones
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h2>8.2 Seguridad JWT y CORS</h2>
+  <p>
+    La clase <code>ConfiguracionSeguridad</code> define <strong>dos</strong> <code>SecurityFilterChain</code>
+    con anotación <code>@Order</code>:
+  </p>
+  <ul>
+    <li><strong>cadenaActuator (@Order 1):</strong> aplica solo a <code>/actuator/**</code>; permite todas las peticiones sin JWT.</li>
+    <li><strong>cadenaFiltroSeguridad (@Order 2):</strong> aplica al resto. Deshabilita CSRF (API stateless sin cookies), configura CORS y añade <code>FiltroAutenticacionJwt</code> antes del filtro de login.</li>
+  </ul>
+  <p>
+    El <strong>CORS</strong> permite orígenes: <code>localhost:*</code>, <code>127.0.0.1:*</code>,
+    <code>192.168.*:*</code>, <code>10.*:*</code> y <code>172.*:*</code>.
+    Métodos permitidos: GET, POST, PUT, PATCH, DELETE, OPTIONS. Credenciales: true.
+  </p>
+  <p>
+    <code>ServicioJwt</code> genera tokens firmados con <strong>HMAC-SHA256</strong>, válidos
+    <strong>24 horas</strong>. La clave secreta se configura con la propiedad
+    <code>jwt.secret.key</code> (variable de entorno <code>JWT_SECRET</code> en producción).
+    El método <code>esTokenValido</code> comprueba tanto la firma como la expiración.
+  </p>
+
+  <h2>8.3 Inicialización Automática de Datos (Components)</h2>
+  <p>
+    Cuatro componentes <code>CommandLineRunner</code> se ejecutan al arrancar el servidor
+    si los datos no están ya cargados:
+  </p>
+
+  <table>
+    <tr><th>Clase</th><th>Qué carga</th><th>Condición de skip</th></tr>
+    <tr><td><strong>CargadorDatos</strong></td><td>251 Pokémon (stats, tipos, ratio captura) y 251 movimientos desde PokéAPI. Usa WebFlux con 5 peticiones concurrentes y batches de 20.</td><td><code>pokedexRepo.count() &gt;= 251</code></td></tr>
+    <tr><td><strong>InicializadorTipos</strong></td><td>Matriz de efectividad de tipos (18×18 para Gen II).</td><td>Tabla TIPOS no vacía.</td></tr>
+    <tr><td><strong>SembradorObjetos</strong></td><td>17 ítems Gen II desde PokéAPI con código de efecto interno asignado.</td><td><code>itemRepo.count() &gt; 0</code></td></tr>
+    <tr><td><strong>SembradorUsuarioSalvajes</strong></td><td>Usuario técnico "salvajes" para poseer Pokémon salvajes durante batallas.</td><td>Usuario ya existente.</td></tr>
+  </table>
+
+  <p>Los 17 ítems cargados son:</p>
+  <p class="sin" style="font-size:10pt;">
+    Potion (HEAL_20), Super-potion (HEAL_50), Hyper-potion (HEAL_200), Max-potion (HEAL_MAX),
+    Full-restore (HEAL_MAX_STATUS), Antidote (CURE_PSN), Burn-heal (CURE_BRN),
+    Ice-heal (CURE_FRZ), Awakening (CURE_SLP), Paralyze-heal (CURE_PAR), Full-heal (CURE_ALL),
+    Poke-ball (CAPTURE_1.0), Great-ball (CAPTURE_1.5), Ultra-ball (CAPTURE_2.0),
+    Master-ball (CAPTURE_MAX), Escape-rope (NONE), Repel (NONE).
+  </p>
+
+  <h2>8.4 Manejo Global de Excepciones</h2>
+  <p>
+    La clase <code>ManejadorGlobalExcepciones</code> (anotada con <code>@RestControllerAdvice</code>)
+    centraliza el tratamiento de errores para toda la API, evitando try-catch en cada controlador:
+  </p>
+  <table>
+    <tr><th>Excepción</th><th>HTTP</th><th>Mensaje</th></tr>
+    <tr><td><code>ErrorNegocio</code></td><td>400 Bad Request</td><td>Mensaje de la excepción de dominio.</td></tr>
+    <tr><td><code>RecursoNoEncontrado</code></td><td>404 Not Found</td><td>Recurso no encontrado.</td></tr>
+    <tr><td><code>BadCredentialsException</code></td><td>401 Unauthorized</td><td>"Credenciales inválidas."</td></tr>
+    <tr><td><code>MethodArgumentNotValidException</code></td><td>400 Bad Request</td><td>Lista de mensajes de <code>@Valid</code>.</td></tr>
+    <tr><td><code>DataIntegrityViolationException</code></td><td>409 Conflict / 400</td><td>Duplicado detectado (p.ej. username ya existente).</td></tr>
+    <tr><td><code>DataAccessException</code></td><td>503 Service Unavailable</td><td>Error de conexión a MySQL.</td></tr>
+    <tr><td><code>Exception</code> (genérica)</td><td>500 Internal Server Error</td><td>"Error interno del servidor." (con log de traza).</td></tr>
+  </table>
+  <p>Todas las respuestas de error incluyen: <code>status</code> (código HTTP), <code>error</code> (mensaje) y <code>timestamp</code> (ISO-8601).</p>
+
+  <div class="pie">11</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     9. FRONTEND
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>9. Frontend – React + Phaser 3</h1><hr/>
+
+  <h2>9.1 Mapa de Navegación</h2>
+  <div class="figura">
+<pre>
+          ┌────────────────────────┐
+          │   / (PaginaInicio)     │  Landing: botones Nueva Partida / Continuar
+          └──────┬─────────┬───────┘
+                 │         │
+      ┌──────────▼──┐  ┌───▼──────────────┐
+      │/iniciarSesion│  │   /registrar     │
+      │PaginaAcceso │  │  PaginaRegistro  │
+      └──────┬──────┘  └───────┬──────────┘
+             │  (JWT)          │ (cuenta creada)
+             └────────┬────────┘
+                      ▼
+          ┌──────────────────────────┐
+          │       /game              │
+          │     PaginaJuego          │
+          │  ┌──────────────────┐    │
+          │  │  Phaser Canvas   │    │
+          │  │  EscenaPreload   │    │
+          │  │  EscenaMenu      │    │
+          │  │  EscenaOverworld │    │
+          │  │  EscenaBatalla   │    │
+          │  │  EscenaTransicion│    │
+          │  └──────────────────┘    │
+          │  ┌──────────────────┐    │
+          │  │  React Overlay   │    │
+          │  │  EscenaApertura  │    │
+          │  │  MenuIngameReact │    │
+          │  └──────────────────┘    │
+          └──────────────────────────┘
+</pre>
+    <div class="figura-cap">Figura 5. Mapa de navegación de la aplicación Pokémon Bytes.</div>
+  </div>
+
+  <h2>9.2 Gestión de Estado – Zustand</h2>
+  <p>
+    El frontend usa dos stores Zustand:
+  </p>
+  <table>
+    <tr><th>Store</th><th>Estado principal</th><th>Persistencia</th></tr>
+    <tr>
+      <td><strong>usarAutenticacionStore</strong></td>
+      <td>JWT, username, isAuthenticated.</td>
+      <td>localStorage (<code>auth-storage</code>).</td>
+    </tr>
+    <tr>
+      <td><strong>usarJuegoStore</strong></td>
+      <td>
+        <em>Jugador:</em> playerState, starter, team[], badges[], money, loading.<br/>
+        <em>Mundo:</em> mapaActual, posX, posY.<br/>
+        <em>Narrativa:</em> esNuevaPartida, nombreJugador, gameStep, hasStarter, starterElegido,
+        elmCharlaEleccionStarter, pokegearEntregado, pocionEntregada, pcPocionRetirada.<br/>
+        <em>Reloj:</em> hora, minutos, diaSemana (sincronizado al arrancar nueva partida).<br/>
+        <em>Inventario:</em> inventario[] (normalizado: fusiona filas duplicadas por nombre/id).
+      </td>
+      <td>Manual: <code>guardarPartidaLocal()</code> escribe en localStorage (<code>pokemon_bytes_save_v1</code>, versión 1).</td>
+    </tr>
+  </table>
+  <p>
+    El store distingue claramente la fuente de verdad: el servidor es canónico. El método
+    <code>setPlayerState(data)</code> hidrata el store desde la respuesta de
+    <code>GET /api/v1/juego/estado</code>, priorizando siempre los datos del servidor sobre los
+    del <code>estadoClienteJson</code> para campos como dinero e inventario.
+  </p>
+
+  <div class="pie">12</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     9 cont. — Phaser + PuenteApi
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h2>9.3 Motor Phaser 3 – Escenas y Sistemas</h2>
+
+  <h3>Escenas</h3>
+  <table>
+    <tr><th>Escena</th><th>Función</th></tr>
+    <tr><td><strong>EscenaPreload</strong></td><td>Precarga todos los assets: mapas JSON (Tiled), spritesheets del jugador (4 direcciones), tilesets, audio BGM por mapa y sprites de Pokémon.</td></tr>
+    <tr><td><strong>EscenaMenu</strong></td><td>Pantalla de título con opciones Nueva Partida y Continuar.</td></tr>
+    <tr><td><strong>EscenaOverworld</strong></td><td>Escena principal: renderiza el mapa Tiled del mapa actual, gestiona movimiento tile a tile, NPCs con etiquetas (ELM, MAMÁ, AYUDANTE, RIVAL, ALDEANO), warps y encuentros.</td></tr>
+    <tr><td><strong>EscenaBatalla</strong></td><td>Combate por turnos: fondo 160×144 (y:0–96 sprites, y:96–144 UI), barras HP, menú de acciones, menú de movimientos, integración con servidor.</td></tr>
+    <tr><td><strong>EscenaTransicion</strong></td><td>Fade in/out (250 ms) entre cambios de mapa.</td></tr>
+  </table>
+
+  <h3>Sistemas y UI Phaser</h3>
+  <table>
+    <tr><th>Clase</th><th>Función</th></tr>
+    <tr><td><strong>SistemaDialogo</strong></td><td>Renderiza marcos de diálogo pixel-perfect estilo GBC con nombre del hablante y texto progresivo.</td></tr>
+    <tr><td><strong>DialogoManager</strong></td><td>Gestor de cola de diálogos y eventos de avance.</td></tr>
+    <tr><td><strong>SistemaEncuentros</strong></td><td>Detecta si el jugador pisa hierba y genera Pokémon salvajes aleatorios según tabla de apariciones del mapa.</td></tr>
+    <tr><td><strong>WarpSystem</strong></td><td>Detecta colisiones con objetos warp Tiled y gestiona la transición al nuevo mapa con fade (configurable: <code>tileSize: TAM_TILE, fadeMs: 250</code>).</td></tr>
+    <tr><td><strong>SistemaSecuencias</strong></td><td>Orquesta cinemáticas: selección de starter, diálogos post-starter (Prof. Elm, Mamá), eventos narrativos del overworld.</td></tr>
+    <tr><td><strong>Jugador</strong></td><td>Entidad sprite con movimiento por grid (WASD/Flechas), animaciones en 4 direcciones y verificación de colisión del tile destino.</td></tr>
+    <tr><td><strong>BarraHp</strong></td><td>Barra de PS en batalla con gradiente de color según porcentaje (verde/amarillo/rojo).</td></tr>
+    <tr><td><strong>MenuMovimientos</strong></td><td>Selector de hasta 4 movimientos con PP actuales en combate.</td></tr>
+    <tr><td><strong>UISeleccionStarter</strong></td><td>Pantalla de selección de los 3 iniciales (Chikorita, Cyndaquil, Totodile) con GIFs mini y descripción.</td></tr>
+    <tr><td><strong>UIConfirmacionStarter</strong></td><td>Diálogo de confirmación "¿Elegir a X?" tras seleccionar el starter.</td></tr>
+    <tr><td><strong>UIMenuLista</strong></td><td>Menú genérico navegable con teclado.</td></tr>
+    <tr><td><strong>UIOpcionSiNo</strong></td><td>Diálogo de opción binaria Sí/No.</td></tr>
+  </table>
+
+  <h3>Mapas Implementados</h3>
+  <p>Los mapas se diseñaron en Tiled Map Editor y se exportaron en JSON. Cada mapa contiene capas de suelo, decoración, colisiones y objetos (warps, NPCs):</p>
+  <ul>
+    <li><strong>player-room:</strong> habitación del jugador (mapa inicial de nueva partida).</li>
+    <li><strong>casa-jugador:</strong> interior de la casa completa.</li>
+    <li><strong>new-bark-town / johtoOverworld:</strong> pueblo inicial de Johto con todos sus edificios.</li>
+    <li><strong>elm-lab / labElm:</strong> Laboratorio del Profesor Elm con secuencia de elección de starter.</li>
+    <li><strong>ruta-29:</strong> primera ruta con hierba y encuentros salvajes.</li>
+  </ul>
+
+  <h2>9.4 PuenteApi – Comunicación Phaser ↔ Backend</h2>
+  <p>
+    El módulo <code>PuenteApi.js</code> centraliza todas las llamadas HTTP desde Phaser, usando
+    la instancia Axios configurada con interceptor JWT. Expone:
+    <code>getEstadoJugador</code>, <code>getEquipo</code>, <code>guardarJuegoEnServidor</code>,
+    <code>sincronizarEstadoDesdeServidor</code>, <code>reiniciarPartidaEnServidor</code>,
+    <code>getMovimientos</code>, <code>ejecutarTurno</code>, <code>intentarCaptura</code>,
+    <code>prepararSalvajePokemon</code>, <code>liberarSalvajePokemon</code>,
+    <code>elegirStarterServidor</code>, <code>comprarItem</code> y <code>anadirInventarioServidor</code>.
+  </p>
+  <p>
+    Tras guardar, <code>PuenteApi</code> sincroniza automáticamente el store Zustand con el servidor
+    y actualiza el localStorage, manteniendo siempre la consistencia entre las tres capas de persistencia.
+  </p>
+
+  <div class="pie">13</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     10. IDENTIDAD VISUAL
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>10. Identidad Visual</h1><hr/>
+
+  <table>
+    <tr><th>Elemento</th><th>Descripción</th></tr>
+    <tr><td><strong>Paleta de colores</strong></td><td>Rojo Pokéball (#CC0000), Negro (#000000), Gris oscuro (#1A1A1A), Blanco (#FFFFFF), Amarillo Pokémon (#FFCB05) como acento.</td></tr>
+    <tr><td><strong>Tipografía UI (React)</strong></td><td>Tailwind CSS. Fuente del sistema (sans-serif) para menús modernos.</td></tr>
+    <tr><td><strong>Tipografía in-game</strong></td><td>Fuente bitmap pixelada en los diálogos Phaser para emular la Game Boy Color.</td></tr>
+    <tr><td><strong>Marco de diálogo</strong></td><td>Recreación pixel-perfect del marco GBC estilo Gen II: fondo blanco, bordes dobles negros, nombre del hablante en cabecera. Implementado en <code>marcoDialogoRetro.js</code>.</td></tr>
+    <tr><td><strong>Cinemática de apertura</strong></td><td>Sprite del Prof. Oak (<code>opening_oak_idle_01.png</code>), Marill y jugador con animaciones Framer Motion. Diálogos: "¡Hola! ¡Perdona por la espera!…" (11 líneas) con teclado virtual para nombre.</td></tr>
+    <tr><td><strong>Sprites Pokémon</strong></td><td>GIFs de cristal (Gen II Crystal) para el menú de equipo. PNGs de oro/plata para las batallas. Obtenidos vía PokéAPI sprites GitHub.</td></tr>
+    <tr><td><strong>Tilesets</strong></td><td>Tilesets de Johto en estilo 16-bit, tiles de 16×16 píxeles. Incluye variantes: <em>new_bark_town</em>, <em>ruta_29_bg</em>, <em>debugger_room</em>, tilesets interiores.</td></tr>
+    <tr><td><strong>Audio</strong></td><td>BGM por mapa en carpeta <code>assets/game/audio/bgm/</code>. Volumen configurable desde el menú (pasos predefinidos <code>PASOS_VOLUMEN_BGM</code>).</td></tr>
+  </table>
+
+  <div class="figura">
+    <div class="placeholder-fig">[ Figura 6 – Captura del Overworld de New Bark Town ]<br/><em>Ver: docs/screenshots/</em></div>
+    <div class="figura-cap">Figura 6. Vista del overworld de New Bark Town con jugador y NPCs.</div>
+  </div>
+
+  <div class="figura">
+    <div class="placeholder-fig">[ Figura 7 – Pantalla de selección de Pokémon inicial ]<br/><em>Ver: docs/screenshots/</em></div>
+    <div class="figura-cap">Figura 7. Pantalla de selección de starter con los tres iniciales de Johto.</div>
+  </div>
+
+  <div class="figura">
+    <div class="placeholder-fig">[ Figura 8 – Menú in-game (vista de equipo) ]<br/><em>Ver: docs/screenshots/</em></div>
+    <div class="figura-cap">Figura 8. Menú in-game mostrando el equipo con stats y estado del Pokémon.</td></div>
+  </div>
+
+  <div class="pie">14</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     11. MECÁNICAS
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>11. Implementación – Mecánicas de Juego</h1><hr/>
+
+  <h2>11.1 Sistema de Combate Gen II (<code>CalculoService</code>)</h2>
+  <p>
+    Todas las fórmulas matemáticas del motor de combate están encapsuladas en <code>CalculoService</code>
+    como métodos puros sin efectos secundarios, lo que permite su testing unitario aislado.
+  </p>
+
+  <h3>Fórmula de daño</h3>
+  <pre>
+Daño = ((0.2×N + 1) × A × P / (D × 25) + 2) × STAB × Efectividad × Variación
+
+  N           = Nivel del atacante
+  A           = Stat de ataque (reducido al 50% si quemado y movimiento físico)
+  P           = Potencia base del movimiento
+  D           = Stat de defensa del defensor
+  STAB        = 1.5 si tipo movimiento coincide con tipo del atacante, 1.0 si no
+  Efectividad = 0.0 / 0.5 / 1.0 / 2.0 / 4.0 (según tabla TIPOS en BD)
+  Variación   = random [0.85, 1.0) via ThreadLocalRandom
+
+Resultado mínimo garantizado: 1 (Math.max(1, …))
+  </pre>
+
+  <h3>Golpe crítico</h3>
+  <p class="sin">Probabilidad base del <strong>6.25%</strong> (<code>random() &lt; 0.0625</code>). Duplica el daño (×2.0).</p>
+
+  <h3>Verificación de impacto</h3>
+  <p class="sin">Si <code>precisionBase ≥ 100</code> el golpe nunca falla. Si no, <code>random(1,101) ≤ precisionBase</code>.</p>
+
+  <h3>Cálculo de experiencia</h3>
+  <p class="sin">XP ganada = <code>Math.floor(xpBase × nivelDerrotado / 7.0)</code></p>
+
+  <h3>Estados alterados – efectos en combate</h3>
+  <table>
+    <tr><th>Estado</th><th>Efecto pre-turno</th><th>Efecto post-turno</th></tr>
+    <tr><td>PARALIZADO</td><td>25% de probabilidad de no atacar.</td><td>—</td></tr>
+    <tr><td>DORMIDO</td><td>No puede atacar; turnosSueno-- cada turno. Se despierta al llegar a 0.</td><td>—</td></tr>
+    <tr><td>CONGELADO</td><td>No puede atacar. 20% de descongelarse.</td><td>—</td></tr>
+    <tr><td>QUEMADO</td><td>Ataque físico reducido al 50%.</td><td>Daño = hpMax / 8.</td></tr>
+    <tr><td>ENVENENADO</td><td>—</td><td>Daño = contadorToxico × hpMax / 16 (tóxico progresivo).</td></tr>
+    <tr><td>CONFUSIÓN</td><td>Posibilidad de golpearse a sí mismo.</td><td>turnosConfusion--</td></tr>
+    <tr><td>DRENADORAS</td><td>—</td><td>El rival recupera HP a costa del afectado.</td></tr>
+  </table>
+
+  <h2>11.2 Sistema de Captura (<code>CalculoService.calcularCaptura</code>)</h2>
+  <pre>
+a = ((3 × HPmax − 2 × HPactual) × ratioCaptura × multiplicadorBall) / (3 × HPmax) × bonusEstado
+
+Bonus estado:
+  DORMIDO / CONGELADO          → × 2.0
+  PARALIZADO / QUEMADO / ENVENENADO → × 1.5
+  SALUDABLE                    → × 1.0
+
+Multiplicadores de Ball:
+  Poké Ball   → 1.0   |   Súper Ball → 1.5
+  Ultra Ball  → 2.0   |   Master Ball → CAPTURE_MAX (garantizada)
+
+Si a ≥ 255 → captura garantizada.
+Si no     → ThreadLocalRandom.nextInt(0, 256) &lt; a → captura exitosa.
+  </pre>
+  <p>Los Pokémon capturados se asignan al jugador en <code>POKEMON_USUARIO</code>. Si el equipo está lleno (6 miembros), van a la caja (<code>posicionEquipo ≥ 6</code>).</p>
+
+  <div class="pie">15</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     11 cont. — Economía y guardado
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h2>11.3 Economía e Ítems de Tienda</h2>
+  <p>
+    El jugador comienza con <strong>300 Pokédólares</strong> (restablecidos a 300 al reiniciar).
+    La compra de ítems es una operación transaccional ACID anotada con <code>@Transactional</code>:
+    si el saldo es insuficiente, la excepción <code>ErrorNegocio</code> revierte la operación
+    sin modificar el inventario ni el dinero.
+  </p>
+  <p>
+    El inventario usa la entidad de unión <code>InventarioUsuario</code> con clave compuesta
+    <code>@EmbeddedId InventarioId(usuarioId, itemId)</code> y campo <code>cantidad</code>.
+    Al comprar un ítem ya poseído, se incrementa la cantidad; si es nuevo, se crea el registro.
+    En el frontend, el store normaliza el inventario fusionando filas con el mismo nombre/id para
+    evitar duplicados al sincronizar servidor + caché local.
+  </p>
+
+  <h2>11.4 Sistema de Guardado Híbrido</h2>
+  <p>
+    El guardado es redundante en tres niveles para garantizar continuidad ante fallos de red:
+  </p>
+
+  <table>
+    <tr><th>Nivel</th><th>Datos guardados</th><th>Implementación</th></tr>
+    <tr>
+      <td><strong>1. MySQL (servidor)</strong></td>
+      <td>Posición (posX, posY, mapaActual), dinero, equipo completo con stats y HP, inventario, estadoClienteJson (JSON con flags narrativos, reloj, nombre).</td>
+      <td><code>POST /api/v1/juego/guardar</code> → <code>JuegoService.guardarPartida()</code></td>
+    </tr>
+    <tr>
+      <td><strong>2. localStorage (cliente)</strong></td>
+      <td>Nombre, mapa, posición, equipo, inventario, flags narrativos, dinero, badges, reloj, esNuevaPartida. Clave: <code>pokemon_bytes_save_v1</code> (versión 1).</td>
+      <td><code>usarJuegoStore.guardarPartidaLocal()</code> llamado automáticamente tras guardar en servidor.</td>
+    </tr>
+    <tr>
+      <td><strong>3. Zustand en RAM</strong></td>
+      <td>Estado completo del juego en memoria durante la sesión.</td>
+      <td>Store de Zustand. Se hidrata desde el servidor al cargar.</td>
+    </tr>
+  </table>
+
+  <p>
+    Al cargar una partida, el servidor tiene prioridad (<code>setPlayerState(data)</code> del store
+    prioriza datos del servidor sobre el JSON del cliente). Si no hay red, <code>cargarPartidaLocal()</code>
+    restaura desde localStorage. La condición de existencia de partida guardada se comprueba con
+    <code>existePartidaGuardadaLocal()</code> para mostrar el botón "Continuar" en el menú de título.
+  </p>
+
+  <h3>Campos del JSON estadoClienteJson (guardado en MySQL)</h3>
+  <table>
+    <tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr>
+    <tr><td>v</td><td>Number</td><td>Versión del formato (actualmente 1).</td></tr>
+    <tr><td>nombreJugador</td><td>String</td><td>Nombre elegido en la apertura (max. 10 caracteres).</td></tr>
+    <tr><td>hasStarter / starterElegido</td><td>Boolean</td><td>Si ya eligió su Pokémon inicial.</td></tr>
+    <tr><td>elmCharlaEleccionStarter</td><td>Boolean</td><td>Si el Prof. Elm ya explicó la elección de starter.</td></tr>
+    <tr><td>pokegearEntregado</td><td>Boolean</td><td>Si la madre ya entregó el PokéGear.</td></tr>
+    <tr><td>pocionEntregada</td><td>Boolean</td><td>Si el ayudante ya entregó la poción.</td></tr>
+    <tr><td>pcPocionRetirada</td><td>Boolean</td><td>Si la poción del PC ya fue retirada al inventario.</td></tr>
+    <tr><td>gameStep</td><td>String</td><td>Paso narrativo actual del juego (p.ej. "PLAYING").</td></tr>
+    <tr><td>badges</td><td>Array</td><td>Medallas conseguidas.</td></tr>
+    <tr><td>reloj</td><td>Object</td><td>Hora, minutos y día de la semana del juego.</td></tr>
+    <tr><td>teamCliente / starterCliente</td><td>Array/Object</td><td>Espejo del equipo en cliente (fallback si la BD está vacía).</td></tr>
+  </table>
+
+  <div class="pie">16</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     12. PRUEBAS
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>12. Pruebas</h1><hr/>
+
+  <h2>12.1 Pruebas Unitarias – <code>CalculoServiceTest</code></h2>
+  <p>
+    Clase de prueba JUnit 5 que instancia <code>CalculoService</code> directamente (sin Spring),
+    garantizando que las fórmulas matemáticas del motor de combate son correctas de forma aislada.
+    Contiene cinco tests:
+  </p>
+
+  <table>
+    <tr><th>Test</th><th>Escenario</th><th>Verificación</th></tr>
+    <tr>
+      <td><strong>testCalcularDañoBasico</strong></td>
+      <td>Pikachu Nv10 (Ataque 55) vs defensor genérico (Defensa 40). Placaje (potencia 40), sin STAB, neutro.</td>
+      <td>Daño entre 7 y 9 (rango con variación [0.85,1.0)).</td>
+    </tr>
+    <tr>
+      <td><strong>testCalcularDañoConMultiplicador</strong></td>
+      <td>Atacante Nv50 (Ataque 177) vs defensor (Defensa 167). Lanzallamas (potencia 90), x2.0 tipo y STAB x1.5.</td>
+      <td>Daño entre 110 y 131.</td>
+    </tr>
+    <tr>
+      <td><strong>testCalcularExperiencia</strong></td>
+      <td>Derrotar Pokémon Nv40 con xpBase=150. También Nv10 con xpBase=14.</td>
+      <td>857 XP y 20 XP exactos (Math.floor).</td>
+    </tr>
+    <tr>
+      <td><strong>testFueGolpeCritico</strong></td>
+      <td>1000 intentos de golpe crítico (probabilidad 6.25%).</td>
+      <td>Entre 30 y 95 críticos (distribución estadística válida).</td>
+    </tr>
+    <tr>
+      <td><strong>testVerificaImpacto</strong></td>
+      <td>Precisión 100% (siempre), 0% (nunca), 50% (1000 intentos).</td>
+      <td>true, false y entre 400-600 impactos respectivamente.</td>
+    </tr>
+  </table>
+
+  <h2>12.2 Pruebas de Servicio – <code>JuegoServiceTest</code></h2>
+  <p>
+    Pruebas con Mockito (<code>@ExtendWith(MockitoExtension.class)</code>) que mockean todos los
+    repositorios JPA y prueban la lógica de <code>JuegoService</code> de forma aislada:
+  </p>
+  <ul>
+    <li><strong>elegirStarter_sinId_lanzaErrorNegocio:</strong> Verificar que <code>elegirStarter(username, null)</code> lanza <code>ErrorNegocio</code> con mensaje que contiene "starterId".</li>
+    <li>Más tests de flujo de elección de starter, carga de estado y reinicio de partida.</li>
+  </ul>
+
+  <h2>12.3 Prueba de Integración – <code>FlujoCableadoBatallaIT</code></h2>
+  <p>
+    Test de integración completo con <code>@SpringBootTest(webEnvironment = RANDOM_PORT)</code>
+    y perfil <code>@ActiveProfiles("test")</code> (H2 en memoria). Mockea <code>CargadorDatos</code>
+    y <code>SembradorObjetos</code> para no hacer peticiones a PokéAPI durante los tests.
+    Prueba el flujo completo:
+  </p>
+  <ol>
+    <li>Registro de usuario con UUID aleatorio.</li>
+    <li>Login y obtención de JWT.</li>
+    <li>Elección de starter y persistencia en BD H2.</li>
+    <li>Preparación de instancia de Pokémon salvaje.</li>
+    <li>Turno jugador → rival (POST /batalla/turno).</li>
+    <li>Turno rival → jugador.</li>
+    <li>Liberación del salvaje al terminar.</li>
+    <li>Reinicio de partida.</li>
+  </ol>
+
+  <h2>12.4 Pruebas Manuales de API</h2>
+  <p>
+    El archivo <code>docs/api-tests.http</code> contiene una colección completa de peticiones
+    para IntelliJ IDEA HTTP Client y VS Code REST Client, con ejemplos de cada endpoint y
+    respuestas esperadas. Se probaron escenarios positivos y negativos (token inválido, saldo
+    insuficiente, starter ya elegido, etc.).
+  </p>
+
+  <h2>12.5 Pruebas de Interfaz</h2>
+  <p>
+    Probadas manualmente en Chrome y Firefox: flujo completo de registro → login → apertura (Prof. Oak)
+    → nombre jugador → selección starter → overworld → combate → menú in-game → guardado y recarga.
+  </p>
+
+  <div class="pie">17</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     13. DIARIO DE DESARROLLO
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>13. Diario de Desarrollo</h1><hr/>
+
+  <h2>Fase I – Seguridad y Autenticación JWT</h2>
+  <p>
+    <strong>Dificultad:</strong> Spring Security 6.x eliminó <code>WebSecurityConfigurerAdapter</code>,
+    lo que requirió aprender el nuevo modelo basado en beans de <code>SecurityFilterChain</code>.
+    La documentación oficial mezcla ejemplos de versiones anteriores, causando confusión inicial.
+  </p>
+  <p>
+    <strong>Decisión técnica:</strong> Se implementaron dos <code>SecurityFilterChain</code> con
+    <code>@Order</code>: uno exclusivo para Actuator (sin JWT) y otro principal. El filtro
+    <code>FiltroAutenticacionJwt</code> se añade antes de <code>UsernamePasswordAuthenticationFilter</code>.
+    La entidad <code>Usuario</code> implementa directamente <code>UserDetails</code> para simplificar
+    la integración, aceptando que si el sistema de roles crece habrá que extraer un <code>UsuarioPrincipal</code>.
+  </p>
+
+  <h2>Fase II – Motor de Combate Gen II</h2>
+  <p>
+    <strong>Dificultad:</strong> Implementar fidedignamente la fórmula de daño de Gen II con todos
+    sus modificadores (STAB, efectividad de tipos, golpe crítico 6.25%, variación [0.85,1.0),
+    penalización por quemadura en físicos) requirió consultar exhaustivamente la Bulbapedia.
+  </p>
+  <p>
+    <strong>Decisión técnica:</strong> Se separó toda la matemática pura en <code>CalculoService</code>
+    (métodos sin efectos secundarios) y la lógica de estado en <code>BatallaService</code>. Esto
+    permitió escribir tests unitarios de las fórmulas sin necesidad de Spring ni base de datos.
+    La efectividad de tipos se consultó en base de datos (tabla TIPOS) en lugar de hardcodearla,
+    usando <code>TipoService</code> como intermediario.
+  </p>
+  <p>
+    <strong>Optimización:</strong> <code>BatallaService</code> mantiene un <code>ConcurrentHashMap</code>
+    como caché de learnsets (movimientos por especie) para no consultar PokéAPI en cada turno.
+    La versión objetivo es <code>gold-silver</code> para obtener los movimientos correctos de Gen II.
+  </p>
+
+  <h2>Fase III – Economía e Inventario ACID</h2>
+  <p>
+    <strong>Dificultad:</strong> Modelar la relación M:N entre Usuario e Item con un campo de cantidad
+    no es posible con colecciones JPA estándar; requirió una entidad de unión explícita con
+    <code>@EmbeddedId</code> y clase <code>@Embeddable</code>.
+  </p>
+  <p>
+    <strong>Decisión técnica:</strong> Se creó <code>InventarioUsuario</code> con <code>InventarioId</code>
+    como clave compuesta. La operación de compra está anotada con <code>@Transactional</code>: si el
+    saldo es insuficiente, <code>ErrorNegocio</code> revierte toda la transacción automáticamente.
+  </p>
+
+  <h2>Fase IV – Algoritmo de Captura</h2>
+  <p>
+    <strong>Dificultad:</strong> El algoritmo de captura de Gen II usa raíces cuadradas anidadas y
+    podía desbordar <code>int</code> en operaciones intermedias.
+  </p>
+  <p>
+    <strong>Decisión técnica:</strong> Se usaron tipos <code>double</code> en todo el cálculo para
+    evitar pérdidas de precisión. El algoritmo simplificado en este proyecto usa una única comparación
+    aleatoria en lugar de las cuatro del juego original, manteniendo la probabilidad equivalente.
+  </p>
+
+  <h2>Fase V – Data Seeding Reactivo (PokéAPI)</h2>
+  <p>
+    <strong>Dificultad:</strong> Cargar 251 Pokémon y sus movimientos en el arranque bloqueaba el
+    hilo principal durante varios minutos y sobrepassaba el rate limit de PokéAPI.
+  </p>
+  <p>
+    <strong>Decisión técnica:</strong> Se usó Spring WebFlux (<code>WebClient</code>) con
+    <code>Flux.flatMap(..., 5)</code> para limitar la concurrencia a 5 peticiones simultáneas,
+    y <code>.buffer(20)</code> para guardar en batches de 20 en lugar de uno a uno. El seeding
+    se salta si la tabla ya tiene el número esperado de registros.
+  </p>
+
+  <div class="pie">18</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     13 cont. — más entradas del diario
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h2>Integración React + Phaser 3</h2>
+  <p>
+    <strong>Dificultad principal del frontend:</strong> Phaser gestiona su propio bucle de juego
+    y canvas de forma completamente independiente de React. Zustand pertenece al mundo React; Phaser
+    no tiene acceso directo a los hooks ni al store.
+  </p>
+  <p>
+    <strong>Decisión técnica:</strong> Se diseñó <code>PuenteApi.js</code> como módulo singleton
+    que accede al store Zustand mediante <code>usarJuegoStore.getState()</code> (API imperativa,
+    sin hooks). Phaser llama a <code>PuenteApi</code> para todas las operaciones HTTP, y
+    <code>PuenteApi</code> actualiza el store Zustand tras cada respuesta. React escucha los cambios
+    del store de forma reactiva.
+  </p>
+
+  <h2>Sistema de Mapas Tiled y Colisiones por Grid</h2>
+  <p>
+    <strong>Dificultad:</strong> El sistema de colisiones de Phaser con física continua causaba
+    que el jugador atravesara paredes en esquinas y que la cámara se desincronizara al cambiar
+    de mapa. Los tilemaps exportados desde Tiled requerían configuración precisa de capas.
+  </p>
+  <p>
+    <strong>Decisión técnica:</strong> Se abandonó la física continua en favor de un
+    <strong>sistema de movimiento por grid</strong> (tile a tile): el jugador comprueba si el tile
+    destino es colisionable <em>antes</em> de iniciar el movimiento, y solo se desplaza si está
+    libre. Esto eliminó todos los bugs de colisión y simplificó enormemente la detección de warps
+    y eventos del mapa.
+  </p>
+
+  <h2>Sistema de Guardado Híbrido y Consistencia</h2>
+  <p>
+    <strong>Dificultad:</strong> Al sincronizar el estado del servidor con el localStorage, las
+    versiones antiguas del JSON del cliente mezclaban inventario del JSON con inventario de la BD,
+    duplicando ítems en el store.
+  </p>
+  <p>
+    <strong>Decisión técnica:</strong> Se estableció una regla clara: el inventario y el dinero del
+    servidor <em>nunca</em> se sobreescriben con los del <code>estadoClienteJson</code>. La función
+    <code>normalizarListaInventario</code> fusiona filas con el mismo <code>itemId</code> o nombre
+    antes de guardar en el store.
+  </p>
+
+  <h2>Cinemática de Apertura y Teclado Virtual</h2>
+  <p>
+    <strong>Dificultad:</strong> Implementar un teclado virtual completo para introducir el nombre
+    del jugador (estilo Game Boy Color) dentro de React, con navegación por teclas de dirección,
+    borrado y confirmación, sin romper el foco del canvas de Phaser.
+  </p>
+  <p>
+    <strong>Decisión técnica:</strong> La cinemática de apertura (<code>EscenaApertura.jsx</code>)
+    es un componente React superpuesto al canvas de Phaser. Se implementó un teclado virtual con
+    26 letras + DEL y confirmación. Las opciones de nombre predefinidas son: "Nuevo nombre", "Jesús",
+    "Oro" y "Ethan". Framer Motion gestiona las transiciones entre el sprite de Oak, Marill y el
+    teclado de nombre.
+  </p>
+
+  <div class="nota">
+    <strong>Estado actual del proyecto:</strong> El backend está completamente funcional y probado.
+    El frontend tiene el overworld navegable con 5 mapas, diálogos, la secuencia de apertura con
+    Oak, selección de starter, sistema de encuentros, combate por turnos y menú in-game (equipo,
+    mochila, opciones, guardado). El flujo de retorno del combate al overworld está en refinamiento.
+  </div>
+
+  <div class="pie">19</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     14. CONCLUSIONES
+══════════════════════════════════════════════════════════ -->
+<div class="pagina">
+  <div class="encabezado"><span>Proyecto fin de grado</span><span>Jesús Quintero</span></div>
+
+  <h1>14. Conclusiones</h1><hr/>
+
+  <h2>14.1 Lecciones Aprendidas</h2>
+
+  <p>
+    <strong>La separación de responsabilidades salva el proyecto.</strong> La arquitectura en capas
+    del backend (Controller → Service → Repository) demostró su valor en múltiples ocasiones:
+    cambiar la lógica de captura no requirió tocar ningún controlador, y añadir el endpoint de
+    reinicio fue trivial porque <code>JuegoService</code> ya tenía los métodos necesarios.
+  </p>
+
+  <p>
+    <strong>Las pruebas unitarias no son opcionales.</strong> Los tests de <code>CalculoService</code>
+    detectaron un error en la fórmula de daño durante la refactorización de la penalización por
+    quemadura. Sin ellos, el bug habría llegado a producción y el combate habría sido incorrecto
+    para todos los Pokémon quemados.
+  </p>
+
+  <p>
+    <strong>Phaser y React son complementarios, no competidores.</strong> La clave fue entender
+    que Phaser es una librería de canvas, no un framework de UI. React gestiona los formularios,
+    menús y overlays donde el DOM es superior; Phaser gestiona el canvas donde el bucle de juego
+    y el renderizado son superiores. El módulo <code>PuenteApi</code> es el pegamento entre ambos.
+  </p>
+
+  <p>
+    <strong>El seeding reactivo fue imprescindible.</strong> Sin WebFlux y la limitación de
+    concurrencia a 5 peticiones, el servidor habría tardado más de 10 minutos en arrancar y
+    habría superado el rate limit de PokéAPI. El enfoque reactivo redujo el tiempo a menos de
+    2 minutos con batches de guardado.
+  </p>
+
+  <p>
+    <strong>Definir la fuente de verdad desde el principio.</strong> El mayor dolor de cabeza de
+    persistencia se habría evitado si desde el inicio se hubiera documentado que "el servidor
+    es la fuente de verdad para dinero e inventario, y el JSON del cliente nunca los sobreescribe".
+    Llegar a esa regla tardó varias iteraciones de bugs de duplicación de ítems.
+  </p>
+
+  <h2>14.2 Mejoras Posibles</h2>
+
+  <h3>Funcionalidades de Juego</h3>
+  <ul>
+    <li>Completar los 251 Pokémon y sus apariciones en todos los mapas de Johto.</li>
+    <li>Implementar combates contra entrenadores NPC con IA básica (elige el movimiento de mayor daño).</li>
+    <li>Sistema de medallas: 8 gimnasios de Johto con sus líderes.</li>
+    <li>Evoluciones al subir de nivel o por condición (amistad, piedra).</li>
+    <li>Interfaz de PC para gestionar la caja de Pokémon.</li>
+    <li>Implementar el reloj en juego con eventos según hora del día (Pokémon nocturnos, etc.).</li>
+    <li>Usar el escape-rope y el repel con su efecto real en el overworld.</li>
+  </ul>
+
+  <h3>Técnicas y Arquitectura</h3>
+  <ul>
+    <li>WebSockets para batallas multijugador en tiempo real.</li>
+    <li>Caché Redis para las peticiones frecuentes (learnsets, Pokédex).</li>
+    <li>Dockerizar la aplicación (backend + MySQL) con docker-compose.</li>
+    <li>Pipeline CI/CD con GitHub Actions para ejecutar los tests en cada push.</li>
+    <li>Cobertura de tests frontend con React Testing Library y Vitest.</li>
+    <li>Rol administrador con panel para gestionar la Pokédex Maestra.</li>
+  </ul>
+
+  <h3>Experiencia de Usuario</h3>
+  <ul>
+    <li>Soporte táctil para móviles (joystick virtual en canvas).</li>
+    <li>Efectos de sonido en batalla, pasos y menús.</li>
+    <li>Modo pantalla completa.</li>
+    <li>Guía in-game para nuevos jugadores.</li>
+  </ul>
+
+  <br/>
+  <hr/>
+  <p class="sin" style="text-align:center; font-style:italic; color:#555; margin-top:.4cm;">
+    Pokémon Bytes es un proyecto que demuestra que las tecnologías web modernas pueden recrear
+    experiencias de videojuego ricas y complejas en el navegador. La base técnica construida,
+    con un backend Spring Boot robusto y un frontend React + Phaser bien estructurado, sienta
+    los cimientos de lo que podría convertirse en un juego completo.
+  </p>
+  <p class="sin" style="text-align:center; font-style:italic; color:#777; margin-top:.3cm;">— Fin del documento —</p>
+
+  <div class="pie">20</div>
+</div>
+
+</body>
+</html>

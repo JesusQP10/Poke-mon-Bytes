@@ -88,6 +88,19 @@ export default class SistemaSecuencias {
   }
 
   /**
+   * Ejecuta un async y continúa al resolver (errores también cierran el paso).
+   * @param {() => void|Promise<void>} fn
+   */
+  pasoAsync(fn) {
+    return (resolve) => {
+      Promise.resolve()
+        .then(() => fn())
+        .then(() => resolve())
+        .catch(() => resolve());
+    };
+  }
+
+  /**
    * Muestra una UI de selección y resuelve cuando el usuario confirma.
    * @param {Object} ui - Objeto con método mostrar(onElegido)
    * @param {Function} onElegido - Callback (indice) => void llamado al confirmar

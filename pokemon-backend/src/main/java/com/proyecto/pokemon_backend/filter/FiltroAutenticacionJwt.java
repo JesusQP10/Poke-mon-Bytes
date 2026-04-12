@@ -17,16 +17,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Filtro JWT que intercepta cada petición HTTP.
- *
- * Flujo:
- *   1. Extrae el token del header "Authorization: Bearer <token>".
- *   2. Valida la firma y la expiración.
- *   3. Si es válido, carga el usuario y lo registra en el SecurityContext.
- *   4. Pasa la petición al siguiente filtro de la cadena.
- *
- * Si el token es inválido o no existe, la petición continúa sin autenticar
- * y Spring Security devolverá 401 si el endpoint lo requiere.
+ * Lee {@code Authorization: Bearer …}, valida el JWT y, si cuadra, rellena el {@code SecurityContext}.
+ * Sin token válido la cadena sigue; quien exija rol o usuario autenticado responderá 401.
  */
 @Component
 public class FiltroAutenticacionJwt extends OncePerRequestFilter {

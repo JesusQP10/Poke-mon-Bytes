@@ -1,5 +1,57 @@
 import { create } from 'zustand';
 
+/**
+ * Une líneas del mismo ítem (id numérico de BD o nombre tipo poción/potion).
+ * Evita cantidades infladas si hubo filas duplicadas o mezcla JSON antiguo + servidor.
+ * @param {unknown[]} lineas
+ */
+function normalizarListaInventario(lineas) {
+  if (!Array.isArray(lineas) || lineas.length === 0) return [];
+  const map = new Map();
+  for (const it of lineas) {
+    if (!it || typeof it !== 'object') continue;
+    const rawId = it.itemId ?? it.id;
+    const numId = Number(rawId);
+    const clave =
+      Number.isFinite(numId) && numId > 0 ? `i:${numId}` : `n:${nombreClaveFusionInv(it.nombre)}`;
+    const q = Number.isFinite(Number(it.cantidad)) ? Math.max(0, Math.floor(Number(it.cantidad))) : 1;
+    const prev = map.get(clave);
+    if (prev) {
+      prev.cantidad = (Number(prev.cantidad) || 0) + q;
+    } else {
+      map.set(clave, { ...it, cantidad: q });
+    }
+  }
+  return [...map.values()];
+}
+
+function nombreClaveFusionInv(nombre) {
+  const s = String(nombre ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '');
+  if (!s) return '_';
+  if (s.includes('pocion') || s.includes('potion')) return 'potion';
+  return s;
+}
+
+/**
+ * Inventario de la tabla servidor: nunca mezclar con `estadoCliente.inventario` del JSON
+ * (clientes viejos guardaban mochila ahí y al hidratar se duplicaba con la BD).
+ * @param {Record<string, unknown> | null | undefined} data
+ * @param {{ inventario?: unknown[] }} state
+ */
+function inventarioParaStore(data, state) {
+  if (data != null && Object.prototype.hasOwnProperty.call(data, 'inventario')) {
+    const raw = data.inventario;
+    if (Array.isArray(raw)) return normalizarListaInventario(raw);
+    return [];
+  }
+  const prev = Array.isArray(state.inventario) ? state.inventario : [];
+  return normalizarListaInventario(prev);
+}
+
 /** Clave única para partida guardada en el navegador (misma que usa el título). */
 export const SAVE_STORAGE_KEY = 'pokemon_bytes_save_v1';
 const SAVE_VERSION = 1;
@@ -48,11 +100,9 @@ export const usarJuegoStore = create((set, get) => ({
   inventario: [],
 
   /**
-   * Hidrata desde GET /juego/estado: equipo en BD + `estadoCliente` (JSON guardado).
+   * Hidrata desde GET /juego/estado: equipo en BD + inventario/dinero en BD + `estadoCliente` (JSON).
    * Si no hay Pokémon en BD pero sí `teamCliente` en el JSON, usa ese equipo (modo solo-cliente).
-   *
-   * Si `estadoCliente` no trae clave `inventario` / `teamCliente`, no se pisan los valores
-   * que ya hubiera en memoria.
+   * Inventario y dinero del JSON del cliente no sustituyen a los del servidor.
    */
   setPlayerState: (data) => {
     set((state) => {
@@ -101,38 +151,43 @@ export const usarJuegoStore = create((set, get) => ({
           esStarter: starter.esStarter ?? team[0]?.esStarter ?? false,
         };
       }
-      const inventario = 'inventario' in ec
-        ? (Array.isArray(ec.inventario) ? ec.inventario : [])
-        : (Array.isArray(state.inventario) ? state.inventario : []);
+      const inventario = inventarioParaStore(data, state);
+      const moneyServidor = data != null && Object.prototype.hasOwnProperty.call(data, 'money');
+      const money = moneyServidor && Number.isFinite(Number(data.money))
+        ? Number(data.money)
+        : (Number.isFinite(Number(ec.money)) ? Number(ec.money) : (Number.isFinite(state.money) ? state.money : 3000));
       return {
         playerState: data,
         starter,
         team,
         badges: Array.isArray(ec.badges) ? ec.badges : (data.badges || []),
-        money: data.money ?? ec.money ?? 3000,
+        money,
         mapaActual: data.mapaActual || ec.mapaActual || 'new-bark-town',
         posX: data.posX ?? ec.posX ?? 5,
         posY: data.posY ?? ec.posY ?? 5,
         loading: false,
-        gameStep: ec.gameStep ?? 'PLAYING',
+        gameStep: 'gameStep' in ec ? ec.gameStep : state.gameStep,
         hasStarter: Boolean(ec.hasStarter ?? data.starter ?? team.length > 0),
-        pcPocionRetirada: Boolean(ec.pcPocionRetirada),
-        nombreJugador: ec.nombreJugador ?? '',
+        // Si el servidor aún no devuelve `estadoCliente` (JSON null), no forzar false: borraba flags
+        // locales y repetía recompensas (ayudante + PC) en cada sincronización.
+        pcPocionRetirada: 'pcPocionRetirada' in ec ? Boolean(ec.pcPocionRetirada) : state.pcPocionRetirada,
+        nombreJugador: 'nombreJugador' in ec ? String(ec.nombreJugador ?? '') : (state.nombreJugador ?? ''),
         inventario,
-        pokegearEntregado: Boolean(ec.pokegearEntregado),
+        pokegearEntregado: 'pokegearEntregado' in ec ? Boolean(ec.pokegearEntregado) : state.pokegearEntregado,
         starterElegido: Boolean(ec.starterElegido ?? team.length > 0),
         elmCharlaEleccionStarter: Boolean(
           ec.elmCharlaEleccionStarter ?? ec.starterElegido ?? team.length > 0,
         ),
-        pocionEntregada: Boolean(ec.pocionEntregada),
-        esNuevaPartida: ec.esNuevaPartida === true,
-        reloj: ec.reloj && typeof ec.reloj === 'object'
-          ? {
-              hora: ec.reloj.hora ?? 12,
-              minutos: ec.reloj.minutos ?? 0,
-              diaSemana: ec.reloj.diaSemana ?? 0,
-            }
-          : { hora: 12, minutos: 0, diaSemana: 0 },
+        pocionEntregada: 'pocionEntregada' in ec ? Boolean(ec.pocionEntregada) : state.pocionEntregada,
+        esNuevaPartida: 'esNuevaPartida' in ec ? ec.esNuevaPartida === true : state.esNuevaPartida,
+        reloj:
+          ec.reloj && typeof ec.reloj === 'object'
+            ? {
+                hora: ec.reloj.hora ?? 12,
+                minutos: ec.reloj.minutos ?? 0,
+                diaSemana: ec.reloj.diaSemana ?? 0,
+              }
+            : (state.reloj ?? { hora: 12, minutos: 0, diaSemana: 0 }),
       };
     });
   },
@@ -144,8 +199,7 @@ export const usarJuegoStore = create((set, get) => ({
   rellenarEquipoYmochilaDesdeGuardadoLocal: () => {
     set((state) => {
       const tieneTeam = Array.isArray(state.team) && state.team.length > 0;
-      const tieneInv = Array.isArray(state.inventario) && state.inventario.length > 0;
-      if (tieneTeam && tieneInv) return {};
+      if (tieneTeam) return {};
       let raw;
       try {
         raw = localStorage.getItem(SAVE_STORAGE_KEY);
@@ -161,10 +215,8 @@ export const usarJuegoStore = create((set, get) => ({
       }
       if (!disk || disk.v !== SAVE_VERSION) return {};
       const teamDisk = Array.isArray(disk.team) ? disk.team : [];
-      const invDisk = Array.isArray(disk.inventario) ? disk.inventario : [];
       const next = {};
       if (!tieneTeam && teamDisk.length) next.team = teamDisk;
-      if (!tieneInv && invDisk.length) next.inventario = invDisk;
       if (!Object.keys(next).length) return {};
       if (!state.starter && disk.starter) next.starter = disk.starter;
       if (!state.starterElegido && disk.starterElegido) next.starterElegido = true;
@@ -181,7 +233,6 @@ export const usarJuegoStore = create((set, get) => ({
     const estadoCliente = {
       v: SAVE_VERSION,
       nombreJugador: s.nombreJugador,
-      inventario: s.inventario,
       pokegearEntregado: s.pokegearEntregado,
       pocionEntregada: s.pocionEntregada,
       pcPocionRetirada: s.pcPocionRetirada,
@@ -199,7 +250,6 @@ export const usarJuegoStore = create((set, get) => ({
       posX: s.posX,
       posY: s.posY,
       mapaActual: s.mapaActual,
-      money: s.money,
       estadoCliente,
     };
   },
@@ -217,9 +267,15 @@ export const usarJuegoStore = create((set, get) => ({
   setElmCharlaEleccionStarter: () => set({ elmCharlaEleccionStarter: true }),
   setPcPocionRetirada: () => set({ pcPocionRetirada: true }),
   setGameStep: (gameStep) => set({ gameStep }),
+  /** Solo modo sin sesión servidor; con login usar `PuenteApi.anadirInventarioServidor`. */
   addInventario: (item) => set((state) => ({
     inventario: [...state.inventario, item],
   })),
+
+  setInventarioYMonto: (inventario, money) => set({
+    ...(Array.isArray(inventario) ? { inventario: normalizarListaInventario(inventario) } : {}),
+    ...(Number.isFinite(money) ? { money } : {}),
+  }),
 
   /** Sincroniza HP (p. ej. tras batalla) sin sustituir el objeto Pokémon entero. */
   setPokemonHpEnEquipo: (indice, hpActual) => set((state) => {

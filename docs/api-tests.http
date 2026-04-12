@@ -1,10 +1,7 @@
 @token = PEGA_AQUI_EL_JWT_TRAS_LOGIN
 
-# Tras login (paso B): sustituye el valor de @token por el JWT (un solo renglón). No subas tokens reales al repositorio.
-# REST Client: @token solo en esta zona inicial. En cada petición usa Authorization: Bearer {{token}}. No pegues @token = dentro de un bloque GET/POST (el cliente lo toma por cabecera y falla).
-
 # =============================================================================
-# GUÍA RÁPIDA — Probar el cableado (starter + salvaje + turnos + liberar)
+# GUÍA — Probar el cableado (starter + salvaje + turnos + liberar)
 # =============================================================================
 #
 # Requisitos:
@@ -25,7 +22,7 @@
 #
 # Comprobar en MySQL:
 #   SELECT id_usuario FROM USUARIOS WHERE username = '__wild_battle_pool__';
-#   SELECT * FROM POKEMON_USUARIO WHERE id_usuario = <id de la consulta anterior>;
+#   SELECT * FROM POKEMON_USUARIO WHERE id_usuario = <id>;
 #   Tras (J), el Pokémon salvaje no debería seguir existiendo (salvo que se haya capturado).
 #
 # Automático (sin Postman): desde la carpeta pokemon-backend :
@@ -44,7 +41,7 @@ Content-Type: application/json
 
 ###
 
-### Login
+### Login — MISMO username/password que arriba; "token" del JSON a la línea @token
 POST http://localhost:8081/auth/iniciarSesion
 Content-Type: application/json
 
@@ -55,9 +52,27 @@ Content-Type: application/json
 
 ###
 
+### Añadir 1 Potion al inventario en BD 
+POST http://localhost:8081/api/v1/juego/inventario/anadir
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nombreItem": "Potion",
+  "cantidad": 1
+}
+
+###
+
 ### Estado del juego
 
 GET http://localhost:8081/api/v1/juego/estado
+Authorization: Bearer {{token}}
+
+###
+
+### Nueva partida en servidor (borra equipo, inventario, estado_cliente_json; dinero 300; mapa player-room)
+POST http://localhost:8081/api/v1/juego/reiniciar
 Authorization: Bearer {{token}}
 
 ###

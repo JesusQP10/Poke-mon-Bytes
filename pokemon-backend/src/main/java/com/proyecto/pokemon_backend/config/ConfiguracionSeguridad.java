@@ -21,6 +21,10 @@ import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.List;
 
+/**
+ * Reglas de quién puede llamar a qué: JWT en casi todo lo de juego, {@code /auth} abierto al login,
+ * CORS acotado y sin sesiones HTTP (stateless).
+ */
 @Configuration
 @EnableWebSecurity
 public class ConfiguracionSeguridad {
@@ -47,11 +51,15 @@ public class ConfiguracionSeguridad {
         return http.build();
     }
 
+    /**
+     * API principal: CORS permisivo para dev (Vite en distintos hosts/puertos), JWT antes del form login
+     * abstracto de Spring, y {@code /auth/**} público para registrar e iniciar sesión.
+     */
     @Bean
     @Order(2)
     public SecurityFilterChain cadenaFiltroSeguridad(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // CSRF deshabilitado: API stateless con JWT, no hay cookies de sesión
+            .csrf(csrf -> csrf.disable()) // stateless + Bearer: no hay formulario post tradicional
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration config = new CorsConfiguration();
                 config.setAllowedOriginPatterns(List.of(

@@ -139,6 +139,16 @@
 		<plugin>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-surefire-plugin</artifactId>
+			<configuration>
+				<!-- Por defecto Surefire no ejecuta *IT.java; Integración HTTP. -->
+				<includes>
+					<include>**/Test*.java</include>
+					<include>**/*Test.java</include>
+					<include>**/*Tests.java</include>
+					<include>**/*TestCase.java</include>
+					<include>**/*IT.java</include>
+				</includes>
+			</configuration>
 		</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

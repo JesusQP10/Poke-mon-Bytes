@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/** Alta de usuarios y comprobaciones de credenciales usadas desde el controlador de auth. */
 @Service
 public class ServicioAutenticacion {
 
@@ -18,6 +19,7 @@ public class ServicioAutenticacion {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /** Persiste el usuario con contraseña ya en claro en {@code user.passwordHash} → se guarda como hash BCrypt. */
     public Usuario registrarUsuarioNuevo(Usuario user) {
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
             throw new ErrorNegocio("El nombre de usuario ya está en uso.");
@@ -26,6 +28,7 @@ public class ServicioAutenticacion {
         return userRepository.save(user);
     }
 
+    /** Usado tras login exitoso para emitir el JWT con los roles/flags que Spring asocie al {@link Usuario}. */
     public UserDetails cargarUsuarioPorNombreUsuario(String username) {
         return userRepository.findByUsername(username)
             .orElseThrow(() -> new ErrorNegocio("Usuario no encontrado: " + username));

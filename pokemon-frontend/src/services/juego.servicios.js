@@ -24,7 +24,7 @@ export const gameService = {
 
   /**
    * Guardar partida en servidor (requiere JWT).
-   * @param {Record<string, unknown>} [payload] - posX, posY, mapaActual, money, estadoCliente
+   * @param {Record<string, unknown>} [payload] - posX, posY, mapaActual, estadoCliente (sin dinero/inventario; servidor es la fuente)
    */
   guardarJuego: async (payload = {}) => {
     const response = await api.post('/api/v1/juego/guardar', payload);

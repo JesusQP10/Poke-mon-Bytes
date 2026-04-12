@@ -1,13 +1,16 @@
 package com.proyecto.pokemon_backend.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import com.proyecto.pokemon_backend.model.InventarioId;
 import com.proyecto.pokemon_backend.model.InventarioUsuario;
+import com.proyecto.pokemon_backend.model.Item;
 import com.proyecto.pokemon_backend.model.Usuario;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 import java.util.Optional;
-
-import com.proyecto.pokemon_backend.model.Item;
 
 /**
  * Repositorio para la gestión del Inventario (Tabla Intermedia M:N).
@@ -24,6 +27,13 @@ public interface RepositorioInventarioUsuario extends JpaRepository<InventarioUs
 
     // Buscar un objeto específico en la mochila del usuario (Por ej: ver si tiene pociones)
     Optional<InventarioUsuario> findByUsuarioAndItem(Usuario usuario, Item item);
-    
+
+    /**
+     * Borra todas las filas de mochila del usuario (nueva partida). JPQL + flush para no depender
+     * solo de {@code findByUsuario} + delete en memoria.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM InventarioUsuario i WHERE i.id.usuarioId = :usuarioId")
+    void deleteAllByUsuarioId(@Param("usuarioId") Long usuarioId);
 }
 

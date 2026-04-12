@@ -4,9 +4,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proyecto.pokemon_backend.exception.ErrorNegocio;
 import com.proyecto.pokemon_backend.exception.RecursoNoEncontrado;
+import com.proyecto.pokemon_backend.model.InventarioUsuario;
+import com.proyecto.pokemon_backend.model.Item;
 import com.proyecto.pokemon_backend.model.PokedexMaestra;
 import com.proyecto.pokemon_backend.model.PokemonUsuario;
 import com.proyecto.pokemon_backend.model.Usuario;
+import com.proyecto.pokemon_backend.repository.RepositorioEstadoMovimientoPokemon;
+import com.proyecto.pokemon_backend.repository.RepositorioInventarioUsuario;
+import com.proyecto.pokemon_backend.repository.RepositorioObjeto;
 import com.proyecto.pokemon_backend.repository.RepositorioPokedexMaestra;
 import com.proyecto.pokemon_backend.repository.RepositorioPokemonUsuario;
 import com.proyecto.pokemon_backend.repository.RepositorioUsuario;
@@ -19,9 +24,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
- * Lógica de negocio del estado del juego: equipo, starter, posición del jugador.
+ * Partida single-player persistida: equipo y starter, dinero, inventario en tablas, guardado de
+ * posición/mapas y blob {@code estadoCliente}. También reinicio completo (nueva partida).
  */
 @Service
 public class JuegoService {
@@ -35,17 +42,56 @@ public class JuegoService {
     private final RepositorioUsuario userRepo;
     private final RepositorioPokemonUsuario pokemonRepo;
     private final RepositorioPokedexMaestra pokedexRepo;
+    private final RepositorioInventarioUsuario inventarioRepo;
+    private final RepositorioObjeto itemRepo;
+    private final RepositorioEstadoMovimientoPokemon estadoMovimientoRepo;
 
     public JuegoService(
         RepositorioUsuario userRepo,
         RepositorioPokemonUsuario pokemonRepo,
-        RepositorioPokedexMaestra pokedexRepo
+        RepositorioPokedexMaestra pokedexRepo,
+        RepositorioInventarioUsuario inventarioRepo,
+        RepositorioObjeto itemRepo,
+        RepositorioEstadoMovimientoPokemon estadoMovimientoRepo
     ) {
         this.userRepo = userRepo;
         this.pokemonRepo = pokemonRepo;
         this.pokedexRepo = pokedexRepo;
+        this.inventarioRepo = inventarioRepo;
+        this.itemRepo = itemRepo;
+        this.estadoMovimientoRepo = estadoMovimientoRepo;
     }
 
+    /**
+     * Nueva partida en BD: deja al usuario como recién creado en cuanto a Pokémon, mochila y JSON de cliente.
+     * Las medallas siguen en el mapa vacío por ahora; el mapa/spawn coinciden con lo que espera el overworld.
+     */
+    @Transactional
+    public Map<String, Object> reiniciarPartida(String username) {
+        Usuario u = cargarUsuario(username);
+        Long uid = u.getIdUsuario();
+        List<PokemonUsuario> owned = pokemonRepo.findByUsuarioId(uid);
+        // Hay FK o tablas de PP por Pokémon: limpiar antes de borrar la fila del monstruo
+        for (PokemonUsuario p : owned) {
+            estadoMovimientoRepo.eliminarPorPokemonId(p.getId());
+        }
+        pokemonRepo.deleteByUsuarioId(uid);
+        inventarioRepo.deleteAllByUsuarioId(uid);
+
+        u.setDinero(300);
+        u.setMapaActual("player-room");
+        u.setPosX(5);
+        u.setPosY(7);
+        u.setEstadoClienteJson(null);
+        userRepo.save(u);
+        return obtenerEstado(username);
+    }
+
+    /**
+     * Foto actual del jugador para hidratar el cliente: equipo enriquecido desde Pokédex maestra, dinero e
+     * inventario desde tablas, más {@code estadoCliente} si el blob en usuario no es null.
+     */
+    @Transactional(readOnly = true)
     public Map<String, Object> obtenerEstado(String username) {
         Usuario usuario = cargarUsuario(username);
         List<Map<String, Object>> equipo = equipoOrdenado(usuario.getIdUsuario()).stream()
@@ -57,10 +103,12 @@ public class JuegoService {
         estado.put("team",       equipo);
         estado.put("badges",     List.of());
         estado.put("money",      usuario.getDinero());
+        estado.put("inventario", inventarioADtos(usuario));
         estado.put("mapaActual", usuario.getMapaActual());
         estado.put("posX",       usuario.getPosX());
         estado.put("posY",       usuario.getPosY());
 
+        // Flags de historia / nombre / reloj serializados por el front; si el JSON está corrupto no rompemos el GET
         String blob = usuario.getEstadoClienteJson();
         if (blob != null && !blob.isBlank()) {
             try {
@@ -72,6 +120,33 @@ public class JuegoService {
         return estado;
     }
 
+    /**
+     * Suma cantidad a la fila (usuario, ítem) o la crea en 0+cantidad. La clave compuesta evita duplicar tipos
+     * de objeto para el mismo jugador.
+     */
+    @Transactional
+    public List<Map<String, Object>> anadirAlInventario(
+        String username,
+        Integer itemId,
+        String nombreItem,
+        int cantidad
+    ) {
+        if (cantidad <= 0) {
+            throw new ErrorNegocio("La cantidad debe ser mayor que cero.");
+        }
+        Usuario usuario = cargarUsuario(username);
+        Item item = resolverItem(itemId, nombreItem);
+        InventarioUsuario entrada = inventarioRepo.findByUsuarioAndItem(usuario, item)
+            .orElse(new InventarioUsuario(usuario, item, 0));
+        entrada.setCantidad(entrada.getCantidad() + cantidad);
+        inventarioRepo.save(entrada);
+        return inventarioADtos(usuario);
+    }
+
+    /**
+     * Actualiza columnas “de mundo” del usuario y, si viene, el JSON de cliente. No modifica dinero ni
+     * inventario: el front no debe mandar eso aquí para evitar trampas o desincronización.
+     */
     @SuppressWarnings("null")
     @Transactional
     public Map<String, Object> guardarPartida(String username, Map<String, Object> body) {
@@ -92,14 +167,11 @@ public class JuegoService {
         if (mapa != null && !String.valueOf(mapa).isBlank()) {
             u.setMapaActual(String.valueOf(mapa));
         }
-        Object money = body.get("money");
-        if (money instanceof Number) {
-            u.setDinero(((Number) money).intValue());
-        }
 
         Object ec = body.get("estadoCliente");
         if (ec != null) {
             try {
+                // El cliente a veces manda Map (Jackson) y otras un String ya serializado
                 if (ec instanceof String s && !s.isBlank()) {
                     u.setEstadoClienteJson(s);
                 } else if (ec instanceof Map<?, ?> map) {
@@ -123,6 +195,10 @@ public class JuegoService {
         return resp;
     }
 
+    /**
+     * Inserta un {@link PokemonUsuario} en posición 0 con stats derivadas de {@link PokedexMaestra}.
+     * Idempotente: si el usuario ya tiene equipo (p. ej. doble click en el lab), no crea otro.
+     */
     @Transactional
     public Map<String, Object> elegirStarter(String username, Integer starterId) {
         if (starterId == null) {
@@ -135,7 +211,6 @@ public class JuegoService {
         Usuario usuario = cargarUsuario(username);
         List<PokemonUsuario> equipo = equipoOrdenado(usuario.getIdUsuario());
 
-        // Si ya tiene starter, devolvemos el existente sin crear uno nuevo
         if (!equipo.isEmpty()) {
             return Map.of("starter", toDto(equipo.get(0)));
         }
@@ -163,6 +238,7 @@ public class JuegoService {
         return Map.of("starter", toDto(guardado));
     }
 
+    /** Misma lista que {@link #obtenerEstado} en la clave {@code team}, sin el resto de campos del estado. */
     public List<Map<String, Object>> obtenerEquipo(String username) {
         Usuario usuario = cargarUsuario(username);
         return equipoOrdenado(usuario.getIdUsuario()).stream()
@@ -171,7 +247,7 @@ public class JuegoService {
     }
 
     // =========================================================================
-    // HELPERS
+    // HELPERS — DTOs para el front (nombres en inglés en parte del JSON por compatibilidad con Phaser)
     // =========================================================================
 
     private Map<String, Object> toDto(PokemonUsuario p) {
@@ -235,6 +311,43 @@ public class JuegoService {
     private Usuario cargarUsuario(String username) {
         return userRepo.findByUsername(username)
             .orElseThrow(() -> new RecursoNoEncontrado("Usuario no encontrado."));
+    }
+
+    private Item resolverItem(Integer itemId, String nombreItem) {
+        if (itemId != null && itemId > 0) {
+            return itemRepo.findById(itemId)
+                .orElseThrow(() -> new RecursoNoEncontrado("Ítem no encontrado: id " + itemId));
+        }
+        if (nombreItem != null && !nombreItem.isBlank()) {
+            return itemRepo.findByNombreIgnoreCase(nombreItem.trim())
+                .orElseThrow(() -> new RecursoNoEncontrado("Ítem no encontrado: " + nombreItem));
+        }
+        throw new ErrorNegocio("Indica itemId o nombreItem.");
+    }
+
+    /** Usado tras comprar en tienda: devuelve la mochila tal como la vería {@link #obtenerEstado}. */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listarInventarioDtos(String username) {
+        return inventarioADtos(cargarUsuario(username));
+    }
+
+    /** Omite líneas con cantidad 0 para no inflar la respuesta (el front agrupa por id/nombre). */
+    private List<Map<String, Object>> inventarioADtos(Usuario usuario) {
+        return inventarioRepo.findByUsuario(usuario).stream()
+            .filter(e -> e.getCantidad() != null && e.getCantidad() > 0)
+            .map(this::inventarioLineaDto)
+            .collect(Collectors.toList());
+    }
+
+    private Map<String, Object> inventarioLineaDto(InventarioUsuario e) {
+        Item it = e.getItem();
+        Map<String, Object> m = new HashMap<>();
+        m.put("itemId", it.getIdItem());
+        m.put("id", it.getIdItem());
+        m.put("nombre", it.getNombre());
+        m.put("cantidad", e.getCantidad());
+        m.put("efecto", it.getEfecto());
+        return m;
     }
 
     private int nvl(Integer value, int defecto) {
