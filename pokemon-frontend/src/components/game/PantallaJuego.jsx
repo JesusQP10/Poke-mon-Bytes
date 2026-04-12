@@ -4,10 +4,13 @@ import titleTheme from "../../assets/game/audio/bgm/title_screen_gold_silver.mp3
 import menuFrameImg from "../../assets/game/title/menu/title_menu_frame_01.png";
 import menuCursorImg from "../../assets/game/title/menu/title_menu_cursor_01.png";
 import menuHighlightImg from "../../assets/game/title/menu/title_menu_highlight_01.png";
-import menuTexts from "../../assets/game/title/texts/menu_texts.es.json";
+import menuTextsEs from "../../assets/game/title/texts/menu_texts.es.json";
+import menuTextsEn from "../../assets/game/title/texts/menu_texts.en.json";
+import { textosPanelOpciones } from "../../config/textosOpcionesUi";
 import logoPokemonSvg from "../../assets/game/title/pokemon_logo.svg";
-import { existePartidaGuardadaLocal } from "../../store/usarJuegoStore";
+import { hayGuardadoLocalContinuable } from "../../store/usarJuegoStore";
 import { usarAutenticacionStore } from "../../store/usarAutenticacionStore";
+import PuenteApi from "../../phaser/puentes/PuenteApi";
 import {
   esTeclaAceptar,
   esTeclaAtras,
@@ -16,7 +19,29 @@ import {
   esTeclaDerecha,
   esTeclaArriba,
 } from "../../config/controlesJuego";
+import {
+  leerOpcionesCliente,
+  escribirOpcionesCliente,
+  pasoBgmPercent,
+  volumenBgmParaPhaser,
+} from "../../config/opcionesCliente";
 import "./PantallaJuego.css";
+
+/** @param {unknown} data Respuesta de GET /juego/estado */
+function estadoServidorTieneProgreso(data) {
+  if (!data || typeof data !== "object") return false;
+  const team = Array.isArray(data.team) ? data.team : [];
+  if (team.length > 0) return true;
+  const ec = data.estadoCliente;
+  if (ec && typeof ec === "object") {
+    if (ec.starterElegido) return true;
+    if (ec.hasStarter) return true;
+    if (ec.partidaRecienteTitulo === true) return true;
+    const tc = ec.teamCliente;
+    if (Array.isArray(tc) && tc.length > 0) return true;
+  }
+  return false;
+}
 
 // Manejar PantallaJuego.
 const PantallaJuego = ({ onStart, onContinue }) => {
@@ -27,22 +52,62 @@ const PantallaJuego = ({ onStart, onContinue }) => {
   const [audioStarted, setAudioStarted] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [panelOpcionesTitulo, setPanelOpcionesTitulo] = useState(false);
+  /** Opciones del menú (CONTINUAR / NUEVA PARTIDA / …) solo tras Z o Enter. */
+  const [menuOpcionesVisible, setMenuOpcionesVisible] = useState(false);
+  const [prefsTitulo, setPrefsTitulo] = useState(() => leerOpcionesCliente());
+  const [selOpcionesTitulo, setSelOpcionesTitulo] = useState(0);
 
   const token = usarAutenticacionStore((s) => s.token);
-  // Partida local o sesión iniciada (el servidor puede tener progreso aunque no haya caché).
-  const hasSave = useMemo(
-    () => existePartidaGuardadaLocal() || Boolean(token),
-    [token],
+  /** undefined = aún no comprobado (solo con sesión); true/false = resultado del GET */
+  const [servidorTieneProgreso, setServidorTieneProgreso] = useState(undefined);
+  const [epochGuardadoLocal, setEpochGuardadoLocal] = useState(0);
+
+  useEffect(() => {
+    const alGuardarLocal = () => setEpochGuardadoLocal((n) => n + 1);
+    window.addEventListener("bytes-guardado-local", alGuardarLocal);
+    return () => window.removeEventListener("bytes-guardado-local", alGuardarLocal);
+  }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    void PuenteApi.getEstadoJugador()
+      .then((data) => {
+        if (!cancelled) setServidorTieneProgreso(estadoServidorTieneProgreso(data));
+      })
+      .catch(() => {
+        if (!cancelled) setServidorTieneProgreso(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const puedeContinuar = useMemo(() => {
+    void epochGuardadoLocal;
+    return (
+      hayGuardadoLocalContinuable() || (Boolean(token) && servidorTieneProgreso === true)
+    );
+  }, [token, servidorTieneProgreso, epochGuardadoLocal]);
+
+  const menuTexts = prefsTitulo.locale === "en" ? menuTextsEn : menuTextsEs;
+  const menuOptions = puedeContinuar ? menuTexts.with_save : menuTexts.no_save;
+  const tOpcTitulo = useMemo(
+    () => textosPanelOpciones(prefsTitulo.locale === "en" ? "en" : "es"),
+    [prefsTitulo.locale],
   );
 
-  const menuOptions = hasSave ? menuTexts.with_save : menuTexts.no_save;
+  const indiceMenuSeguro = Math.min(selectedIndex, Math.max(0, menuOptions.length - 1));
 
   useEffect(() => {
     // música y el desbloqueo por interacción del usuario.
     const audio = new Audio(titleTheme);
     audio.loop = true;
     audio.preload = "auto";
-    audio.volume = 0.8;
+    const aplicarVolumenBgm = () => {
+      audio.volume = volumenBgmParaPhaser();
+    };
+    aplicarVolumenBgm();
     audio.muted = false;
     audioRef.current = audio;
 
@@ -82,6 +147,8 @@ const PantallaJuego = ({ onStart, onContinue }) => {
       }
     };
 
+    window.addEventListener("bytes-opciones-audio", aplicarVolumenBgm);
+
     audio.load();
     void desbloquearYReproducir();
 
@@ -93,6 +160,7 @@ const PantallaJuego = ({ onStart, onContinue }) => {
     document.addEventListener("visibilitychange", alCambiarVisibilidad);
 
     return () => {
+      window.removeEventListener("bytes-opciones-audio", aplicarVolumenBgm);
       quitarEscuchasDesbloqueo();
       audio.pause();
       audio.currentTime = 0;
@@ -118,34 +186,111 @@ const PantallaJuego = ({ onStart, onContinue }) => {
   };
 
   useEffect(() => {
-    // Controles del menú principal (logo + opciones desde el primer frame).
     const manejarTecla = (event) => {
-      if (esTeclaArriba(event.code) || esTeclaIzquierda(event.code)) {
-        event.preventDefault();
-        setSelectedIndex((prev) => (prev - 1 + menuOptions.length) % menuOptions.length);
+      if (panelOpcionesTitulo) {
+        if (esTeclaAtras(event.code) || event.code === "Escape") {
+          event.preventDefault();
+          setPanelOpcionesTitulo(false);
+          return;
+        }
+        const filas = 4;
+        if (esTeclaArriba(event.code)) {
+          event.preventDefault();
+          setSelOpcionesTitulo((i) => Math.max(0, i - 1));
+          return;
+        }
+        if (esTeclaAbajo(event.code)) {
+          event.preventDefault();
+          setSelOpcionesTitulo((i) => Math.min(filas - 1, i + 1));
+          return;
+        }
+        if (esTeclaIzquierda(event.code) || esTeclaDerecha(event.code)) {
+          event.preventDefault();
+          const dir = esTeclaDerecha(event.code) ? 1 : -1;
+          if (selOpcionesTitulo === 0) {
+            const next = pasoBgmPercent(prefsTitulo.bgmPercent, dir);
+            setPrefsTitulo(escribirOpcionesCliente({ bgmPercent: next }));
+          } else if (selOpcionesTitulo === 1) {
+            setPrefsTitulo(escribirOpcionesCliente({ sfxOn: !prefsTitulo.sfxOn }));
+          } else if (selOpcionesTitulo === 2) {
+            setPrefsTitulo(escribirOpcionesCliente({ textoRapido: !prefsTitulo.textoRapido }));
+          } else if (selOpcionesTitulo === 3) {
+            const nextLoc = prefsTitulo.locale === "es" ? "en" : "es";
+            setPrefsTitulo(escribirOpcionesCliente({ locale: nextLoc }));
+          }
+          return;
+        }
+        if (esTeclaAceptar(event.code)) {
+          event.preventDefault();
+          if (selOpcionesTitulo === 0) {
+            const next = pasoBgmPercent(prefsTitulo.bgmPercent, 1);
+            setPrefsTitulo(escribirOpcionesCliente({ bgmPercent: next }));
+          } else if (selOpcionesTitulo === 1) {
+            setPrefsTitulo(escribirOpcionesCliente({ sfxOn: !prefsTitulo.sfxOn }));
+          } else if (selOpcionesTitulo === 2) {
+            setPrefsTitulo(escribirOpcionesCliente({ textoRapido: !prefsTitulo.textoRapido }));
+          } else {
+            const nextLoc = prefsTitulo.locale === "es" ? "en" : "es";
+            setPrefsTitulo(escribirOpcionesCliente({ locale: nextLoc }));
+          }
+        }
         return;
       }
 
-      if (esTeclaAbajo(event.code) || esTeclaDerecha(event.code)) {
+      if (!menuOpcionesVisible) {
+        if (esTeclaAceptar(event.code)) {
+          event.preventDefault();
+          setMenuOpcionesVisible(true);
+        }
+        return;
+      }
+
+      if (esTeclaArriba(event.code)) {
         event.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % menuOptions.length);
+        setSelectedIndex((prev) => {
+          const i = Math.min(Math.max(0, prev), Math.max(0, menuOptions.length - 1));
+          return (i - 1 + menuOptions.length) % menuOptions.length;
+        });
+        return;
+      }
+
+      if (esTeclaAbajo(event.code)) {
+        event.preventDefault();
+        setSelectedIndex((prev) => {
+          const i = Math.min(Math.max(0, prev), Math.max(0, menuOptions.length - 1));
+          return (i + 1) % menuOptions.length;
+        });
         return;
       }
 
       if (esTeclaAceptar(event.code)) {
         event.preventDefault();
-        const currentOption = menuOptions[selectedIndex];
-        if (currentOption === "CONTINUAR") {
-          onContinue?.();
-          return;
-        }
-        if (currentOption === "NUEVA PARTIDA") {
-          onStart?.();
-          return;
-        }
-        if (currentOption === "OPCIONES") {
-          setPanelOpcionesTitulo(true);
-          return;
+        if (puedeContinuar) {
+          if (indiceMenuSeguro === 0) {
+            onContinue?.();
+            return;
+          }
+          if (indiceMenuSeguro === 1) {
+            onStart?.();
+            return;
+          }
+          if (indiceMenuSeguro === 2) {
+            setPrefsTitulo(leerOpcionesCliente());
+            setSelOpcionesTitulo(0);
+            setPanelOpcionesTitulo(true);
+            return;
+          }
+        } else {
+          if (indiceMenuSeguro === 0) {
+            onStart?.();
+            return;
+          }
+          if (indiceMenuSeguro === 1) {
+            setPrefsTitulo(leerOpcionesCliente());
+            setSelOpcionesTitulo(0);
+            setPanelOpcionesTitulo(true);
+            return;
+          }
         }
         return;
       }
@@ -153,23 +298,17 @@ const PantallaJuego = ({ onStart, onContinue }) => {
 
     document.addEventListener("keydown", manejarTecla);
     return () => document.removeEventListener("keydown", manejarTecla);
-  }, [menuOptions, onContinue, onStart, selectedIndex]);
-
-  useEffect(() => {
-    if (!panelOpcionesTitulo) return;
-    const cerrar = (e) => {
-      if (
-        esTeclaAceptar(e.code) ||
-        esTeclaAtras(e.code) ||
-        e.code === "Escape"
-      ) {
-        e.preventDefault();
-        setPanelOpcionesTitulo(false);
-      }
-    };
-    document.addEventListener("keydown", cerrar);
-    return () => document.removeEventListener("keydown", cerrar);
-  }, [panelOpcionesTitulo]);
+  }, [
+    menuOptions,
+    menuOpcionesVisible,
+    onContinue,
+    onStart,
+    indiceMenuSeguro,
+    panelOpcionesTitulo,
+    prefsTitulo,
+    puedeContinuar,
+    selOpcionesTitulo,
+  ]);
 
   return (
     // Render del título + Ho-Oh + menú.
@@ -220,56 +359,69 @@ const PantallaJuego = ({ onStart, onContinue }) => {
         <img src={hoOhSprite} alt="Ho-Oh" className="gs-hooh" />
       </div>
 
-      <div className="gs-menu-wrap">
-        <div className="gs-menu-frame" style={{ backgroundImage: `url(${menuFrameImg})` }}>
-          {menuOptions.map((option, index) => (
-            <div key={option} className="gs-menu-row">
-              {index === selectedIndex && (
-                <>
-                  <img src={menuCursorImg} alt="" className="gs-menu-cursor" />
-                  <img src={menuHighlightImg} alt="" className="gs-menu-highlight" />
-                </>
-              )}
-              <span className="gs-menu-label">{option}</span>
-            </div>
-          ))}
+      {menuOpcionesVisible && (
+        <div className="gs-menu-wrap">
+          <div className="gs-menu-frame" style={{ backgroundImage: `url(${menuFrameImg})` }}>
+            {menuOptions.map((option, index) => (
+              <div key={option} className="gs-menu-row">
+                {index === indiceMenuSeguro && (
+                  <>
+                    <img src={menuCursorImg} alt="" className="gs-menu-cursor" />
+                    <img src={menuHighlightImg} alt="" className="gs-menu-highlight" />
+                  </>
+                )}
+                <span className="gs-menu-label">{option}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {panelOpcionesTitulo && (
-        <div
-          className="gs-title-opciones-overlay"
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 30,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.65)",
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: 9,
-            lineHeight: 1.7,
-            color: "#f4f4f4",
-            textAlign: "center",
-            padding: "16px 20px",
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 280,
-              border: "2px solid #bcd",
-              background: "rgba(12,18,28,0.92)",
-              padding: "14px 16px 18px",
-            }}
-          >
-            <div style={{ marginBottom: 10, color: "#dfe8f5" }}>OPCIONES</div>
-            <div style={{ fontSize: 7, color: "#a8b4c4", marginBottom: 12 }}>
-              Aún no hay ajustes (volumen, idioma, etc.). Se irán añadiendo aquí.
+        <div className="gs-title-opciones-overlay" role="dialog" aria-modal="true">
+          <div className="gs-title-opciones-panel">
+            <div className="gs-title-opciones-heading">{tOpcTitulo.titulo}</div>
+            <div
+              className={`gs-title-opciones-row${selOpcionesTitulo === 0 ? " gs-title-opciones-row--active" : ""}`}
+            >
+              <span className="gs-title-opciones-cursor" aria-hidden>
+                {selOpcionesTitulo === 0 ? "▶" : ""}
+              </span>
+              <span className="gs-title-opciones-label">{tOpcTitulo.musica}</span>
+              <span className="gs-title-opciones-valor">{prefsTitulo.bgmPercent}%</span>
             </div>
-            <div style={{ fontSize: 6, color: "#7a8a9e" }}>Z / Enter / X · cerrar</div>
+            <div
+              className={`gs-title-opciones-row${selOpcionesTitulo === 1 ? " gs-title-opciones-row--active" : ""}`}
+            >
+              <span className="gs-title-opciones-cursor" aria-hidden>
+                {selOpcionesTitulo === 1 ? "▶" : ""}
+              </span>
+              <span className="gs-title-opciones-label">{tOpcTitulo.sonidos}</span>
+              <span className="gs-title-opciones-valor">
+                {prefsTitulo.sfxOn ? tOpcTitulo.sonidoSi : tOpcTitulo.sonidoNo}
+              </span>
+            </div>
+            <div
+              className={`gs-title-opciones-row${selOpcionesTitulo === 2 ? " gs-title-opciones-row--active" : ""}`}
+            >
+              <span className="gs-title-opciones-cursor" aria-hidden>
+                {selOpcionesTitulo === 2 ? "▶" : ""}
+              </span>
+              <span className="gs-title-opciones-label">{tOpcTitulo.texto}</span>
+              <span className="gs-title-opciones-valor">
+                {prefsTitulo.textoRapido ? tOpcTitulo.textoVelRapido : tOpcTitulo.textoVelNormal}
+              </span>
+            </div>
+            <div
+              className={`gs-title-opciones-row${selOpcionesTitulo === 3 ? " gs-title-opciones-row--active" : ""}`}
+            >
+              <span className="gs-title-opciones-cursor" aria-hidden>
+                {selOpcionesTitulo === 3 ? "▶" : ""}
+              </span>
+              <span className="gs-title-opciones-label">{tOpcTitulo.idioma}</span>
+              <span className="gs-title-opciones-valor">{prefsTitulo.locale === "en" ? "EN" : "ES"}</span>
+            </div>
+            <p className="gs-title-opciones-hint">{tOpcTitulo.hintOpciones}</p>
           </div>
         </div>
       )}

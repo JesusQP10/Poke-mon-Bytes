@@ -304,6 +304,18 @@ export const usarJuegoStore = create((set, get) => ({
   /** Cuerpo para POST /juego/guardar (servidor + caché local). */
   construirPayloadGuardado: () => {
     const s = get();
+    let partidaRecienteTitulo = false;
+    try {
+      if (typeof window !== 'undefined') {
+        const raw = window.localStorage.getItem(SAVE_STORAGE_KEY);
+        if (raw?.trim()) {
+          const d = JSON.parse(raw);
+          if (d?.partidaRecienteTitulo === true) partidaRecienteTitulo = true;
+        }
+      }
+    } catch {
+      /* ignorar */
+    }
     const estadoCliente = {
       v: SAVE_VERSION,
       nombreJugador: s.nombreJugador,
@@ -323,6 +335,7 @@ export const usarJuegoStore = create((set, get) => ({
       idEntrenadorPublico: s.idEntrenadorPublico,
       tiempoJuegoSegundos: s.tiempoJuegoSegundos,
       pokedexRegistrados: s.pokedexRegistrados,
+      partidaRecienteTitulo,
     };
     return {
       posX: s.posX,
@@ -440,9 +453,23 @@ export const usarJuegoStore = create((set, get) => ({
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error, loading: false }),
 
-  /** Serializa estado jugable en localStorage (sin JWT ni playerState del backend). */
-  guardarPartidaLocal: () => {
+  /**
+   * Serializa estado jugable en localStorage (sin JWT ni playerState del backend).
+   * @param {{ desdeGuardadoMenu?: boolean }} [opts] Si `desdeGuardadoMenu`, marca el guardado como válido para «Continuar» en el título.
+   */
+  guardarPartidaLocal: (opts) => {
     const s = get();
+    let prevTitulo = false;
+    try {
+      const raw = typeof window !== 'undefined' ? window.localStorage.getItem(SAVE_STORAGE_KEY) : null;
+      if (raw?.trim()) {
+        const d = JSON.parse(raw);
+        if (d && d.partidaRecienteTitulo === true) prevTitulo = true;
+      }
+    } catch {
+      /* ignorar JSON corrupto */
+    }
+    const partidaRecienteTitulo = opts?.desdeGuardadoMenu === true ? true : prevTitulo;
     const payload = {
       v: SAVE_VERSION,
       nombreJugador: s.nombreJugador,
@@ -466,9 +493,13 @@ export const usarJuegoStore = create((set, get) => ({
       idEntrenadorPublico: s.idEntrenadorPublico,
       tiempoJuegoSegundos: s.tiempoJuegoSegundos,
       pokedexRegistrados: s.pokedexRegistrados,
+      partidaRecienteTitulo,
     };
     try {
       localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(payload));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('bytes-guardado-local'));
+      }
     } catch (e) {
       console.warn('[guardarPartidaLocal]', e);
       throw e;
@@ -545,5 +576,33 @@ export function existePartidaGuardadaLocal() {
   } catch {
     return false;
   }
+}
+
+/**
+ * ¿El JSON local tiene progreso para ofrecer «Continuar»?
+ * Ignora guardados solo con nombre / charla con Elm (sin Pokémon en equipo ni starter).
+ */
+export function hayGuardadoLocalContinuable() {
+  if (typeof window === 'undefined') return false;
+  let raw;
+  try {
+    raw = window.localStorage.getItem(SAVE_STORAGE_KEY);
+  } catch {
+    return false;
+  }
+  if (!raw || !raw.trim()) return false;
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return false;
+  }
+  if (!data || data.v !== SAVE_VERSION) return false;
+  if (data.partidaRecienteTitulo === true) return true;
+  const team = Array.isArray(data.team) ? data.team : [];
+  if (team.length > 0) return true;
+  if (data.starterElegido) return true;
+  if (data.hasStarter) return true;
+  return false;
 }
 

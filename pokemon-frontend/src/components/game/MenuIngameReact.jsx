@@ -13,8 +13,9 @@ import {
 import {
   leerOpcionesCliente,
   escribirOpcionesCliente,
-  PASOS_VOLUMEN_BGM,
+  pasoBgmPercent,
 } from "../../config/opcionesCliente";
+import { textosPanelOpciones } from "../../config/textosOpcionesUi";
 import "./MenuIngameReact.css";
 import "./DialogoRetro.css";
 import iconSlotParty from "../../assets/ui/menu/icon_slot_party.png";
@@ -93,15 +94,6 @@ function esMismoPokemonQueStarter(p, starter) {
   return Number(p.id) === Number(starter.id ?? starter.pokedexId);
 }
 
-function pasoBgmPercent(actual, dir) {
-  const steps = PASOS_VOLUMEN_BGM;
-  let i = steps.indexOf(actual);
-  if (i < 0) i = steps.indexOf(100);
-  if (i < 0) i = steps.length - 1;
-  const ni = Math.max(0, Math.min(steps.length - 1, i + dir));
-  return steps[ni];
-}
-
 /**
  * Menú in-game (tecla X) en React.
  *
@@ -117,6 +109,11 @@ const MenuIngameReact = ({ onClose }) => {
   const [dialogo, setDialogo] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [detalleApi, setDetalleApi] = useState({ status: "idle" });
+
+  const tOpc = useMemo(
+    () => textosPanelOpciones(prefs.locale === "en" ? "en" : "es"),
+    [prefs.locale],
+  );
 
   const inventario = usarJuegoStore((s) => s.inventario);
   const team = usarJuegoStore((s) => s.team);
@@ -221,7 +218,7 @@ const MenuIngameReact = ({ onClose }) => {
     setGuardando(true);
     setDialogo(null);
     try {
-      usarJuegoStore.getState().guardarPartidaLocal();
+      usarJuegoStore.getState().guardarPartidaLocal({ desdeGuardadoMenu: true });
     } catch {
       setGuardando(false);
       abrirDialogo("No se pudo guardar\nen el navegador.");
@@ -347,7 +344,7 @@ const MenuIngameReact = ({ onClose }) => {
       }
 
       if (vista === "opciones") {
-        const filas = 3;
+        const filas = 4;
         if (esTeclaArriba(e.code)) {
           e.preventDefault();
           setSelOpciones((i) => Math.max(0, i - 1));
@@ -368,6 +365,9 @@ const MenuIngameReact = ({ onClose }) => {
             if (dir !== 0) {
               setPrefs(escribirOpcionesCliente({ textoRapido: !prefs.textoRapido }));
             }
+          } else if (selOpciones === 3) {
+            const nextLoc = prefs.locale === "es" ? "en" : "es";
+            setPrefs(escribirOpcionesCliente({ locale: nextLoc }));
           }
         } else if (esTeclaAceptar(e.code)) {
           e.preventDefault();
@@ -378,6 +378,9 @@ const MenuIngameReact = ({ onClose }) => {
             setPrefs(escribirOpcionesCliente({ sfxOn: !prefs.sfxOn }));
           } else if (selOpciones === 2) {
             setPrefs(escribirOpcionesCliente({ textoRapido: !prefs.textoRapido }));
+          } else {
+            const nextLoc = prefs.locale === "es" ? "en" : "es";
+            setPrefs(escribirOpcionesCliente({ locale: nextLoc }));
           }
         } else if (esTeclaAtras(e.code)) {
           e.preventDefault();
@@ -439,7 +442,7 @@ const MenuIngameReact = ({ onClose }) => {
     if (vista === "equipo") return "↑↓ · Z datos · X menú";
     if (vista === "equipo-detalle") return "X · volver al equipo";
     if (vista === "mochila") return "↑↓ · Z detalle · X menú";
-    if (vista === "opciones") return "↑↓ · ←→ o Z · X menú";
+    if (vista === "opciones") return tOpc.hintOpcionesIngame;
     return "";
   })();
 
@@ -713,31 +716,42 @@ const MenuIngameReact = ({ onClose }) => {
 
       {vista === "opciones" && (
         <div className="menu-ingame-full menu-ingame-full--opts">
-          <div className="menu-ingame-full-title">OPCIONES</div>
+          <div className="menu-ingame-full-title">{tOpc.titulo}</div>
           <div className="menu-ingame-opciones-list">
             <div
               className={`menu-ingame-opcion-row${selOpciones === 0 ? " menu-ingame-opcion-row--active" : ""}`}
             >
               <span className="menu-ingame-cursor">{selOpciones === 0 ? "▶" : ""}</span>
-              <span className="menu-ingame-opcion-label">Música</span>
+              <span className="menu-ingame-opcion-label">{tOpc.musica}</span>
               <span className="menu-ingame-opcion-valor">{prefs.bgmPercent}%</span>
             </div>
             <div
               className={`menu-ingame-opcion-row${selOpciones === 1 ? " menu-ingame-opcion-row--active" : ""}`}
             >
               <span className="menu-ingame-cursor">{selOpciones === 1 ? "▶" : ""}</span>
-              <span className="menu-ingame-opcion-label">Sonidos</span>
-              <span className="menu-ingame-opcion-valor">{prefs.sfxOn ? "SÍ" : "NO"}</span>
+              <span className="menu-ingame-opcion-label">{tOpc.sonidos}</span>
+              <span className="menu-ingame-opcion-valor">
+                {prefs.sfxOn ? tOpc.sonidoSi : tOpc.sonidoNo}
+              </span>
             </div>
             <div
               className={`menu-ingame-opcion-row${selOpciones === 2 ? " menu-ingame-opcion-row--active" : ""}`}
             >
               <span className="menu-ingame-cursor">{selOpciones === 2 ? "▶" : ""}</span>
-              <span className="menu-ingame-opcion-label">Texto</span>
-              <span className="menu-ingame-opcion-valor">{prefs.textoRapido ? "RÁPIDO" : "NORMAL"}</span>
+              <span className="menu-ingame-opcion-label">{tOpc.texto}</span>
+              <span className="menu-ingame-opcion-valor">
+                {prefs.textoRapido ? tOpc.textoVelRapido : tOpc.textoVelNormal}
+              </span>
+            </div>
+            <div
+              className={`menu-ingame-opcion-row${selOpciones === 3 ? " menu-ingame-opcion-row--active" : ""}`}
+            >
+              <span className="menu-ingame-cursor">{selOpciones === 3 ? "▶" : ""}</span>
+              <span className="menu-ingame-opcion-label">{tOpc.idioma}</span>
+              <span className="menu-ingame-opcion-valor">{prefs.locale === "en" ? "EN" : "ES"}</span>
             </div>
           </div>
-          <p className="menu-ingame-opciones-nota">← → o Z en la fila</p>
+          <p className="menu-ingame-opciones-nota">{tOpc.notaFilaOpciones}</p>
         </div>
       )}
 

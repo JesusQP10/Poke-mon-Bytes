@@ -1,0 +1,8 @@
+{
+  "no_save": ["NEW GAME", "SETTINGS"],
+  "with_save": ["CONTINUE", "NEW GAME", "SETTINGS"],
+  "description": {
+    "no_save": "Shown when there is no save to continue.",
+    "with_save": "Shown when a save exists."
+  }
+}

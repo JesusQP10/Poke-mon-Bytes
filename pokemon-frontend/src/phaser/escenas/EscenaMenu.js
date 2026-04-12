@@ -131,7 +131,7 @@ export default class EscenaMenu extends Phaser.Scene {
     this._crearCajaTexto('Guardando...');
 
     try {
-      usarJuegoStore.getState().guardarPartidaLocal();
+      usarJuegoStore.getState().guardarPartidaLocal({ desdeGuardadoMenu: true });
     } catch {
       this._cajaMensaje?.destroy();
       this._textoMsg?.destroy();
