@@ -9,32 +9,45 @@ import PuenteApi from "../phaser/puentes/PuenteApi";
 import "../components/game/DialogoRetro.css";
 
 function PanelTextoEstaticoReact({ lineas, onCerrar }) {
+  const [indice, setIndice] = useState(0);
+
   useEffect(() => {
     const manejar = (e) => {
-      if (
-        e.code === "KeyZ" ||
-        e.code === "Enter" ||
-        e.code === "NumpadEnter" ||
-        e.code === "Escape"
-      ) {
+      if (e.code === "Escape") {
         e.preventDefault();
+        onCerrar();
+        return;
+      }
+      if (
+        e.code !== "KeyZ" &&
+        e.code !== "Enter" &&
+        e.code !== "NumpadEnter"
+      ) {
+        return;
+      }
+      e.preventDefault();
+      if (indice < lineas.length - 1) {
+        setIndice((i) => i + 1);
+      } else {
         onCerrar();
       }
     };
     window.addEventListener("keydown", manejar);
     return () => window.removeEventListener("keydown", manejar);
-  }, [onCerrar]);
+  }, [onCerrar, lineas.length, indice]);
+
+  const texto = lineas[indice] ?? "";
+  const hayMas = indice < lineas.length - 1;
 
   return (
     <div className="dialogo-retro-capas" role="dialog" aria-modal="true">
       <div className="dialogo-retro-caja dialogo-retro-caja--panel">
-        {lineas.map((t, i) => (
-          <p key={i} className="dialogo-retro-parrafo">
-            {t}
-          </p>
-        ))}
+        <p className="dialogo-retro-parrafo">{texto}</p>
       </div>
-      <div className="dialogo-retro-hint">Z / Enter · cerrar</div>
+      <div className="dialogo-retro-hint">
+        {hayMas ? "Z / Enter · siguiente" : "Z / Enter · cerrar"}
+        {" · Esc"}
+      </div>
     </div>
   );
 }
@@ -46,12 +59,18 @@ const PaginaJuego = () => {
   const [textoEstaticoReact, setTextoEstaticoReact] = useState(null);
   const [menuIngame, setMenuIngame] = useState(null);
   const gameCallbacksRef = useRef({});
+  const textoEstaticoSeqRef = useRef(0);
 
   useLayoutEffect(() => {
     gameCallbacksRef.current = {
       onCambioPantalla: setScene,
       onTextoEstatico: ({ lineas, onCerrar }) => {
-        setTextoEstaticoReact({ lineas, onCerrar });
+        textoEstaticoSeqRef.current += 1;
+        setTextoEstaticoReact({
+          lineas,
+          onCerrar,
+          id: textoEstaticoSeqRef.current,
+        });
       },
       onAbrirMenuIngame: ({ resumePhaser }) => {
         setMenuIngame((cur) => (cur ? cur : { resumePhaser }));
@@ -159,6 +178,7 @@ const PaginaJuego = () => {
             <CanvasPhaser callbacksRef={gameCallbacksRef} />
             {textoEstaticoReact && (
               <PanelTextoEstaticoReact
+                key={textoEstaticoReact.id}
                 lineas={textoEstaticoReact.lineas}
                 onCerrar={() => {
                   setTextoEstaticoReact((cur) => {

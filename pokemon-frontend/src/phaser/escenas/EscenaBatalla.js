@@ -21,6 +21,11 @@ export default class EscenaBatalla extends Phaser.Scene {
     this._pokemonSalvaje = data?.pokemonSalvaje ?? { id: 1, nombre: 'Bulbasaur', nivel: 5 };
     /** Si existe, se libera en BD al salir del combate. */
     this._salvajePokemonUsuarioId = null;
+    /** Texto extra al inicio (sala debug) */
+    this._estadoSalvajeDebug = this._pokemonSalvaje?.estadoSalvajeDebug ?? null;
+    /** Estado de prueba mostrado sobre el Pokémon activo del jugador (por defecto en combates debug). */
+    this._estadoJugadorDebug = this._pokemonSalvaje?.estadoJugadorDebug ?? null;
+    this._esDebugCaptura = Boolean(this._pokemonSalvaje?.esDebugCaptura);
   }
 
   async create() {
@@ -103,15 +108,64 @@ export default class EscenaBatalla extends Phaser.Scene {
     this._onOpcionesAudioBatalla = () => this._aplicarVolumenBgmBatalla();
     window.addEventListener('bytes-opciones-audio', this._onOpcionesAudioBatalla);
 
-    // Texto inicial de encuentro
-    this._mostrarTexto(`¡Un ${this._pokemonSalvaje.nombre}\nsalvaje apareció!`, () => {
-      this._mostrarTexto(`¡Vamos, ${this._pokemonJugador?.nombreApodo ?? 'Pokémon'}!`, () => {
-        this._mostrarMenuAcciones();
-      });
-    });
+    const salPost = this._pokemonSalvaje;
+    const lineaEncuentro = `¡Un ${salPost.nombre}\nsalvaje apareció!`;
+    const lineaVamos = `¡Vamos, ${this._pokemonJugador?.nombreApodo ?? 'Pokémon'}!`;
+
+    const encadenarMensajes = (mensajes, i, alTerminar) => {
+      if (i >= mensajes.length) {
+        alTerminar();
+        return;
+      }
+      this._mostrarTexto(mensajes[i], () => encadenarMensajes(mensajes, i + 1, alTerminar));
+    };
+
+    const mensajesInicio = [lineaEncuentro];
+    if (this._esDebugCaptura) {
+      mensajesInicio.push('(Debug) Zona de prueba\nde captura.');
+    }
+    const lineaEstadoRival = this._mensajeLineaEstadoRivalDebug(this._estadoSalvajeDebug);
+    if (lineaEstadoRival) mensajesInicio.push(lineaEstadoRival);
+    mensajesInicio.push(lineaVamos);
+    const nomJug = this._pokemonJugador?.nombreApodo ?? this._pokemonJugador?.nombre ?? 'Pokémon';
+    const lineaEstadoJug = this._mensajeLineaEstadoJugadorDebug(nomJug, this._estadoJugadorDebug);
+    if (lineaEstadoJug) mensajesInicio.push(lineaEstadoJug);
+
+    encadenarMensajes(mensajesInicio, 0, () => this._mostrarMenuAcciones());
 
     // Entrada desde overworld con fade
     this.cameras.main.fadeIn(400, 0, 0, 0);
+  }
+
+  /** Mensaje si el estado de prueba va sobre el salvaje (`estadoAfectaA` = rival en Tiled). */
+  _mensajeLineaEstadoRivalDebug(clave) {
+    if (!clave) return null;
+    const c = String(clave).toLowerCase();
+    const mapa = {
+      quemado: '(Debug) El salvaje viene\ncon QUEMADURA.',
+      veneno: '(Debug) El salvaje viene\nENVENENADO.',
+      paralisis: '(Debug) El salvaje viene\nPARALIZADO.',
+      congelado: '(Debug) El salvaje viene\nCONGELADO.',
+      dormido: '(Debug) El salvaje viene\nDORMIDO.',
+      confuso: '(Debug) El salvaje viene\nCONFUSO.',
+    };
+    return mapa[c] ?? `(Debug) Estado rival: ${c}`;
+  }
+
+  /** Mensaje si el estado de prueba va sobre tu Pokémon activo (por defecto). Narrativa: el rival te lo aplica. */
+  _mensajeLineaEstadoJugadorDebug(nombrePokemon, clave) {
+    if (!clave) return null;
+    const c = String(clave).toLowerCase();
+    const n = String(nombrePokemon ?? 'Pokémon');
+    const mapa = {
+      quemado: `¡${n} fue quemado!\n(Prueba debug: quemadura)`,
+      veneno: `¡${n} fue envenenado!\n(Prueba debug: veneno)`,
+      paralisis: `¡${n} quedó paralizado.\nNo puede moverse…\n(Prueba debug)`,
+      congelado: `¡${n} se congeló!\n(Prueba debug: congelación)`,
+      dormido: `¡${n} se durmió!\n(Prueba debug: sueño)`,
+      confuso: `¡${n} se volvió confuso!\n(Prueba debug: confusión)`,
+    };
+    return mapa[c] ?? `(Debug) Estado en tu Pokémon: ${c}`;
   }
 
   // ── Fondo y plataformas ───────────────────────────────────────────────

@@ -84,13 +84,23 @@ function normalizarIdEntrenador5(raw) {
 }
 
 /**
- * Sin esto, `make.tilemap({ key })` falla y el laboratorio cae en placeholder + guardados incoherentes.
+ * Claves = las de `EscenaPreload` (`tilemapTiledJSON`). Tiled a veces exporta `_` o espacios.
  * @param {string | null | undefined} mapaKey
- * NO TOCAR
  */
 function normalizarMapaActualParaPreload(mapaKey) {
   const k = String(mapaKey ?? '').trim();
-  if (k === 'elm_lab') return 'elm-lab';
+  if (!k) return 'player-room';
+  const slug = k.toLowerCase().replace(/[\s-]+/g, '_');
+  /** @type {Record<string, string>} */
+  const canon = {
+    elm_lab: 'elm-lab',
+    debugger_room: 'debugger-room',
+    new_bark_town: 'new-bark-town',
+    player_house: 'player-house',
+    player_room: 'player-room',
+    ruta_29: 'ruta-29',
+  };
+  if (Object.prototype.hasOwnProperty.call(canon, slug)) return canon[slug];
   return k;
 }
 

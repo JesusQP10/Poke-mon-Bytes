@@ -34,6 +34,7 @@ export default class EscenaPreload extends Phaser.Scene {
 
     // ── Tilesets (solo los que existen) ──────────────────────────────────
     this.load.image('new_bark_town', '/assets/game/overworld/tiles/sheets/new_bark_town.png');
+    this.load.image('debugger_room', '/assets/game/overworld/tiles/sheets/debugger_room.png');
     this.load.image('ruta_29_bg', '/assets/game/overworld/tiles/sheets/ruta_29_bg.png');
 
     // Spritesheet del jugador (32x32 respetando el padding de tus assets)
@@ -49,12 +50,29 @@ export default class EscenaPreload extends Phaser.Scene {
     this.load.spritesheet('madre', '/assets/game/overworld/sprites/npcs/madre.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('nino', '/assets/game/overworld/sprites/npcs/nino.png', { frameWidth: 32, frameHeight: 32 });
 
+    // NPCs sala debugger (sprites 16×16, un frame por hoja)
+    const npc16 = { frameWidth: 16, frameHeight: 16 };
+    this.load.spritesheet('npc_chap', '/assets/game/overworld/sprites/npcs/npc_chap.png', npc16);
+    this.load.spritesheet('npc_clerk', '/assets/game/overworld/sprites/npcs/npc_clerk.png', npc16);
+    this.load.spritesheet('npc_courtney', '/assets/game/overworld/sprites/npcs/npc_courtney.png', npc16);
+    this.load.spritesheet('npc_ishihara', '/assets/game/overworld/sprites/npcs/npc_ishihara.png', npc16);
+    this.load.spritesheet('npc_mint', '/assets/game/overworld/sprites/npcs/npc_mint.png', npc16);
+    this.load.spritesheet('npc_imakuni', '/assets/game/overworld/sprites/npcs/npc_imakuni.png', npc16);
+    this.load.spritesheet('npc_jes', '/assets/game/overworld/sprites/npcs/npc_jes.png', npc16);
+    this.load.spritesheet('npc_jack', '/assets/game/overworld/sprites/npcs/npc_jack.png', npc16);
+    this.load.spritesheet('npc_jonathan', '/assets/game/overworld/sprites/npcs/npc_jonathan.png', npc16);
+    this.load.spritesheet('npc_kristin', '/assets/game/overworld/sprites/npcs/npc_kristin.png', npc16);
+    this.load.spritesheet('npc_pawn', '/assets/game/overworld/sprites/npcs/npc_pawn.png', npc16);
+    this.load.spritesheet('npc_rick', '/assets/game/overworld/sprites/npcs/npc_rick.png', npc16);
+    this.load.spritesheet('npc_yosuke', '/assets/game/overworld/sprites/npcs/npc_yosuke.png', npc16);
+
     // ── Tilemaps (JSON exportados desde Tiled) ──────────────────────────
     this.load.tilemapTiledJSON('player-room', '/assets/game/overworld/tiles/exports/player_room.json');
     this.load.tilemapTiledJSON('player-house', '/assets/game/overworld/tiles/exports/player_house.json');
     this.load.tilemapTiledJSON('new-bark-town', '/assets/game/overworld/tiles/exports/new_bark_town.json');
     this.load.tilemapTiledJSON('elm-lab', '/assets/game/overworld/tiles/exports/elm_lab.json');
     this.load.tilemapTiledJSON('ruta-29', '/assets/game/overworld/tiles/exports/ruta_29.json');
+    this.load.tilemapTiledJSON('debugger-room', '/assets/game/overworld/tiles/exports/debugger_room.json');
 
     // ── Tabla de encuentros (clave = `encuentros-${mapaKey}` en EscenaOverworld) ──
     this.load.json('encuentros-new-bark-town', '/assets/game/overworld/tiles/events/encuentros_new_bark_town.json');

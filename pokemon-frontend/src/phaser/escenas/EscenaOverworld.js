@@ -17,6 +17,7 @@ import {
   comprobarNarrativaTrasTilemap,
   crearZonaTriggerElm,
   intentarWarpConSecuenciaAyudante,
+  resolverTexturaPorNombreTileset,
 } from '../mapas';
 import { lineasProfElmTrasStarter, lineasMadreTrasStarter } from '../mapas/dialogosPostStarter';
 import { STATS_MENU_FALLBACK_POR_POKEDEX } from '../../config/statsCombateMenuFallback';
@@ -57,35 +58,42 @@ export default class EscenaOverworld extends Phaser.Scene {
     this._uiConfirmStarter = null;
     this._flujoEleccionStarter = false;
     this._interactuables = []; // Registro centralizado para que el input no se duplique
+    /** @type {{ tx: number, ty: number, radio: number, disparado: boolean, lineas: string[], optsReactTexto: object }[]} */
+    this._bienvenidasPorTile = [];
     this._tilemapPhaser = null;
     this._warpSystem = new WarpSystem(this, { tileSize: TAM_TILE, fadeMs: 250 });
 
     const store = usarJuegoStore.getState();
     const mapa = store.mapaActual;
     const esNuevaPartida = store.esNuevaPartida;
-    const configMapa = CONFIG_MAPAS[mapa] ?? CONFIG_MAPAS['player-room'];
 
-    const tileX = esNuevaPartida ? configMapa.posXInicio : (store.posX ?? configMapa.posXInicio);
-    const tileY = esNuevaPartida ? configMapa.posYInicio : (store.posY ?? configMapa.posYInicio);
-
-    let tieneAssets = this.cache.tilemap.exists(mapa);
-    
+    // Debe coincidir con la clave en caché de Phaser (p. ej. `new-bark-town`). Antes se marcaba
+    // `tieneAssets` con una variante `_` pero se llamaba a `make.tilemap` con la clave errónea → pantalla negra.
+    let mapaTilemap = mapa;
+    let tieneAssets = this.cache.tilemap.exists(mapaTilemap);
     if (!tieneAssets) {
       const variaciones = [mapa, mapa.replace('-', '_'), mapa.replace('_', '-')];
       for (const key of variaciones) {
         if (this.cache.tilemap.exists(key)) {
           tieneAssets = true;
+          mapaTilemap = key;
           break;
         }
       }
     }
-    
+
+    const configMapa =
+      CONFIG_MAPAS[mapaTilemap] ?? CONFIG_MAPAS[mapa] ?? CONFIG_MAPAS['player-room'];
+
+    const tileX = esNuevaPartida ? configMapa.posXInicio : (store.posX ?? configMapa.posXInicio);
+    const tileY = esNuevaPartida ? configMapa.posYInicio : (store.posY ?? configMapa.posYInicio);
+
     if (tieneAssets) {
       try {
-        this._crearEscenaTilemap(mapa, tileX, tileY, configMapa);
+        this._crearEscenaTilemap(mapaTilemap, tileX, tileY, configMapa);
       } catch (e) {
-        console.error(`[create] ❌ Error cargando tilemap ${mapa}:`, e);
-        this._crearEscenaPlaceholder(mapa, tileX, tileY, configMapa);
+        console.error(`[create] ❌ Error cargando tilemap ${mapaTilemap}:`, e);
+        this._crearEscenaPlaceholder(mapaTilemap, tileX, tileY, configMapa);
       }
     } else {
       this._crearEscenaPlaceholder(mapa, tileX, tileY, configMapa);
@@ -101,9 +109,9 @@ export default class EscenaOverworld extends Phaser.Scene {
     this.input.keyboard.on('keydown-Z', this._manejarInteraccion, this);
 
     this._warpSystem.inicializarWorldstep();
-    this.events.once(Phaser.Scenes.Events.POSTUPDATE, () => {
-      this._warpSystem?.sincronizarPresenciaJugadorEnZonas();
-    });
+    // Tras registrar todas las zonas, alinear presencia antes del primer paso de Arcade (evita salida inmediata
+    // si el spawn cae dentro del warp de salida, sin bloquear otros warps con un flag global).
+    this._warpSystem.sincronizarPresenciaJugadorEnZonas();
 
     this._aplicarVolumenBgmDesdeOpciones = () => {
       const v = volumenBgmParaPhaser();
@@ -182,11 +190,15 @@ export default class EscenaOverworld extends Phaser.Scene {
     this._interactuables.forEach((obj) => {
       if (obj.sprite && !obj.sprite.visible && obj.tipo === 'pokeball') return;
 
-      const dist = Phaser.Math.Distance.Between(this._jugador.x, this._jugador.y, obj.sprite.x, obj.sprite.y);
+      const ix = obj.xRadar ?? obj.sprite.x;
+      const iy = obj.yRadar ?? obj.sprite.y;
+      const dist = Phaser.Math.Distance.Between(this._jugador.x, this._jugador.y, ix, iy);
       const alcanceMax =
-        obj.tipo === 'react_texto' || obj.tipo === 'pc'
+        obj.tipo === 'react_texto' || obj.tipo === 'pc' || obj.tipo === 'battle_debug'
           ? TAM_TILE * 3.25
-          : TAM_TILE * 1.8;
+          : obj.tipo === 'npc'
+            ? TAM_TILE * 2.35
+            : TAM_TILE * 1.8;
       if (dist <= alcanceMax && dist < distanciaMinima) {
         distanciaMinima = dist;
         objetivoMasCercano = obj;
@@ -295,12 +307,22 @@ export default class EscenaOverworld extends Phaser.Scene {
       this._tilemapPhaser = mapa;
       if (!mapa.tilesets?.length) throw new Error(`No tileset found in map ${mapaKey}`);
 
-      const tilesetKey = TILESET_POR_MAPA[mapaKey] || 'new_bark_town';
-      // Enlazar cada tileset del JSON a la textura cargada (mismo PNG puede repetirse con distinto firstgid en Tiled).
+      const tilesetCfg = TILESET_POR_MAPA[mapaKey];
+      const texturaPorNombre =
+        tilesetCfg && typeof tilesetCfg === 'object' && tilesetCfg.tilesetTexturePorNombre
+          ? tilesetCfg.tilesetTexturePorNombre
+          : null;
+      const tilesetKeyUnico =
+        typeof tilesetCfg === 'string' && tilesetCfg ? tilesetCfg : 'new_bark_town';
+
+      // Enlazar cada tileset del JSON a la textura Phaser (un mapa puede usar varios PNG).
       const tilesetsEnlazados = [];
       for (const ts of mapa.tilesets) {
-        const enlazado = mapa.addTilesetImage(ts.name, tilesetKey);
-        if (!enlazado) throw new Error(`Failed to load tileset: ${ts.name} -> ${tilesetKey}`);
+        const textureKey = texturaPorNombre
+          ? resolverTexturaPorNombreTileset(texturaPorNombre, ts.name, tilesetKeyUnico)
+          : tilesetKeyUnico;
+        const enlazado = mapa.addTilesetImage(ts.name, textureKey);
+        if (!enlazado) throw new Error(`Failed to load tileset: ${ts.name} -> ${textureKey}`);
         tilesetsEnlazados.push(enlazado);
       }
       const tilesetCapas = tilesetsEnlazados.length === 1 ? tilesetsEnlazados[0] : tilesetsEnlazados;
@@ -349,12 +371,32 @@ export default class EscenaOverworld extends Phaser.Scene {
         }
       });
 
-      this._npcs.forEach(npc => {
+      this._npcs.forEach((npc) => {
         this.physics.add.collider(this._jugador, npc);
       });
 
+      const tilesNpc = new Set();
+      for (const npc of this._npcs) {
+        const b = npc.getBounds();
+        const t0x = Math.floor(b.left / TAM_TILE);
+        const t1x = Math.floor((b.right - 1) / TAM_TILE);
+        const t0y = Math.floor(b.top / TAM_TILE);
+        const t1y = Math.floor((b.bottom - 1) / TAM_TILE);
+        for (let ty = t0y; ty <= t1y; ty++) {
+          for (let tx = t0x; tx <= t1x; tx++) {
+            tilesNpc.add(`${tx},${ty}`);
+          }
+        }
+      }
+      this._jugador.setTilesBloqueadosNpc(tilesNpc);
+
       this._teclado = crearTecladoJugador(this);
       this._dialogo = new SistemaDialogo(this);
+
+      if (this._bienvenidasPorTile.length) {
+        this._jugador.on('paso', this._comprobarBienvenidasTrasPaso, this);
+        this.time.delayedCall(0, () => this._comprobarBienvenidasTrasPaso());
+      }
       this._configurarCamara(mapa);
       this._configurarMenu();
       this._secuencias = new SistemaSecuencias(this);
@@ -566,25 +608,55 @@ export default class EscenaOverworld extends Phaser.Scene {
   // ── NPCs ──────────────────────────────────────────────────────────────
 
   _crearNpc(obj) {
+    const props = obj.properties ?? [];
+    // Tiled: (x,y) + width/height del rectángulo; los pies van al borde inferior centrado (como pokeball obj.x+8, obj.y+8).
+    const ow = typeof obj.width === 'number' && obj.width > 0 ? obj.width : TAM_TILE;
+    const oh = typeof obj.height === 'number' && obj.height > 0 ? obj.height : TAM_TILE;
+    const footX = obj.x + ow / 2;
+    const footY = obj.y + oh;
+
     const texturasPorNombre = {
       'elm': 'elm', 'madre': 'madre', 'ayudante': 'cientifico',
-      'rival': 'nino', 'aldeano': 'aldeano'
+      'rival': 'nino', 'aldeano': 'aldeano',
+      dependiente: 'npc_clerk',
+      enfermera: 'npc_mint',
+      npc_entrega_curacion_estados: 'npc_chap',
+      npc_regala_pokeballs: 'npc_ishihara',
+      npc_explica: 'npc_imakuni',
+      npc_captura: 'npc_pawn',
+      npc_battle_normal: 'npc_jonathan',
+      npc_battle_confuso: 'npc_jes',
+      npc_battle_dormido: 'npc_yosuke',
+      npc_battle_quemado: 'npc_rick',
+      npc_battle_veneno: 'npc_courtney',
+      npc_battle_paralisis: 'npc_kristin',
+      npc_battle_congelado: 'npc_jack',
     };
     const npcTexture = texturasPorNombre[obj.name] || 'aldeano';
-    const npc = this.add.sprite(obj.x, obj.y, npcTexture, 0).setOrigin(0.5, 1);
-    
-    this.physics.add.existing(npc, false);
-    npc.body.setImmovable(true);
-    npc.body.setSize(12, 12); 
-    npc.body.setOffset(2, 4); 
-    
+    const npc = this.add.sprite(footX, footY, npcTexture, 0).setOrigin(0.5, 1);
+    // Por encima de `decoracion_alto` (depth 10); si no, mostradores / marcos tapan NPCs (p. ej. enfermera arriba del mapa).
+    npc.setDepth(11);
+    if (npcTexture.startsWith('npc_')) {
+      npc.setScale(2);
+    }
+
+    // Cuerpo estático: el jugador no los empuja y el collider responde de forma estable.
+    this.physics.add.existing(npc, true);
+    const hitW = 12;
+    const hitH = 10;
+    npc.body.setSize(hitW, hitH);
+    npc.body.setOffset((npc.displayWidth - hitW) / 2, npc.displayHeight - hitH);
+
     this._npcs.push(npc);
     
-    const dialogo = obj.properties?.find(p => p.name === 'dialogo')?.value;
-    if (!dialogo) return;
+    const dialogo = WarpSystem.prop(props, 'dialogo');
+    if (!dialogo || !String(dialogo).trim()) return;
+
+    const npcBatallaTrasDialogo = this._npcDisparaBatallaTrasDialogo(obj, props);
+    const npcBatallaEsCaptura = this._npcEsBatallaDebugCaptura(obj, props);
 
     const nombreJugador = usarJuegoStore.getState().nombreJugador || 'Tú';
-    const lineasBase = dialogo.replaceAll('[JUGADOR]', nombreJugador).split('|');
+    const lineasBase = String(dialogo).replaceAll('[JUGADOR]', nombreJugador).split('|');
     const esRival = obj.name === 'rival';
     const hablanteNpcProp = obj.properties?.find((p) => p.name === 'dialogo_hablante')?.value;
     const etiquetaNpc =
@@ -593,10 +665,16 @@ export default class EscenaOverworld extends Phaser.Scene {
         : etiquetaHablanteNpc(obj.name);
     const cajaNpcOpts = etiquetaNpc ? { hablante: etiquetaNpc } : {};
 
+    // Centro del rectángulo Tiled: mejor referencia si el sprite es alto (ancla en pies).
+    const xRadar = obj.x + ow / 2;
+    const yRadar = obj.y + oh / 2;
+
     // Registrar en el radar centralizado en lugar de anclar el teclado
     this._interactuables.push({
       sprite: npc,
       tipo: 'npc',
+      xRadar,
+      yRadar,
       accion: () => {
         if (esRival) {
           this._dialogo.mostrar(lineasBase, () => {
@@ -641,7 +719,18 @@ export default class EscenaOverworld extends Phaser.Scene {
                   }
                 }
               : null;
-          this._dialogo.mostrar(lineas, marcarCharlaElm, cajaNpcOpts);
+
+          let onFinDialogo = marcarCharlaElm;
+          if (npcBatallaTrasDialogo) {
+            const prevOnFin = onFinDialogo;
+            onFinDialogo = () => {
+              if (typeof prevOnFin === 'function') prevOnFin();
+              this._iniciarBatalla(
+                this._payloadBatallaDebugDesdePar(obj, props, npcBatallaEsCaptura),
+              );
+            };
+          }
+          this._dialogo.mostrar(lineas, onFinDialogo, cajaNpcOpts);
         }
       }
     });
@@ -658,9 +747,89 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   // ── Zonas de evento (capa Tiled `eventos`) ───────────────────────────
 
+  /** `tipo` en custom props, o class/type del objeto Tiled. */
+  _tipoEventoTiled(obj, props) {
+    const desdeProp = String(WarpSystem.prop(props, 'tipo') ?? '').trim();
+    if (desdeProp) return desdeProp;
+    const t = String(obj.type ?? '').trim();
+    if (t) return t;
+    return String(obj.class ?? '').trim();
+  }
+
+  _propBool(props, nombre) {
+    const v = WarpSystem.prop(props, nombre);
+    if (v === true || v === 1) return true;
+    const s = String(v ?? '').trim().toLowerCase();
+    return s === 'true' || s === '1' || s === 'yes' || s === 'si' || s === 'sí';
+  }
+
+  /**
+   * Estado de prueba para mensajes al inicio de batalla (`battle_*`, `npc_batalla_*`, prop `estadoSalvaje`, …).
+   * @returns {string | null} clave interna o null si es combate “normal”.
+   */
+  _estadoBatallaDebugDesdeObjeto(obj, props) {
+    const desdeProp = String(WarpSystem.prop(props, 'estadoSalvaje') ?? '')
+      .trim()
+      .toLowerCase();
+    if (desdeProp) {
+      return desdeProp === 'normal' ? null : desdeProp;
+    }
+    const n = String(obj.name ?? '').toLowerCase();
+    const prefijos = ['battle_', 'npc_batalla_', 'npc_combate_', 'npc_battle_'];
+    for (const pref of prefijos) {
+      if (n.startsWith(pref)) {
+        const suf = n.slice(pref.length);
+        if (!suf || suf === 'normal') return null;
+        return suf;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Payload para `_iniciarBatalla` desde props Tiled (zonas `battle` o NPCs con batalla tras diálogo).
+   * Por defecto el estado de prueba afecta al **Pokémon del jugador** (`estadoJugadorDebug`).
+   * Prop `estadoAfectaA` = `rival` para el mensaje antiguo (estado en el salvaje).
+   */
+  _payloadBatallaDebugDesdePar(obj, props, esTestCaptura) {
+    const rawId = WarpSystem.prop(props, 'pokedexId');
+    const rawNv = WarpSystem.prop(props, 'nivel');
+    const pokedexId = Number.isFinite(Number(rawId)) ? Number(rawId) : 19;
+    const nivel = Number.isFinite(Number(rawNv)) ? Number(rawNv) : 5;
+    const nombreHint = String(WarpSystem.prop(props, 'nombre') ?? '').trim();
+    const claveEstado = esTestCaptura ? null : this._estadoBatallaDebugDesdeObjeto(obj, props);
+    const afecta = String(WarpSystem.prop(props, 'estadoAfectaA') ?? '').trim().toLowerCase();
+    const estadoEnRival = afecta === 'rival';
+
+    const pokemon = {
+      id: pokedexId,
+      nombre: nombreHint || '???',
+      nivel,
+      ...(esTestCaptura ? { esDebugCaptura: true } : {}),
+    };
+    if (claveEstado) {
+      if (estadoEnRival) pokemon.estadoSalvajeDebug = claveEstado;
+      else pokemon.estadoJugadorDebug = claveEstado;
+    }
+    return pokemon;
+  }
+
+  /** NPC: tras cerrar el diálogo, iniciar combate (Class `battle`/`captura` o prop `batallaTrasDialogo`). */
+  _npcDisparaBatallaTrasDialogo(obj, props) {
+    if (this._propBool(props, 'batallaTrasDialogo')) return true;
+    const cls = String(obj.class ?? obj.type ?? '').trim().toLowerCase();
+    return cls === 'battle' || cls === 'captura';
+  }
+
+  _npcEsBatallaDebugCaptura(obj, props) {
+    if (this._propBool(props, 'esDebugCaptura')) return true;
+    const cls = String(obj.class ?? obj.type ?? '').trim().toLowerCase();
+    return cls === 'captura';
+  }
+
   _crearZonaEvento(obj) {
     const props = obj.properties ?? [];
-    const tipo = String(WarpSystem.prop(props, 'tipo') ?? '').trim();
+    const tipo = this._tipoEventoTiled(obj, props);
 
     if (tipo === 'trigger_elm') {
       crearZonaTriggerElm(this, obj, this._warpSystem);
@@ -677,6 +846,11 @@ export default class EscenaOverworld extends Phaser.Scene {
       return;
     }
 
+    if (tipo === 'battle' || tipo === 'captura') {
+      this._registrarZonaBatallaDebugger(obj, props, tipo === 'captura');
+      return;
+    }
+
     if (WarpSystem.esWarpViaje(obj)) {
       this._warpSystem.registrarZonaWarp(
         obj,
@@ -687,13 +861,52 @@ export default class EscenaOverworld extends Phaser.Scene {
     }
   }
 
+  /**
+   * Texto React / diálogo Phaser para `react_texto_estatico`.
+   * @returns {boolean} true si se mostró algo
+   */
+  _mostrarReactTextoEstatico(lineas, optsReactTexto) {
+    if (this._reactTextoEstaticoActivo || !this._jugador) return false;
+    const cb = this.game.registry.get('callbacks')?.onTextoEstatico;
+    const L = lineas.length ? lineas : ['…'];
+    if (!cb) {
+      this._dialogo.mostrar(L, null, optsReactTexto);
+      return true;
+    }
+    this._reactTextoEstaticoActivo = true;
+    this._jugador.setInputBloqueado(true);
+    cb({
+      lineas: L,
+      onCerrar: () => {
+        this._reactTextoEstaticoActivo = false;
+        this._jugador?.setInputBloqueado(false);
+      },
+    });
+    return true;
+  }
+
+  /** Dispara mensajes `bienvenida_*` (o prop `dispararAlPaso`) al pisar la casilla, no solo con Z. */
+  _comprobarBienvenidasTrasPaso() {
+    if (!this._jugador || !this._bienvenidasPorTile?.length) return;
+    if (this._introActiva || this._reactTextoEstaticoActivo || this._dialogo?.activo) return;
+    const { x: jx, y: jy } = this._jugador.getTilePosicion();
+    for (const b of this._bienvenidasPorTile) {
+      if (b.disparado) continue;
+      const d = Math.max(Math.abs(jx - b.tx), Math.abs(jy - b.ty));
+      if (d <= b.radio) {
+        b.disparado = true;
+        this._mostrarReactTextoEstatico(b.lineas, b.optsReactTexto);
+        break;
+      }
+    }
+  }
+
   /** Texto estático en React (`onTextoEstatico`); prop Tiled `dialogo` con líneas separadas por `|`. */
   _registrarInteraccionReactTexto(obj, props) {
     const w = obj.width ?? TAM_TILE;
     const h = obj.height ?? TAM_TILE;
     const cx = obj.x + w / 2;
     const cy = obj.y + h / 2;
-    const marcador = this.add.rectangle(cx, cy, Math.max(8, w), Math.max(8, h), 0x000000, 0).setDepth(1);
 
     const dialogoRaw = WarpSystem.prop(props, 'dialogo');
     const lineas = String(dialogoRaw ?? '…')
@@ -704,25 +917,52 @@ export default class EscenaOverworld extends Phaser.Scene {
     const hablanteReact = String(WarpSystem.prop(props, 'dialogo_hablante') ?? '').trim();
     const optsReactTexto = hablanteReact ? { hablante: hablanteReact } : {};
 
+    const nombreObj = String(obj.name ?? '').toLowerCase();
+    const autoAlPaso =
+      this._propBool(props, 'dispararAlPaso') || nombreObj.startsWith('bienvenida_');
+    if (autoAlPaso) {
+      const rawR = WarpSystem.prop(props, 'radioTiles');
+      const radio = Number.isFinite(Number(rawR)) ? Math.max(0, Math.floor(Number(rawR))) : 1;
+      this._bienvenidasPorTile.push({
+        tx: Math.floor(cx / TAM_TILE),
+        ty: Math.floor(cy / TAM_TILE),
+        radio,
+        disparado: false,
+        lineas,
+        optsReactTexto,
+      });
+      // Solo disparo al pisar la zona; no entra en el radar de Z (el alcance de `react_texto`
+      // es mayor que el de NPCs y las bienvenidas cerca del mostrador tapaban enfermera / dependiente).
+      return;
+    }
+
+    const marcador = this.add.rectangle(cx, cy, Math.max(8, w), Math.max(8, h), 0x000000, 0).setDepth(1);
     this._interactuables.push({
       sprite: marcador,
       tipo: 'react_texto',
       accion: () => {
-        if (this._reactTextoEstaticoActivo || !this._jugador) return;
-        const cb = this.game.registry.get('callbacks')?.onTextoEstatico;
-        if (!cb) {
-          this._dialogo.mostrar(lineas.length ? lineas : ['…'], null, optsReactTexto);
-          return;
-        }
-        this._reactTextoEstaticoActivo = true;
-        this._jugador.setInputBloqueado(true);
-        cb({
-          lineas: lineas.length ? lineas : ['…'],
-          onCerrar: () => {
-            this._reactTextoEstaticoActivo = false;
-            this._jugador?.setInputBloqueado(false);
-          },
-        });
+        this._mostrarReactTextoEstatico(lineas, optsReactTexto);
+      },
+    });
+  }
+
+  /**
+   * Zona Z → inicia combate salvaje real (`EscenaBatalla`), misma ruta que encuentros.
+   * Props opcionales: `pokedexId` (int), `nivel` (int), `nombre` (string).
+   * Estado de prueba: prop `estadoSalvaje` o prefijo `battle_` en el nombre del objeto.
+   */
+  _registrarZonaBatallaDebugger(obj, props, esTestCaptura) {
+    const w = obj.width ?? TAM_TILE;
+    const h = obj.height ?? TAM_TILE;
+    const cx = obj.x + w / 2;
+    const cy = obj.y + h / 2;
+    const marcador = this.add.rectangle(cx, cy, Math.max(8, w), Math.max(8, h), 0x000000, 0).setDepth(1);
+
+    this._interactuables.push({
+      sprite: marcador,
+      tipo: 'battle_debug',
+      accion: () => {
+        this._iniciarBatalla(this._payloadBatallaDebugDesdePar(obj, props, esTestCaptura));
       },
     });
   }
@@ -847,6 +1087,10 @@ export default class EscenaOverworld extends Phaser.Scene {
       return;
     }
 
+    const debugEstadoRival = pokemon?.estadoSalvajeDebug;
+    const debugEstadoJugador = pokemon?.estadoJugadorDebug;
+    const debugCaptura = Boolean(pokemon?.esDebugCaptura);
+
     let salvaje = { ...pokemon };
     if (salvaje.pokemonUsuarioId == null && salvaje.id != null) {
       try {
@@ -872,6 +1116,10 @@ export default class EscenaOverworld extends Phaser.Scene {
         return;
       }
     }
+
+    if (debugEstadoRival) salvaje.estadoSalvajeDebug = debugEstadoRival;
+    if (debugEstadoJugador) salvaje.estadoJugadorDebug = debugEstadoJugador;
+    if (debugCaptura) salvaje.esDebugCaptura = true;
 
     this.scene.launch('EscenaTransicion', {
       siguiente: 'EscenaBatalla',
@@ -921,8 +1169,11 @@ export default class EscenaOverworld extends Phaser.Scene {
     this._warpSystem?.shutdown();
     this._destruirTilemapActual();
 
+    this._jugador?.off('paso', this._comprobarBienvenidasTrasPaso, this);
+
     // Protección para fugas de memoria
     this.input.keyboard.removeAllListeners(); 
     this._interactuables = [];
+    this._bienvenidasPorTile = [];
   }
 }

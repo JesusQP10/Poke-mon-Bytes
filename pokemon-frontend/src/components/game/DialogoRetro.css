@@ -37,7 +37,7 @@
 
 .dialogo-retro-caja--panel {
   max-height: 88px;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 8px 8px 10px;
 }
 

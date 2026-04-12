@@ -40,6 +40,16 @@ export default class Jugador extends Phaser.GameObjects.Sprite {
 
     // Guardar referencia al sistema de colisiones (EscenaOverworld)
     this.capas = null;
+    /** @type {Set<string>|null} claves `"tileX,tileY"` ocupadas por NPCs. */
+    this._tilesNpc = null;
+  }
+
+  /**
+   * Tiles por los que el jugador no puede caminar (NPCs).
+   * @param {Set<string>|null} tiles
+   */
+  setTilesBloqueadosNpc(tiles) {
+    this._tilesNpc = tiles;
   }
 
   // ── Animaciones ────────────────────────────────────────────────────────
@@ -172,6 +182,7 @@ export default class Jugador extends Phaser.GameObjects.Sprite {
   // ── Colisiones ─────────────────────────────────────────────────────────
 
   _hayColision(tileX, tileY) {
+    if (this._tilesNpc?.has(`${tileX},${tileY}`)) return true;
     if (!this.capas?.colisiones) return false;
     const tile = this.capas.colisiones.getTileAt(tileX, tileY);
     return tile !== null;
