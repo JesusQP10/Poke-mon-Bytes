@@ -61,7 +61,7 @@ public class ConfiguracionSeguridad {
      */
     @Bean
     @Order(2)
-    public SecurityFilterChain cadenaFiltroSeguridad(HttpSecurity http) throws Exception {
+    public SecurityFilterChain cadenaFiltroSeguridad(HttpSecurity http, AuthenticationProvider proveedorAutenticacion) throws Exception {
         http
             .csrf(csrf -> csrf.disable()) // stateless + Bearer: no hay formulario post tradicional
             .cors(cors -> cors.configurationSource(request -> {
@@ -81,7 +81,7 @@ public class ConfiguracionSeguridad {
                 return config;
             }))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authenticationProvider(proveedorAutenticacion())
+            .authenticationProvider(proveedorAutenticacion)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
