@@ -1,114 +1,165 @@
-# 🎮🕹️ Pokémon Bytes
+<div align="center">
 
+# Pokémon Bytes
+
+**RPG en el navegador** con mecánicas **Gen II** (Oro / Plata): overworld en **Phaser**, menús en **React**, reglas y persistencia en **Spring Boot**.
+
+[![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![JWT](https://img.shields.io/badge/API-JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
+
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
+[![Phaser](https://img.shields.io/badge/Phaser-3.90-8B5CF6?style=for-the-badge)](https://phaser.io/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Zustand](https://img.shields.io/badge/Zustand-5-FF9C00?style=for-the-badge)](https://github.com/pmndrs/zustand)
 
 ![poka0012](https://github.com/user-attachments/assets/1b762be8-007d-4b03-a254-1519428a8862)
 
-![Java](https://img.shields.io/badge/Java-21-orange?style=flat&logo=openjdk)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-green?style=flat&logo=springboot)
-![MySQL](https://img.shields.io/badge/MySQL-8.0-blue?style=flat&logo=mysql)
-![JWT](https://img.shields.io/badge/Security-JWT-red?style=flat&logo=jsonwebtokens)
+[Estado del proyecto](#estado-actual-del-proyecto) · [Arquitectura](#arquitectura) · [Stack](#stack-tecnológico) · [Galería](#galería-del-proyecto) · [Estructura](#estructura-del-repositorio) · [Notas de desarrollo](docs/dev/NOTAS.md) · [Backend (Swagger, tests)](docs/backend/README.md)
 
-![React](https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react&logoColor=black)
-![Vite](https://img.shields.io/badge/Vite-Bundler-646CFF?style=flat&logo=vite)
-![Phaser](https://img.shields.io/badge/Phaser-3.80-8B5CF6?style=flat&logo=phaser)
-![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat&logo=tailwindcss)
-![Zustand](https://img.shields.io/badge/State-Zustand-orange?style=flat)
-
-> **Arquitectura para la simulación de RPG basada en mecánicas Gen-II (Pokémon Oro/Plata) corriendo nativamente en el navegador.**
+</div>
 
 ---
 
-## ⚠️ Estado Actual del Proyecto
+## Tabla de contenidos
 
-> **Nota (2026-04-11):** El detalle de tareas está en [`docs/dev/NOTAS.md`](docs/dev/NOTAS.md). 
-Esta sección resume el estado del código.
+- [Visión](#visión)
+- [Inicio rápido](#inicio-rápido)
+- [Estado actual del proyecto](#estado-actual-del-proyecto)
+- [Arquitectura](#arquitectura)
+- [Stack tecnológico](#stack-tecnológico)
+- [Galería](#galería-del-proyecto)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Nota personal](#nota-personal)
 
-### Frontend (En Desarrollo Activo)
+---
 
-#### ✅ Funcionalidades Completadas
+## Visión
+
+Simular un **RPG clásico** con la sensación de **Game Boy Color**: grid, tilesets, diálogos y combate por turnos, pero corriendo **nativamente en el navegador** y hablando con una **API REST** que concentra datos, economía, capturas y el motor de batalla.
+
+---
+
+## Inicio rápido
+
+> [!TIP]
+> Necesitas **JDK 21**, **Node.js** reciente, **MySQL 8** y variables / `application.properties` configurados para tu entorno (ver documentación del backend).
+
+**Backend** (puerto por defecto **8081**):
+
+```bash
+cd pokemon-backend
+.\mvnw.cmd spring-boot:run
+```
+
+Swagger UI (perfil `dev`): `http://localhost:8081/swagger-ui.html` — ver [docs/backend/README.md](docs/backend/README.md).
+
+**Frontend** (Vite, suele ser **5173**):
+
+```bash
+cd pokemon-frontend
+npm install
+npm run dev
+```
+
+---
+
+## Estado actual del proyecto
+
+> **Nota (2026-04-11):** El detalle de tareas vive en [`docs/dev/NOTAS.md`](docs/dev/NOTAS.md). Aquí va un resumen ejecutivo. Estado general: **frontend en evolución**, **backend operativo**.
+
+### Frontend (en desarrollo activo)
+
+#### ✅ Funcionalidades completadas
+
 - Overworld con **varios mapas Tiled** (JSON), capas, colisiones y **warps** entre mapas (`WarpSystem`)
 - New Bark Town, habitación, casa y laboratorio en uso; **encuentros** en hierba donde hay tabla JSON. **Ruta 29 como tramo jugable aún no hecho**
-- **Lógica por mapa modularizada** en `pokemon-frontend/src/phaser/mapas/` (p. ej. `casaJugador.js`, `labElm.js`, `johtoOverworld.js`, `dialogosPostStarter.js`) para aligerar `EscenaOverworld.js`.
-- **Diálogo in-world:** `SistemaDialogo` con marco GBC (`marcoDialogoRetro.js`), texto y **nombre de hablante**.
-- **Menú in-game en React (`MenuIngameReact`):** equipo con **retratos y mini sprites** de los iniciales (`portraitUrls.js`, GIFs en `assets/pokemon/starters/`), datos extra de especie vía **`pokemonDetallePokeapi.js`** (PokéAPI), **stats de combate** que el backend ya envía en el DTO del equipo (`ataque`, `defensa`, `ataqueEspecial`, `defensaEspecial`, `velocidad`, `tipo1` / `tipo2`); mochila y **guardado local y en servidor** (si hay sesión JWT). Opciones de cliente en `config/opcionesCliente.js`.
-- **Confirmación de starter** en Phaser (`UIConfirmacionStarter.js`) y diálogos posteriores centralizados en parte en `dialogosPostStarter.js`.
+- **Lógica por mapa modularizada** en `pokemon-frontend/src/phaser/mapas/` (p. ej. `casaJugador.js`, `labElm.js`, `johtoOverworld.js`, `dialogosPostStarter.js`) para aligerar `EscenaOverworld.js`
+- **Diálogo in-world:** `SistemaDialogo` con marco GBC (`marcoDialogoRetro.js`), texto y **nombre de hablante**
+- **Menú in-game en React (`MenuIngameReact`):** equipo con **retratos y mini sprites** de los iniciales (`portraitUrls.js`, GIFs en `assets/pokemon/starters/`), datos extra de especie vía **`pokemonDetallePokeapi.js`** (PokéAPI), **stats de combate** que el backend ya envía en el DTO del equipo (`ataque`, `defensa`, `ataqueEspecial`, `defensaEspecial`, `velocidad`, `tipo1` / `tipo2`); mochila y **guardado local y en servidor** (si hay sesión JWT). Opciones de cliente en `config/opcionesCliente.js`
+- **Confirmación de starter** en Phaser (`UIConfirmacionStarter.js`) y diálogos posteriores centralizados en parte en `dialogosPostStarter.js`
 - **`EscenaBatalla`:** carga equipo/movimientos y resuelve turnos contra la **API** del backend
 - Estado de juego en **Zustand** con hidratación desde `GET /api/v1/juego/estado` y payload de `POST .../guardar`
 
-#### 🚧 En Desarrollo
+#### 🚧 En desarrollo
+
 - **Cierre de batalla:** flujo completo (resultado, HP persistido, vuelta al mapa) y pulido UI
 - **Sistema de colisiones** y pulido de **diálogos / eventos** (siguen bugs conocidos; ver abajo y `NOTAS.md`)
 - **Ruta 29** (diseño y contenido del tramo) y más mundo; tienda en overworld, Pokédex, etc.
 
-#### ⚠️ Problemas Conocidos
+#### ⚠️ Problemas conocidos
 
-> **Nota de Desarrollo:** El frontend está en fase de aprendizaje e implementación. Actualmente sigo estudiando y dominando la integración de **React con Phaser 3** y el uso de **Tiled Map Editor**, lo cual está llevando tiempo de investigación y experimentación.
-> El proyecto mejorará conforme domine estas herramientas. Los bugs actuales son parte del proceso de aprendizaje.
-**Bugs visuales actuales:**
-- **Colisiones:** Sistema en proceso de refinamiento mientras aprendo las mejores prácticas de Phaser
-- **Casa jugador:** En el diálogo con la madre aparece un placeHolder rosa (entrega del PokeGear). Esto será eliminado, pues no se adapta al juego original dicha acción
+> **Nota de desarrollo:** El frontend está en fase de aprendizaje e implementación. Sigo estudiando la integración **React + Phaser 3** y **Tiled**; los bugs actuales forman parte de ese proceso.
 
+**Bugs visuales / de gameplay actuales:**
 
-### Backend (Funcional)
+- **Colisiones:** sistema en refinamiento mientras afino buenas prácticas en Phaser
+- **Casa jugador:** en el diálogo con la madre aparece un placeholder rosa (entrega del PokeGear); se eliminará porque no encaja con el flujo del juego original
+
+### Backend (funcional)
 
 #### ✅ Completado
+
 - Sistema de autenticación JWT
 - Motor de batalla con fórmulas Gen II
 - Sistema de economía (tienda + inventario)
 - Mecánica de captura
 - Data seeding automático desde PokéAPI
-- **API de estado de partida** (`/api/v1/juego`): `estado`, `starter`, `equipo`, `guardar` (mapa, posición, dinero, JSON de estado del cliente en `Usuario`). El DTO de cada Pokémon en **equipo** incluye **dos tipos** (`tipo1`, `tipo2` si aplica) y **stats de combate** persistidos para enriquecer el menú del cliente.
-- **OpenAPI / Swagger UI** con perfil `dev` (ver `docs/backend/README.md`).
+- **API de estado de partida** (`/api/v1/juego`): `estado`, `starter`, `equipo`, `guardar` (mapa, posición, dinero, JSON de estado del cliente en `Usuario`). El DTO de cada Pokémon en **equipo** incluye **dos tipos** (`tipo1`, `tipo2` si aplica) y **stats de combate** persistidos para enriquecer el menú del cliente
+- **OpenAPI / Swagger UI** con perfil `dev` (ver `docs/backend/README.md`)
 
 ---
 
-## 🚀 Arquitectura del Proyecto
+## Arquitectura
 
-El sistema se divide en dos grandes bloques desacoplados: una **API REST (Backend)** que gestiona la lógica de negocio y una **SPA (Frontend)** que recrea la experiencia de Game Boy Color.
+SPA **React + Phaser** en el cliente; **Spring Boot** como núcleo de reglas y datos; **MySQL** como almacén. Comunicación **HTTP** con **JWT** en rutas protegidas.
 
-### 🧠 Backend (Spring Boot Core)
-El servidor gestiona la persistencia, seguridad y cálculos matemáticos en 5 fases:
+```mermaid
+flowchart LR
+  subgraph Navegador["Navegador"]
+    R[React UI]
+    P[Phaser escenas]
+  end
+  API[Spring Boot API]
+  DB[(MySQL)]
 
-1.  **Seguridad y Autenticación (Fase I):** Arquitectura Stateless con **JWT**, cifrado **BCrypt** y protección de rutas mediante `JwtAuthenticationFilter`.
-2.  **Motor de Batalla (Fase II):** Implementación de fórmulas de daño reales (Gen II), matriz de tipos ($x4.0$ a $x0.0$) y gestión de estados alterados persistentes.
-3.  **Economía (Fase III):** Sistema transaccional atómico (`@Transactional`) para Tienda e Inventario, garantizando la integridad en compras.
-4.  **Mecánica de Captura (Fase IV):** Algoritmos de probabilidad fieles a Pokémon Oro, gestión de stock de Pokéballs y persistencia dinámica de nuevas capturas.
-5.  **Data Seeding (Fase V):** Consumo reactivo de la **PokéAPI** mediante `WebClient` para poblar la base de datos automáticamente.
+  R --> API
+  P --> API
+  API --> DB
+```
+
+### 🧠 Backend (Spring Boot)
+
+El servidor cubre persistencia, seguridad y cálculos en **cinco bloques**:
+
+1. **Seguridad (Fase I):** stateless con **JWT**, **BCrypt** y `JwtAuthenticationFilter`
+2. **Motor de batalla (Fase II):** daño Gen II, matriz de tipos ($\times 4.0$ a $\times 0.0$) y estados alterados persistentes
+3. **Economía (Fase III):** tienda e inventario con `@Transactional`
+4. **Captura (Fase IV):** probabilidades al estilo Oro, stock de Pokéballs y persistencia de nuevas capturas
+5. **Seeding (Fase V):** **PokéAPI** vía `WebClient` para poblar la base de datos
 
 ### 🎨 Frontend (React + Vite)
-El cliente web se centra en la fidelidad visual y la experiencia de usuario:
 
-* **Pixel Art:** Renderizado *pixel-perfect* con escalado de enteros para evitar distorsión en pantallas HD.
-* **Estética Game Boy Color:** Sistema de diseño basado en **Tailwind CSS** que recrea la paleta de colores original y el hardware físico mediante CSS.
-* **Gestión de Estado:** Implementación de **Zustand** para manejar la sesión del usuario (persistencia local) y el estado del juego (equipo, dinero).
-* **Animaciones:** Cinemáticas (Intro Profesor Oak) gestionadas con **Framer Motion**.
-* **Abstracción de Controles:** Sistema de input agnóstico que permite jugar con Teclado (WASD/Flechas) mapeado a botones de consola (A/B/Start).
-
----
-
-## 🛠️ Stack Tecnológico
-
-### 🔙 Backend
-* **Lenguaje:** Java 21 (JDK 21)
-* **Framework:** Spring Boot 3.5.x
-* **Base de Datos:** MySQL 8.0
-* **Seguridad:** Spring Security 6 + JJWT
-* **Herramientas:** Maven, Lombok, Postman
-
-### 🔜 Frontend
-* **Core:** React 19 + Vite
-* **Motor de Juego:** Phaser 3.80
-* **Estilos:** Tailwind CSS + CSS Modules
-* **Estado:** Zustand (con Middleware Persist)
-* **HTTP Client:** Axios (con Interceptores JWT)
-* **Animaciones:** Framer Motion v12
-* **Mapas:** Tiled Map Editor (exportación JSON)
-
+- **Pixel art:** escalado entero para evitar “blur” en pantallas HD
+- **Estética GBC:** Tailwind y CSS acorde a paleta y sensación de hardware
+- **Estado:** **Zustand** (sesión y partida)
+- **Animaciones:** intro y transiciones con **Framer Motion**
+- **Controles:** teclado (WASD / flechas) mapeado a botones de consola (A / B / Start)
 
 ---
 
-## 📸 Galería del Proyecto
+## Stack tecnológico
 
+| Capa | Tecnologías |
+|------|-------------|
+| **Backend** | Java 21, Spring Boot 3.5.x, MySQL 8, Spring Security 6 + JJWT, Maven, Lombok |
+| **Frontend** | React 19, Vite 7, Phaser 3.90, Tailwind CSS 3.4, Zustand 5, Axios, Framer Motion 12, Tiled (export JSON) |
+
+---
+
+## Galería del proyecto
 
 | Landing Page & Portada | Pantalla de Título Original |
 |:---:|:---:|
@@ -145,12 +196,11 @@ El cliente web se centra en la fidelidad visual y la experiencia de usuario:
 | ![Opciones](docs/screenshots/captura-opciones.png) | ![Guardado](docs/screenshots/captura-guardado.png) |
 | *Música, sonidos y ritmo del texto.* | *Confirmación de partida guardada (local y servidor).* |
 
-
 ---
----
-## 📂 Estructura del Proyecto
 
-El repositorio sigue una estructura de monorepo lógico separado en carpetas raíz:
+## Estructura del repositorio
+
+Monorepo lógico en carpetas raíz:
 
 ```text
 root/
@@ -166,17 +216,17 @@ root/
 │   ├── controller/          # Endpoints HTTP
 │   ├── model/               # Entidades JPA (MySQL)
 │   ├── security/            # Lógica JWT
-│   └── service/             # Motor de Batalla y Lógica Matemática
+│   └── service/             # Motor de batalla y lógica de negocio
 │
 └── pokemon-frontend/        # Cliente React (SPA)
     ├── src/
-    │   ├── assets/          # Sprites, Audio y Tilesets (incl. mini sprites de iniciales)
+    │   ├── assets/          # Sprites, audio y tilesets (incl. mini sprites de iniciales)
     │   ├── components/      # UI (PantallaJuego, menú in-game React, shell Game Boy)
     │   ├── config/          # Input, opciones de cliente (p. ej. ritmo de diálogo)
     │   ├── pages/           # Vistas (Login, GameBoy Shell)
-    │   ├── phaser/          # Motor Phaser: escenas, `mapas/` por ubicación, sistemas
+    │   ├── phaser/          # Motor Phaser: escenas, mapas/ por ubicación, sistemas
     │   ├── services/        # API (Axios) y helpers (p. ej. detalle PokéAPI)
-    │   └── store/           # Estado Global (Zustand)
+    │   └── store/           # Estado global (Zustand)
     ├── package.json
     └── vite.config.js
 ```
