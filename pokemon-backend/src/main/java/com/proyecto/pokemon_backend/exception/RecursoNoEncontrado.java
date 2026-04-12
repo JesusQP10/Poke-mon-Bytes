@@ -6,6 +6,9 @@ package com.proyecto.pokemon_backend.exception;
  */
 public class RecursoNoEncontrado extends RuntimeException {
 
+    /**
+     * @param mensaje detalle para logs y cuerpo de error 404
+     */
     public RecursoNoEncontrado(String mensaje) {
         super(mensaje);
     }

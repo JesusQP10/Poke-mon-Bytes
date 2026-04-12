@@ -18,6 +18,8 @@ import java.util.Optional;
  */
 
 public interface RepositorioAtaques extends JpaRepository<Ataques, Integer> {
+
+    /** Coincide nombres de la API (inglés, kebab-case) con filas de {@code ATAQUES}. */
     Optional<Ataques> findByNombreIgnoreCase(String nombre);
 }
 

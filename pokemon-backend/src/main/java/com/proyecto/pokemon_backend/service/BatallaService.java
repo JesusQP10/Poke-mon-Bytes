@@ -67,6 +67,9 @@ public class BatallaService {
 
     private volatile Long cachedSalvajesUserId;
 
+    /**
+     * Compone el servicio con todos los repositorios de dominio, cálculo puro, tipos, ítems y cliente PokéAPI.
+     */
     public BatallaService(
         RepositorioPokemonUsuario pokemonRepo,
         RepositorioPokedexMaestra pokedexRepo,
@@ -311,9 +314,8 @@ public class BatallaService {
     }
 
     /**
-     * Comprueba que el defensor no sea ya del usuario, descuenta la Ball del inventario y tira el RNG de captura.
-     * Si sale bien, mueve el {@link PokemonUsuario} al usuario y le asigna la siguiente posición de equipo libre.
-     * Falla lógica -> Resolver -> Puede tener 2 pokemon iguales
+     * Valida que el objetivo sea salvaje y con PS, descuenta una Ball del inventario y ejecuta el RNG de captura.
+     * Si tiene éxito, reasigna {@code usuarioId} y {@code posicionEquipo} al jugador.
      */
     @Transactional
     public String intentarCaptura(String username, SolicitudCaptura request) {
@@ -359,6 +361,9 @@ public class BatallaService {
     // RESOLUCIÓN DE MOVIMIENTOS Y MOVESET
     // =========================================================================
 
+    /**
+     * Prioridad: {@code movimientoId} del cliente → payload legacy tipo+potencia → primer slot con PP mayor que cero.
+     */
     private MovimientoResuelto resolverMovimiento(PokemonUsuario atacante, SolicitudTurno request) {
         if (request.getMovimientoId() != null) {
             return consumirMovimiento(atacante, request.getMovimientoId().intValue());
@@ -378,6 +383,7 @@ public class BatallaService {
         return consumirMovimiento(atacante, primerSlot.ataque().getIdAtaque());
     }
 
+    /** Decrementa PP en BD y devuelve el ataque resuelto con metadatos para el mensaje de respuesta. */
     private MovimientoResuelto consumirMovimiento(PokemonUsuario atacante, int movimientoId) {
         HuecoMovimiento slot = construirSlots(atacante).stream()
             .filter(s -> Objects.equals(s.ataque().getIdAtaque(), movimientoId))
@@ -394,6 +400,9 @@ public class BatallaService {
         return new MovimientoResuelto(slot.ataque(), ppRestante, slot.ppMax(), true);
     }
 
+    /**
+     * Materializa hasta 4 movimientos con PP persistido, inserta/actualiza filas auxiliares y purga obsoletos.
+     */
     private List<HuecoMovimiento> construirSlots(PokemonUsuario pokemon) {
         List<Ataques> movimientos = resolverMovimientosParaPokemon(pokemon);
 
@@ -431,6 +440,9 @@ public class BatallaService {
         return slots;
     }
 
+    /**
+     * Deriva el moveset activo desde learnset + nivel; si no hay coincidencias usa {@link #movimientosFallback}.
+     */
     private List<Ataques> resolverMovimientosParaPokemon(PokemonUsuario pokemon) {
         List<EntradaLearnset> learnset = obtenerLearnset(nvl(pokemon.getPokedexId(), 0));
         int nivel = nvl(pokemon.getNivel(), 1);
@@ -457,11 +469,17 @@ public class BatallaService {
         return movimientos.isEmpty() ? movimientosFallback(nvl(pokemon.getPokedexId(), 0)) : movimientos;
     }
 
+    /** Learnset en caché por especie; delega en PokéAPI solo en miss. */
     private List<EntradaLearnset> obtenerLearnset(Integer pokedexId) {
         if (pokedexId == null || pokedexId <= 0) return List.of();
         return learnsetCache.computeIfAbsent(pokedexId, this::consultarLearnsetDesdeApi);
     }
 
+    /**
+     * Parsea {@code moves[]} de {@code /pokemon/{id}} filtrando método level-up y versión oro-plata.
+     *
+     * @return lista vacía ante error de red o JSON inesperado
+     */
     private List<EntradaLearnset> consultarLearnsetDesdeApi(Integer pokedexId) {
         try {
             Map<String, Object> datos = pokeApiService.obtenerDetallesPokemon(String.valueOf(pokedexId)).block();
@@ -497,6 +515,9 @@ public class BatallaService {
         }
     }
 
+    /**
+     * Menor nivel de aprendizaje en Gen II (gold-silver) para un movimiento; {@code -1} si no aplica.
+     */
     private int nivelAprendizajeOroPlata(Object rawDetalles) {
         if (!(rawDetalles instanceof List<?> lista)) return -1;
 
@@ -517,6 +538,7 @@ public class BatallaService {
         return nivel == Integer.MAX_VALUE ? -1 : nivel;
     }
 
+    /** Cuando el learnset no cruza con {@code ATAQUES}: ataques genéricos por tipo1 de la especie. */
     private List<Ataques> movimientosFallback(Integer pokedexId) {
         String tipo = (pokedexId != null ? pokedexRepo.findById(pokedexId) : Optional.<PokedexMaestra>empty())
             .map(p -> p.getTipo_1().toLowerCase(Locale.ROOT))
@@ -547,6 +569,7 @@ public class BatallaService {
         return seleccion.values().stream().limit(MAX_MOVIMIENTOS_ACTIVOS).toList();
     }
 
+    /** Construye un movimiento sintético a partir de campos legacy del DTO (sin persistir en ATAQUES). */
     private Ataques movimientoLegacy(SolicitudTurno request) {
         Ataques mov = new Ataques();
         mov.setIdAtaque(-1);
@@ -654,6 +677,9 @@ public class BatallaService {
     // CAPTURA
     // =========================================================================
 
+    /**
+     * Resuelve el ítem por nombre flexible y comprueba que el {@code efecto} sea de captura ({@code CAPTURE_*}).
+     */
     private Item resolverPokeball(String nombre) {
         String raw = str(nombre).trim();
         if (raw.isEmpty()) throw new ErrorNegocio("nombreBall es obligatorio.");
@@ -666,10 +692,12 @@ public class BatallaService {
         throw new RecursoNoEncontrado("La Poké Ball indicada no existe: " + nombre);
     }
 
+    /** True si el código de efecto del ítem empieza por {@code CAPTURE_}. */
     private boolean esPokeball(Item item) {
         return str(item.getEfecto()).toUpperCase(Locale.ROOT).startsWith("CAPTURE_");
     }
 
+    /** Multiplicador numérico de la fórmula de captura según el código de efecto de la Ball. */
     private double bonoPokeball(Item ball) {
         return switch (str(ball.getEfecto()).toUpperCase(Locale.ROOT)) {
             case "CAPTURE_1.0" -> 1.0;
@@ -680,6 +708,9 @@ public class BatallaService {
         };
     }
 
+    /**
+     * Primer hueco libre 0–5; si el equipo está lleno, asigna la siguiente posición de caja (mayor que 5).
+     */
     private int siguientePosicionEquipo(Long userId) {
         List<PokemonUsuario> equipo = pokemonRepo.findByUsuarioId(userId);
         boolean[] ocupados = new boolean[LIMITE_EQUIPO];
@@ -705,6 +736,9 @@ public class BatallaService {
     // VALIDACIONES
     // =========================================================================
 
+    /**
+     * Exige combate jugador-vs-salvaje cruzado con la cuenta técnica y que ambos tengan PS.
+     */
     private void validarParticipantes(Usuario usuario, PokemonUsuario atacante, PokemonUsuario defensor) {
         Long uid = usuario.getIdUsuario();
         Long salvajes = idUsuarioCuentaSalvajes();
@@ -730,17 +764,20 @@ public class BatallaService {
     // HELPERS DE CARGA
     // =========================================================================
 
+    /** @throws RecursoNoEncontrado si el username no existe */
     private Usuario cargarUsuario(String username) {
         return userRepo.findByUsername(username)
             .orElseThrow(() -> new RecursoNoEncontrado("Usuario no encontrado."));
     }
 
+    /** @throws ErrorNegocio si {@code id} es null; @throws RecursoNoEncontrado si no hay fila */
     private PokemonUsuario cargarPokemon(Long id) {
         if (id == null) throw new ErrorNegocio("ID de Pokémon no puede ser null.");
         return pokemonRepo.findById(id)
             .orElseThrow(() -> new RecursoNoEncontrado("Pokémon no encontrado: " + id));
     }
 
+    /** @throws ErrorNegocio si {@code id} es null; @throws RecursoNoEncontrado si no hay especie */
     private PokedexMaestra cargarPokedex(Integer id) {
         if (id == null) throw new ErrorNegocio("ID de Pokédex no puede ser null.");
         return pokedexRepo.findById(id)
@@ -751,6 +788,7 @@ public class BatallaService {
     // HELPERS DE CONSTRUCCIÓN DE RESPUESTA
     // =========================================================================
 
+    /** Construye {@link RespuestaTurno} con daño 0 pero HP actualizados por residuales o bloqueos. */
     private RespuestaTurno sinDanio(PokemonUsuario atacante, PokemonUsuario defensor, String mensaje) {
         return RespuestaTurno.builder()
             .danoInfligido(0)
@@ -764,6 +802,7 @@ public class BatallaService {
             .build();
     }
 
+    /** STAB si el tipo del movimiento coincide (ignorando mayúsculas) con tipo1 o tipo2 del atacante. */
     private boolean tieneStab(String tipoMov, String tipo1, String tipo2) {
         String mov = tipoMov.toLowerCase(Locale.ROOT);
         return mov.equals(str(tipo1).toLowerCase(Locale.ROOT))
@@ -774,6 +813,7 @@ public class BatallaService {
     // UTILIDADES
     // =========================================================================
 
+    /** Concatena fragmentos no vacíos separados por un espacio. */
     private String unir(String... partes) {
         StringBuilder sb = new StringBuilder();
         for (String parte : partes) {
@@ -786,12 +826,14 @@ public class BatallaService {
         return sb.toString();
     }
 
+    /** Extrae {@code name} de mapas anidados típicos de PokéAPI ({@code move}, {@code type}, etc.). */
     private String nombreAnidado(Object raw) {
         if (!(raw instanceof Map<?, ?> map)) return "";
         Object name = map.get("name");
         return name == null ? "" : String.valueOf(name);
     }
 
+    /** Coerción tolerante de JSON numérico o string a int. */
     private int toInt(Object raw, int defecto) {
         if (raw == null) return defecto;
         if (raw instanceof Number n) return n.intValue();
@@ -799,10 +841,12 @@ public class BatallaService {
         catch (NumberFormatException e) { return defecto; }
     }
 
+    /** {@code null}-safe para enteros envueltos en entidades JPA. */
     private int nvl(Integer value, int defecto) {
         return value == null ? defecto : value;
     }
 
+    /** Evita NPE en campos de texto opcionales. */
     private String str(String value) {
         return value == null ? "" : value;
     }
@@ -811,7 +855,12 @@ public class BatallaService {
     // RECORDS INTERNOS
     // =========================================================================
 
+    /** Par (id de ataque en catálogo, nivel mínimo de aprendizaje Gen II). */
     private record EntradaLearnset(Integer moveId, int nivel) {}
+    /** Un hueco de combate con PP actual y tope según {@link Ataques#getPpBase()}. */
     private record HuecoMovimiento(Ataques ataque, int ppActual, int ppMax) {}
+    /**
+     * Resultado intermedio tras elegir movimiento: entidad de catálogo, PP tras consumo y si viene del moveset persistido.
+     */
     private record MovimientoResuelto(Ataques ataque, Integer ppRestante, Integer ppMax, boolean fromMoveset) {}
 }

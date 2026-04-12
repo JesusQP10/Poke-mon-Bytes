@@ -12,8 +12,11 @@ import com.proyecto.pokemon_backend.model.Item;
  */
 
 public interface RepositorioObjeto extends JpaRepository<Item, Integer> {
+
+    /** Coincidencia exacta por nombre tal como figura en BD. */
     Optional<Item> findByNombre(String nombre);
+
+    /** Búsqueda tolerante a mayúsculas y variantes de espacios/guiones en nombres de Ball. */
     Optional<Item> findByNombreIgnoreCase(String nombre);
-    
 }
 

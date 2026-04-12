@@ -5,6 +5,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Intento de captura: el salvaje se identifica por {@code defensorId}; la Ball por nombre (catálogo ITEMS).
+ */
 @Data
 @NoArgsConstructor
 public class SolicitudCaptura {

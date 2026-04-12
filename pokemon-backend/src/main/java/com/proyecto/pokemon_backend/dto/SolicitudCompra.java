@@ -5,6 +5,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Petición de compra en tienda: identifica el ítem del catálogo y cuántas unidades sumar a la mochila.
+ */
 @Data
 @NoArgsConstructor
 public class SolicitudCompra {

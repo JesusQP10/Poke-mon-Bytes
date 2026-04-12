@@ -19,11 +19,18 @@ public class SembradorUsuarioSalvajes implements CommandLineRunner {
     private final RepositorioUsuario userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * @param userRepository para upsert de la fila técnica
+     * @param passwordEncoder BCrypt del hash dummy 
+     */
     public SembradorUsuarioSalvajes(RepositorioUsuario userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * {@inheritDoc} — sale si ya existe {@link CuentaSalvajes#USERNAME}.
+     */
     @Override
     public void run(String... args) {
         if (userRepository.findByUsername(CuentaSalvajes.USERNAME).isPresent()) {

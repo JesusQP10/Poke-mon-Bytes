@@ -30,11 +30,18 @@ public class SembradorObjetos implements CommandLineRunner {
     private final RepositorioObjeto itemRepo;
     private final ServicioPokeApi apiService;
 
+    /**
+     * @param itemRepo persistencia del catálogo ITEMS
+     * @param apiService cliente PokéAPI para precios y nombres
+     */
     public SembradorObjetos(RepositorioObjeto itemRepo, ServicioPokeApi apiService) {
         this.itemRepo = itemRepo;
         this.apiService = apiService;
     }
 
+    /**
+     * {@inheritDoc} — no hace nada si la tabla ITEMS ya tiene filas.
+     */
     @Override
     public void run(String... args) {
         if (itemRepo.count() > 0) return;
@@ -55,6 +62,7 @@ public class SembradorObjetos implements CommandLineRunner {
         System.out.println("--- Tienda lista: " + itemRepo.count() + " ítems ---");
     }
 
+    /** Transforma el JSON de PokéAPI en {@link Item} con {@code efecto} interno para el motor. */
     private Item mapearItem(Map<String, Object> detalles) {
         Item item = new Item();
         String nombre = (String) detalles.get("name");
@@ -64,6 +72,7 @@ public class SembradorObjetos implements CommandLineRunner {
         return item;
     }
 
+    /** Mapea slugs de PokéAPI a códigos {@code HEAL_*}, {@code CAPTURE_*}, curas de estado, etc. */
     private String efectoPara(String nombre) {
         return switch (nombre) {
             case "potion"        -> "HEAL_20";
@@ -85,6 +94,7 @@ public class SembradorObjetos implements CommandLineRunner {
         };
     }
 
+    /** Primera letra en mayúscula para nombres mostrables en tienda. */
     private String capitalizar(String s) {
         if (s == null || s.isEmpty()) return s;
         return Character.toUpperCase(s.charAt(0)) + s.substring(1);

@@ -16,8 +16,11 @@ import java.util.List;
 
 @Repository
 public interface RepositorioPokemonUsuario extends JpaRepository<PokemonUsuario, Long> {
+
+    /** Equipo y caja del jugador (o pool salvaje si {@code usuarioId} es la cuenta técnica). */
     List<PokemonUsuario> findByUsuarioId(Long usuarioId);
 
+    /** Borrado en bloque al reiniciar partida (tras limpiar PP por movimiento). */
     void deleteByUsuarioId(Long usuarioId);
 }
 

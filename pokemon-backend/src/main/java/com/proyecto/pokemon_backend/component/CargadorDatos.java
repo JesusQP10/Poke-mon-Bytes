@@ -30,6 +30,11 @@ public class CargadorDatos implements CommandLineRunner {
     private final RepositorioAtaques ataquesRepo;
     private final ServicioPokeApi apiService;
 
+    /**
+     * @param pokedexRepo persistencia de especies Gen II
+     * @param ataquesRepo catálogo de movimientos
+     * @param apiService cliente HTTP reactivo hacia PokéAPI
+     */
     public CargadorDatos(
         RepositorioPokedexMaestra pokedexRepo,
         RepositorioAtaques ataquesRepo,
@@ -40,12 +45,16 @@ public class CargadorDatos implements CommandLineRunner {
         this.apiService = apiService;
     }
 
+    /**
+     * {@inheritDoc} — completar Pokédex Gen II si falta filas, luego movimientos.
+     */
     @Override
     public void run(String... args) {
         cargarPokedex();
         cargarAtaques();
     }
 
+    /** Descarga en paralelo pares especie+detalles hasta completar 251 especies Gen II. */
     private void cargarPokedex() {
         if (pokedexRepo.count() >= LIMITE_GEN_II) return;
 
@@ -67,6 +76,7 @@ public class CargadorDatos implements CommandLineRunner {
         System.out.println("--- Pokédex lista: " + pokedexRepo.count() + " registros ---");
     }
 
+    /** Descarga movimientos por id 1..251 y los guarda en lotes de 20 filas. */
     private void cargarAtaques() {
         if (ataquesRepo.count() >= LIMITE_GEN_II) return;
 
@@ -83,6 +93,9 @@ public class CargadorDatos implements CommandLineRunner {
         System.out.println("--- Movimientos cargados: " + ataquesRepo.count() + " registros ---");
     }
 
+    /**
+     * Convierte el JSON de {@code /pokemon} y {@code /pokemon-species} en entidad JPA lista para {@code saveAll}.
+     */
     @SuppressWarnings("unchecked")
     private PokedexMaestra mapearPokemon(Map<String, Object> detalles, Map<String, Object> especie) {
         PokedexMaestra pkm = new PokedexMaestra();
@@ -121,6 +134,7 @@ public class CargadorDatos implements CommandLineRunner {
         return pkm;
     }
 
+    /** Convierte el JSON de {@code /move} en fila de {@code ATAQUES}. */
     @SuppressWarnings("unchecked")
     private Ataques mapearAtaque(Map<String, Object> detalles) {
         Ataques ataque = new Ataques();

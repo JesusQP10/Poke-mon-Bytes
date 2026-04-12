@@ -32,10 +32,14 @@ public class InicializadorTipos implements CommandLineRunner {
 
     private final RepositorioTipo tipoRepository;
 
+    /** @param tipoRepository destino de las filas de la matriz de efectividad */
     public InicializadorTipos(RepositorioTipo tipoRepository) {
         this.tipoRepository = tipoRepository;
     }
 
+    /**
+     * {@inheritDoc} — solo si {@code TIPOS} está vacío, inserta todas las relaciones no neutras Gen II.
+     */
     @Override
     public void run(String... args) {
         if (tipoRepository.count() > 0) return;
@@ -45,6 +49,7 @@ public class InicializadorTipos implements CommandLineRunner {
         System.out.println("--- Matriz de tipos cargada ---");
     }
 
+    /** Genera la lista de filas (inmunidades, x2, x0.5) según tablas clásicas de Johto. */
     private List<Tipo> construirMatriz() {
         List<Tipo> tipos = new ArrayList<>();
 
@@ -125,18 +130,22 @@ public class InicializadorTipos implements CommandLineRunner {
         return tipos;
     }
 
+    /** Añade relación con multiplicador 0.0. */
     private void inmune(List<Tipo> lista, int atacante, int defensor) {
         lista.add(tipo(atacante, defensor, 0.0));
     }
 
+    /** Añade relación con multiplicador 2.0. */
     private void debil(List<Tipo> lista, int atacante, int defensor) {
         lista.add(tipo(atacante, defensor, 2.0));
     }
 
+    /** Añade relación con multiplicador 0.5. */
     private void resist(List<Tipo> lista, int atacante, int defensor) {
         lista.add(tipo(atacante, defensor, 0.5));
     }
 
+    /** Construye una fila {@link Tipo} usando los nombres en español del arreglo {@link #TIPOS}. */
     private Tipo tipo(int atacante, int defensor, double multiplicador) {
         Tipo t = new Tipo();
         t.setAtacante(TIPOS[atacante]);

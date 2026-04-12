@@ -32,6 +32,10 @@ public class ConfiguracionSeguridad {
     private final FiltroAutenticacionJwt jwtAuthFilter;
     private final ServicioDetallesUsuario userDetailsService;
 
+    /**
+     * @param jwtAuthFilter filtro que rellena el contexto de seguridad con JWT
+     * @param userDetailsService usado por el {@link DaoAuthenticationProvider}
+     */
     public ConfiguracionSeguridad(FiltroAutenticacionJwt jwtAuthFilter, ServicioDetallesUsuario userDetailsService) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
@@ -90,21 +94,28 @@ public class ConfiguracionSeguridad {
         return http.build();
     }
 
+    /** BCrypt para registro y verificación de credenciales. */
     @Bean
     public PasswordEncoder codificadorContrasena() {
         return new BCryptPasswordEncoder();
     }
 
+    /** Expone el {@link AuthenticationManager} estándar de Spring Security al contexto. */
     @Bean
     public AuthenticationManager gestorAutenticacion(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
+    /**
+     * Autenticación usuario/contraseña contra BD vía {@link ServicioDetallesUsuario}.
+     *
+     * <p>Patrón soportado por la API actual de Spring Security: {@code UserDetailsService} en el constructor y
+     * {@link PasswordEncoder} vía {@link DaoAuthenticationProvider#setPasswordEncoder}.</p>
+     */
     @Bean
-    @SuppressWarnings("deprecation")
-    public AuthenticationProvider proveedorAutenticacion() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(codificadorContrasena());
-        provider.setUserDetailsService(userDetailsService);
+    public AuthenticationProvider proveedorAutenticacion(PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
 }

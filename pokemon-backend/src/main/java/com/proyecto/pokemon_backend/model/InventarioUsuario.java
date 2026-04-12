@@ -32,6 +32,9 @@ public class InventarioUsuario {
     @JoinColumn(name = "id_item")
     private Item item;
 
+    /**
+     * Construye una fila de inventario inicializando la clave compuesta a partir del usuario y el ítem.
+     */
     public InventarioUsuario(Usuario usuario, Item item, Integer cantidad) {
         this.usuario = usuario;
         this.item = item;

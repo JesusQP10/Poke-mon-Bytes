@@ -49,30 +49,37 @@ public class Usuario implements UserDetails {
 
     // --- UserDetails ---
 
+    /** {@inheritDoc} — devuelve {@link #passwordHash}. */
     @Override
     public String getPassword() {
         return passwordHash;
     }
 
+    /** {@inheritDoc} — login por nombre de usuario único. */
     @Override
     public String getUsername() {
         return username;
     }
 
+    /** Sin roles. Lista vacía (autenticación binaria usuario/contraseña). */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isAccountNonExpired() { return true; }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isAccountNonLocked() { return true; }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isCredentialsNonExpired() { return true; }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isEnabled() { return true; }
 }

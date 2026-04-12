@@ -22,10 +22,10 @@ import java.util.Optional;
 
 public interface RepositorioInventarioUsuario extends JpaRepository<InventarioUsuario, InventarioId> {
 
-    // Buscar todo el inventario de un usario ( para mostrar la mochila)
+    /** Todas las líneas de mochila del jugador (cantidad puede ser 0). */
     List<InventarioUsuario> findByUsuario(Usuario usuario);
 
-    // Buscar un objeto específico en la mochila del usuario (Por ej: ver si tiene pociones)
+    /** Una fila concreta usuario+ítem, p. ej. para comprobar stock antes de captura o compra. */
     Optional<InventarioUsuario> findByUsuarioAndItem(Usuario usuario, Item item);
 
     /**

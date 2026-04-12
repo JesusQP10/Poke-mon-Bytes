@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Bean;
 @EnableConfigurationProperties(PropiedadesJwt.class)
 public class PokemonBackendApplication {
 
+    /** Punto de entrada: arranca el contexto Spring Boot del backend. */
     public static void main(String[] args) {
         SpringApplication.run(PokemonBackendApplication.class, args);
     }

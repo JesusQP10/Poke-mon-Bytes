@@ -26,6 +26,9 @@ public class ServicioJwt {
     @Value("${jwt.secret.key}")
     private String secretKey;
 
+    /**
+     * Emite un JWT firmado con el subject = nombre de usuario y caducidad de 24 horas.
+     */
     public String generarToken(UserDetails userDetails) {
         return Jwts.builder()
             .subject(userDetails.getUsername())
@@ -35,19 +38,23 @@ public class ServicioJwt {
             .compact();
     }
 
+    /** Lee el claim {@code sub} del token (nombre de usuario). */
     public String extraerNombreUsuario(String token) {
         return extraerClaim(token, Claims::getSubject);
     }
 
+    /** Coincide el subject con el usuario cargado y comprueba que el token no haya expirado. */
     public boolean esTokenValido(String token, UserDetails userDetails) {
         String username = extraerNombreUsuario(token);
         return username.equals(userDetails.getUsername()) && !estaExpirado(token);
     }
 
+    /** Compara la fecha de expiración del token con el reloj del servidor. */
     private boolean estaExpirado(String token) {
         return extraerClaim(token, Claims::getExpiration).before(new Date());
     }
 
+    /** Parsea y verifica la firma del token, luego aplica el extractor al payload. */
     private <T> T extraerClaim(String token, Function<Claims, T> resolver) {
         Claims claims = Jwts.parser()
             .verifyWith(claveFirma())
@@ -57,6 +64,7 @@ public class ServicioJwt {
         return resolver.apply(claims);
     }
 
+    /** Construye la clave simétrica a partir de {@code jwt.secret.key}. */
     private SecretKey claveFirma() {
         return Keys.hmacShaKeyFor(secretKey.getBytes());
     }

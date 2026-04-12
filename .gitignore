@@ -78,7 +78,7 @@ pokemon-frontend/node_modules/
 pokemon-frontend/dist/
 
 # ========== Secrets & Environment ==========
-# NUNCA commitear credenciales reales
+# NUNCA credenciales reales
 pokemon-backend/src/main/resources/application-local.properties
 *.env
 .env
@@ -95,11 +95,11 @@ pokemon-backend/src/main/resources/application-local.properties
 pokemon-frontend/public/assets/game/overworld/tiles/exports/*.json
 
 # ========== Tiled Map Editor ==========
-# Archivos de configuración de tilesets (se regeneran desde Tiled)
+# Archivos de configuración de tilesets 
 *.tsx
 
-# ========== Refactorización (Opcional) ==========
-# Descomentar si NO quieres commitear la refactorización
+# ========== Refactorización ==========
+
 # pokemon-frontend/src/phaser/config/
 # pokemon-frontend/src/phaser/managers/
 # pokemon-frontend/src/phaser/data/
@@ -107,3 +107,6 @@ pokemon-frontend/public/assets/game/overworld/tiles/exports/*.json
 # pokemon-frontend/src/store/slices/
 # pokemon-frontend/src/store/usarJuegoStoreRefactorizado.js
 # pokemon-frontend/src/utils/
+
+# ========== Archivos Entregables ==========
+docs/documentacion-proyecto.html

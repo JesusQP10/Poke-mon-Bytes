@@ -6,6 +6,12 @@ import java.util.Set;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+/**
+ * Persistencia de PP por movimiento y Pokémon en tabla auxiliar {@code POKEMON_MOVIMIENTOS_USUARIO}.
+ *
+ * <p>Se crea la tabla por JDBC al primer uso para no depender de migraciones Flyway en el prototipo.
+ * La PK compuesta evita duplicar el mismo ataque en un mismo Pokémon.</p>
+ */
 @Repository
 public class RepositorioEstadoMovimientoPokemon {
 
@@ -24,12 +30,15 @@ public class RepositorioEstadoMovimientoPokemon {
     private final JdbcTemplate jdbcTemplate;
     private volatile boolean initialized = false;
 
-    // RepositorioEstadoMovimientoPokemon.
     public RepositorioEstadoMovimientoPokemon(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    
+    /**
+     * Lee todos los movimientos persistidos de un Pokémon, ordenados por slot.
+     *
+     * @param pokemonId {@code id_pokemon_usuario}
+     */
     public List<EstadoPpMovimiento> buscarPorPokemonId(Long pokemonId) {
         asegurarTabla();
         String sql = "SELECT id_ataque, slot_index, pp_actual FROM " + TABLE_NAME
@@ -45,7 +54,9 @@ public class RepositorioEstadoMovimientoPokemon {
         );
     }
 
-    
+    /**
+     * Upsert de una fila de PP (al materializar slots o al sincronizar learnset).
+     */
     public void insertarOActualizar(Long pokemonId, Integer moveId, Integer slotIndex, Integer ppActual) {
         asegurarTabla();
         String sql = "INSERT INTO " + TABLE_NAME
@@ -54,14 +65,18 @@ public class RepositorioEstadoMovimientoPokemon {
         jdbcTemplate.update(sql, pokemonId, moveId, slotIndex, ppActual);
     }
 
-    // actualizarPpActual.
+    /**
+     * Tras consumir PP en un turno de batalla.
+     */
     public void actualizarPpActual(Long pokemonId, Integer moveId, Integer ppActual) {
         asegurarTabla();
         String sql = "UPDATE " + TABLE_NAME + " SET pp_actual = ? WHERE id_pokemon_usuario = ? AND id_ataque = ?";
         jdbcTemplate.update(sql, ppActual, pokemonId, moveId);
     }
 
-    
+    /**
+     * Elimina movimientos que ya no forman parte del learnset activo (mantiene solo {@code keepMoveIds}).
+     */
     public void eliminarPorPokemonIdYNoEn(Long pokemonId, Set<Integer> keepMoveIds) {
         asegurarTabla();
         if (keepMoveIds == null || keepMoveIds.isEmpty()) {
@@ -80,14 +95,14 @@ public class RepositorioEstadoMovimientoPokemon {
         jdbcTemplate.update(sql, args.toArray());
     }
 
-    // eliminarPorPokemonId.
+    /** Borra todas las filas de PP asociadas a un Pokémon (liberar salvaje, reinicio, etc.). */
     public void eliminarPorPokemonId(Long pokemonId) {
         asegurarTabla();
         String sql = "DELETE FROM " + TABLE_NAME + " WHERE id_pokemon_usuario = ?";
         jdbcTemplate.update(sql, pokemonId);
     }
 
-    // asegurarTabla.
+    /** DDL idempotente con doble comprobación volátil para no bloquear hilos innecesariamente. */
     private void asegurarTabla() {
         if (initialized) {
             return;
@@ -101,6 +116,8 @@ public class RepositorioEstadoMovimientoPokemon {
         }
     }
 
+    /**
+     * Fila mínima para hidratar slots: id de ataque en catálogo, orden visual y PP restante.
+     */
     public record EstadoPpMovimiento(Integer moveId, Integer slotIndex, Integer ppActual) {}
 }
-

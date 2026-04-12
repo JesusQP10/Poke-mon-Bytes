@@ -17,10 +17,16 @@ public class ServicioDetallesUsuario implements UserDetailsService {
 
     private final RepositorioUsuario userRepository;
 
+    /** @param userRepository fuente de {@link Usuario} para Spring Security */
     public ServicioDetallesUsuario(RepositorioUsuario userRepository) {
         this.userRepository = userRepository;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws UsernameNotFoundException si no existe fila en {@code USUARIOS} con ese {@code username}
+     */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByUsername(username)

@@ -11,8 +11,8 @@ import java.util.Optional;
  * Es un componente para el módulo de Seguridad (Auth).
  */
 public interface RepositorioUsuario extends JpaRepository<Usuario, Long> {
-    
-    // Método  para el iniciarSesion: Spring lo implementa automáticamente
+
+    /** Usado en login y en {@code ServicioDetallesUsuario} para hidratar el principal de seguridad. */
     Optional<Usuario> findByUsername(String username);
 }
 

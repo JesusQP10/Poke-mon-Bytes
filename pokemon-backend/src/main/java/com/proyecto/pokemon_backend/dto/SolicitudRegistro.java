@@ -5,6 +5,9 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Cuerpo del POST de registro: credenciales validadas antes de persistir el {@code Usuario}.
+ */
 @Data
 @NoArgsConstructor
 public class SolicitudRegistro {

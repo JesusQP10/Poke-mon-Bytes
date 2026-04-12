@@ -41,6 +41,7 @@ public class TipoService {
 
     private final RepositorioTipo tipoRepository;
 
+    /** @param tipoRepository matriz de efectividad persistida en {@code TIPOS} */
     public TipoService(RepositorioTipo tipoRepository) {
         this.tipoRepository = tipoRepository;
     }
@@ -78,6 +79,10 @@ public class TipoService {
         return "";
     }
 
+    /**
+     * Traduce variantes en español/inglés a la forma de la tabla {@code TIPOS}.
+     * Si no hay entrada en el mapa, devuelve cadena vacía y la consulta de efectividad usa 1.0.
+     */
     private String normalizar(String raw) {
         if (raw == null) return "";
         return NORMALIZAR.getOrDefault(raw.trim().toLowerCase(Locale.ROOT), "");

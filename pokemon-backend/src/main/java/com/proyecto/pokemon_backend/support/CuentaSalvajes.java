@@ -6,7 +6,9 @@ package com.proyecto.pokemon_backend.support;
  */
 public final class CuentaSalvajes {
 
+    /** Nombre de usuario técnico cuya PK aparece en {@code POKEMON_USUARIO.id_usuario} para salvajes. */
     public static final String USERNAME = "__wild_battle_pool__";
 
+    /** Utilidad: no instanciar. */
     private CuentaSalvajes() {}
 }

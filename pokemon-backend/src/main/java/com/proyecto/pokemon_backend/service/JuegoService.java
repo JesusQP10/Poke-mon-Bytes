@@ -46,6 +46,9 @@ public class JuegoService {
     private final RepositorioObjeto itemRepo;
     private final RepositorioEstadoMovimientoPokemon estadoMovimientoRepo;
 
+    /**
+     * Inyecta repositorios de usuario, equipo, catálogo, mochila, ítems y PP por movimiento.
+     */
     public JuegoService(
         RepositorioUsuario userRepo,
         RepositorioPokemonUsuario pokemonRepo,
@@ -250,6 +253,7 @@ public class JuegoService {
     // HELPERS — DTOs para el front (nombres en inglés en parte del JSON por compatibilidad con Phaser)
     // =========================================================================
 
+    /** Ensambla el mapa JSON que consume Phaser (sprite Gen II, tipos en inglés, stats de combate). */
     private Map<String, Object> toDto(PokemonUsuario p) {
         Integer pokedexId = p.getPokedexId();
         Optional<PokedexMaestra> especie = pokedexId != null ? pokedexRepo.findById(pokedexId) : Optional.empty();
@@ -302,17 +306,25 @@ public class JuegoService {
         };
     }
 
+    /** Pokémon del usuario ordenados por {@link PokemonUsuario#getPosicionEquipo()}. */
     private List<PokemonUsuario> equipoOrdenado(Long userId) {
         List<PokemonUsuario> equipo = new ArrayList<>(pokemonRepo.findByUsuarioId(userId));
         equipo.sort(Comparator.comparingInt(p -> nvl(p.getPosicionEquipo(), Integer.MAX_VALUE)));
         return equipo;
     }
 
+    /** @throws RecursoNoEncontrado si el login no corresponde a ninguna fila */
     private Usuario cargarUsuario(String username) {
         return userRepo.findByUsername(username)
             .orElseThrow(() -> new RecursoNoEncontrado("Usuario no encontrado."));
     }
 
+    /**
+     * Resuelve un ítem por PK o por nombre; exige exactamente uno de los dos criterios.
+     *
+     * @throws RecursoNoEncontrado si no hay coincidencia en catálogo
+     * @throws ErrorNegocio si faltan ambos identificadores
+     */
     private Item resolverItem(Integer itemId, String nombreItem) {
         if (itemId != null && itemId > 0) {
             return itemRepo.findById(itemId)
@@ -339,6 +351,7 @@ public class JuegoService {
             .collect(Collectors.toList());
     }
 
+    /** Una línea de mochila: ids duplicados por compatibilidad con distintas versiones del cliente. */
     private Map<String, Object> inventarioLineaDto(InventarioUsuario e) {
         Item it = e.getItem();
         Map<String, Object> m = new HashMap<>();
@@ -350,6 +363,7 @@ public class JuegoService {
         return m;
     }
 
+    /** {@code null}-safe: devuelve {@code defecto} si el Integer es null. */
     private int nvl(Integer value, int defecto) {
         return value == null ? defecto : value;
     }

@@ -9,6 +9,9 @@ package com.proyecto.pokemon_backend.exception;
  */
 public class ErrorNegocio extends RuntimeException {
 
+    /**
+     * @param mensaje texto expuesto al cliente vía {@code ManejadorGlobalExcepciones} (HTTP 400)
+     */
     public ErrorNegocio(String mensaje) {
         super(mensaje);
     }

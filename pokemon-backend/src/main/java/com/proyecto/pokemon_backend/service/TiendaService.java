@@ -29,6 +29,12 @@ public class TiendaService {
     private final RepositorioInventarioUsuario inventarioRepository;
     private final JuegoService juegoService;
 
+    /**
+     * @param userRepository saldo del jugador
+     * @param itemRepository catálogo de precios
+     * @param inventarioRepository filas de mochila
+     * @param juegoService reutiliza el mismo formato de inventario que el estado de partida
+     */
     public TiendaService(
         RepositorioUsuario userRepository,
         RepositorioObjeto itemRepository,

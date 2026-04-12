@@ -14,6 +14,10 @@ public class ServicioAutenticacion {
     private final RepositorioUsuario userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * @param userRepository persistencia de jugadores
+     * @param passwordEncoder BCrypt para el registro
+     */
     public ServicioAutenticacion(RepositorioUsuario userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;

@@ -20,6 +20,10 @@ public class InventarioId implements Serializable {
     private Long usuarioId;
     private Integer itemId;
 
+    /**
+     * @param usuarioId FK a USUARIOS
+     * @param itemId FK a ITEMS
+     */
     public InventarioId(Long usuarioId, Integer itemId) {
         this.usuarioId = usuarioId;
         this.itemId = itemId;

@@ -15,6 +15,9 @@ import java.util.Map;
 public class ServicioPokeApi {
     private final WebClient webClient;
 
+    /**
+     * Configura {@code WebClient} con URL base de PokéAPI y buffer de cuerpo ampliado (evita {@code DataBufferLimitException}).
+     */
     public ServicioPokeApi(WebClient.Builder webClientBuilder) {
         // 1. Configuración para aumentar el límite del buffer (Solución al DataBufferLimitException)
         final int maxBufferSize = 16 * 1024 * 1024; // 16 MB (más que suficiente)
@@ -32,16 +35,11 @@ public class ServicioPokeApi {
     }
 
     // --- MÉTODOS DE EXTRACCIÓN (GET) ---
-    // Todos devuelven 'Mono<T>', caja que puede contener el resultado de la petición o un error,
-    // pero que no bloquea el programa mientras espera la respuesta de Internet.
-    // La petición no se ejecuta hasta que alguien se "suscribe" a este Mono (en CargadorDatos).
+    // Todos devuelven Mono: la petición HTTP no corre hasta que el llamador hace block()/subscribe().
 
     /**
-     * Obtiene los datos base de un Pokémon (Stats, Tipos, Sprites).
-     * Endpoint: /pokemon/{name}
+     * GET {@code /pokemon/{name}} — stats, tipos y metadatos del Pokémon (id numérico o nombre).
      */
-
-    // Método para obtner los detalles de un Pokémon
     public Mono<Map<String, Object>> obtenerDetallesPokemon(String name) {
         return webClient.get()
                 .uri("pokemon/{name}", name) 
@@ -49,7 +47,7 @@ public class ServicioPokeApi {
                 .bodyToMono(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
-    // Método para obtener detalles de un Ataque/Movimiento
+    /** GET {@code /move/{moveName}} — potencia, precisión, tipo y categoría del movimiento. */
     public Mono<Map<String, Object>> obtenerDetallesMovimiento(String moveName) {
         return webClient.get()
                 .uri("move/{moveName}", moveName)
@@ -57,7 +55,7 @@ public class ServicioPokeApi {
                 .bodyToMono(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
-    // Método para obtener la info de un Item (Precio, Nombre)
+    /** GET {@code /item/{name}} — coste y nombre del objeto de tienda. */
     public Mono<Map<String, Object>> obtenerDetallesObjeto(String name) {
         return webClient.get()
                 .uri("item/{name}", name) 
@@ -65,7 +63,7 @@ public class ServicioPokeApi {
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
-    // Método para obtener capture_rate
+    /** GET {@code /pokemon-species/{id}} — incluye {@code capture_rate} para la fórmula de captura. */
     public Mono<Map<String, Object>> obtenerEspeciePokemon(String idOrName){
         return webClient.get()
             .uri("pokemon-species/{id}", idOrName)

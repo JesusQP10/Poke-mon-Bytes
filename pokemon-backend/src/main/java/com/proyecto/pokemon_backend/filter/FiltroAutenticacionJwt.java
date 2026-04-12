@@ -26,11 +26,20 @@ public class FiltroAutenticacionJwt extends OncePerRequestFilter {
     private final ServicioJwt jwtService;
     private final ServicioDetallesUsuario userDetailsService;
 
+    /**
+     * @param jwtService parseo y validación de tokens
+     * @param userDetailsService carga el {@link UserDetails} a partir del subject del JWT
+     */
     public FiltroAutenticacionJwt(ServicioJwt jwtService, ServicioDetallesUsuario userDetailsService) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * Si hay Bearer válido y no hay autenticación previa, establece {@code SecurityContext}.
+     */
     @Override
     protected void doFilterInternal(
         @NonNull HttpServletRequest request,
