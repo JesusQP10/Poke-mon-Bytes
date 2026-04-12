@@ -27,7 +27,7 @@ Desde la carpeta `pokemon-backend`: `.\mvnw.cmd test`
 ## Estructura
 
 ```
-docs/backend/
+docs/referencia/backend/
 ├── fases/                           # Documentación por fases del proyecto
 │   ├── Documentación FASE I.pdf    # Seguridad y Autenticación (JWT)
 │   ├── Documentación FASE II.pdf   # Motor de Batalla
@@ -39,7 +39,7 @@ docs/backend/
 └── README.md                        # Este archivo
 ```
 
-**Diagramas mantenidos (Mermaid):** [docs/diagramas/README.md](../diagramas/README.md) — incluye casos de uso, clases, ACID, captura, arranque y daño (**secciones 13–18**).
+**Diagramas mantenidos (Mermaid):** [README de diagramas](../diagramas/README.md) — incluye casos de uso, clases, ACID, captura, arranque y daño (**secciones 13–18**).
 
 ## Fases del Proyecto
 

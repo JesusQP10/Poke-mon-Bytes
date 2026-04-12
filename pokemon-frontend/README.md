@@ -5,8 +5,8 @@ Cliente **React 19 + Vite** con **Phaser 3** embebido (overworld, batalla, menú
 ## Documentación principal
 
 - Estado del proyecto, stack y alcance: [README del monorepo](../README.md)
-- Notas de desarrollo, bugs y prioridades: [`docs/dev/NOTAS.md`](../docs/dev/NOTAS.md)
-- API backend (incl. OpenAPI con perfil `dev`): [`docs/backend/README.md`](../docs/backend/README.md)
+- Notas de desarrollo, bugs y prioridades: [`docs/desarrollo/NOTAS.md`](../docs/desarrollo/NOTAS.md)
+- API backend (incl. OpenAPI con perfil `dev`): [`docs/referencia/backend/README.md`](../docs/referencia/backend/README.md)
 
 ## Arranque local
 

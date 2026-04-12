@@ -650,6 +650,6 @@ Fórmula resumida en código: `((0.2*N+1)*A*P/(D*25)+2) * STAB * E * V` con `V �
 
 Referencias útiles:
 
-- Seguridad y Swagger: [docs/backend/README.md](../backend/README.md)
-- Tareas y bugs: [docs/dev/NOTAS.md](../dev/NOTAS.md)
+- Seguridad y Swagger: [README del backend](../backend/README.md)
+- Tareas y bugs: [NOTAS](../../desarrollo/NOTAS.md)
 

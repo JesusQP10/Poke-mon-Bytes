@@ -2,6 +2,7 @@
 
 ## Registro
 
+- **Reorganización solo `docs/` (2026-04-12):** `dev/` → `desarrollo/`; `backend/` + `diagramas/` → `referencia/backend/` y `referencia/diagramas/`. Índice: [docs/README.md](../README.md).
 - Actualización de documentación **11-04-2026**:
   - **Menú in-game en React** (`components/game/MenuIngameReact.jsx` / `.css`): equipo, mochila, guardado; detalle de Pokémon con stats y tipos; **mini sprites** de iniciales y URLs de retrato en `src/assets/pokemon/starters/portraitUrls.js`; datos de especie vía **`src/services/pokemonDetallePokeapi.js`**; fallback de stats en `config/statsCombateMenuFallback.js`.
   - **Diálogo overworld retro** (`SistemaDialogo.js`, `marcoDialogoRetro.js`) con **etiqueta de hablante** y opciones de ritmo en `config/opcionesCliente.js`.

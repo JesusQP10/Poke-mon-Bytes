@@ -1,110 +1,98 @@
 # Documentación del Proyecto
 
-Esta carpeta contiene toda la documentación, assets de diseño y archivos de desarrollo del proyecto Pokémon Bytes.
+Esta carpeta agrupa **documentación**, **assets de diseño** y **herramientas** (p. ej. colección HTTP).
+
+## Cómo está organizado
+
+| Carpeta | Contenido |
+|---------|-----------|
+| **`referencia/`** |  **backend** y **diagramas Mermaid** (arquitectura, API, ER). |
+| **`desarrollo/`** | Notas del día a día . |
+| **`planning/`**, **`screenshots/`**, **`tiled/`** | Plan en texto, capturas para README, mapas fuente Tiled. |
+| Raíz `docs/` | `api-tests.http`, este índice. |
 
 ## Estructura
 
 ```
 docs/
-├── backend/                      # Documentación del backend (Spring Boot)
-│   ├── fases/                   # Documentación por fases del proyecto
-│   │   ├── Documentación FASE I.pdf    # Seguridad y JWT
-│   │   ├── Documentación FASE II.pdf   # Motor de Batalla
-│   │   ├── Documentación FASE III.pdf  # Economía
-│   │   ├── Documentación FASE IV.pdf   # Captura
-│   │   ├── Documentación FASE V.pdf    # Data Seeding
-│   │   └── Diagramas/           # Opcional: PNG viejos (no son la doc oficial)
-│   └── README.md                # Índice de documentación backend
+├── referencia/
+│   ├── backend/                 # Índice API, Swagger, tests, enlaces a fases (PDF)
+│   │   └── README.md
+│   └── diagramas/             # Diagramas Mermaid (fuente única)
+│       └── README.md
 │
-├── diagramas/                   # Diagramas Mermaid (fuente única)
-│   └── README.md
+├── desarrollo/
+│   ├── MEJORAS_ARQUITECTURA.md
+│   ├── NOTAS.md
+│   └── ORGANIZACION.md
 │
-├── dev/                          # Documentación de desarrollo
-│   ├── MEJORAS_ARQUITECTURA.md  # Propuesta de refactorización del código
-│   ├── NOTAS.md                 # Notas personales y TODOs
-│   └── ORGANIZACION.md          # Explicación de la estructura
+├── planning/
+│   └── PLAN_POKEMON_ORO.txt
 │
-├── planning/                     # Planificación del proyecto
-│   └── PLAN_POKEMON_ORO.txt      # Plan inicial del juego
+├── screenshots/
+│   └── …                      # PNG para README / presentaciones
 │
-├── screenshots/                  # Capturas para README / presentaciones (renovar cuando cambie la UI)
-│   ├── landing.png               # Página de inicio 
-│   ├── titulo.png                # Pantalla de título
-│   ├── oak.png                   # Intro Profesor Oak
-│   ├── nombre.png                # Entrada de nombre
-│   ├── player_room.png           # Interior habitación (Tiled)
-│   ├── ejemplo_combate.png       # Escena de batalla (API)
-│   ├── captura-dialogo-mama.png
-│   ├── captura-dialogo-profesor-elm.png
-│   ├── captura-menu-principal.png
-│   ├── captura-equipo-pokemon.png
-│   ├── captura-ficha-totodile.png
-│   ├── captura-mochila.png
-│   ├── captura-opciones.png
-│   └── captura-guardado.png
+├── tiled/
+│   ├── elm_lab.tmx
+│   └── player_house.tmx
 │
-├── tiled/                        # Archivos fuente de Tiled Map Editor
-│   ├── elm_lab.tmx              # Laboratorio del Prof. Elm
-│   └── player_house.tmx         # Casa del jugador
-│
-├── api-tests.http               # Tests de la API REST (usar con REST Client)
-├── .gitignore                   # Ignorar archivos temporales
-└── README.md                    # Este archivo
-
+├── api-tests.http
+├── .gitignore
+└── README.md                  # Este archivo
 ```
 
-## Archivos por Categoría
+## Archivos por categoría
 
-### 🏗️ Backend
-- **fases/**: Documentación técnica de las 5 fases del proyecto (PDFs)
-- **Diagramas técnicos (Mermaid):** [docs/diagramas/README.md](diagramas/README.md) — fuente única. `fases/Diagramas/` solo si guardas PNG aparte ([nota](backend/fases/Diagramas/README.md))
+### Referencia — backend
 
-Ver detalles en: `backend/README.md`
+- Índice técnico: [referencia/backend/README.md](referencia/backend/README.md) (OpenAPI, `mvnw`, puerto, fases).
 
-### 📝 Desarrollo
-- **MEJORAS_ARQUITECTURA.md**: Análisis de problemas del código actual y soluciones propuestas (managers, slices, logging)
-- **NOTAS.md**: Estado del código frente a la doc (incluye registro por fecha), prioridades, bugs y referencias. Convive con el resumen del [`README.md`](../README.md) en la raíz del repo.
+### Referencia — diagramas
 
-### 🗺️ Mapas (Tiled)
-Los archivos `.tmx` son mapas editables con [Tiled Map Editor](https://www.mapeditor.org/):
-- **elm_lab.tmx**: Laboratorio donde se elige el starter
-- **player_house.tmx**: Casa del jugador (planta baja)
+- **Mermaid** (única fuente mantenida de diagramas técnicos): [referencia/diagramas/README.md](referencia/diagramas/README.md).
 
-Para editar: Abrir con Tiled → Exportar como JSON → Colocar los `.json` en `pokemon-frontend/public/assets/game/overworld/tiles/exports/` (y registrar la clave en `src/phaser/mapas/` —p. ej. `index.js` y el módulo del mapa— y en `EscenaPreload.js` para assets nuevos).
+### Desarrollo
 
-**Código overworld reciente:** parte de la lógica por mapa vive en `pokemon-frontend/src/phaser/mapas/` (casa, laboratorio, exteriores) para no concentrar todo en `EscenaOverworld.js`.
+- [MEJORAS_ARQUITECTURA.md](desarrollo/MEJORAS_ARQUITECTURA.md): análisis y propuestas de refactorización.
+- [NOTAS.md](desarrollo/NOTAS.md): estado del código, prioridades, bugs, registro por fecha.
+- [ORGANIZACION.md](desarrollo/ORGANIZACION.md): cómo está ordenado `docs/` y el monorepo.
 
-### 📸 Screenshots
-Capturas de pantalla para el README principal y presentaciones
+### Mapas (Tiled)
 
-### 🧪 API Tests
-- **api-tests.http**: Colección de requests HTTP para testear el backend
-  - Usar con extensión REST Client de VS Code
-  - O importar en Postman
+Los `.tmx` se editan con [Tiled Map Editor](https://www.mapeditor.org/):
 
-## Cómo Usar
+- **elm_lab.tmx**: laboratorio del Prof. Elm.
+- **player_house.tmx**: casa del jugador.
 
-### Editar Mapas
-1. Instalar [Tiled](https://www.mapeditor.org/)
-2. Abrir archivo `.tmx` desde `docs/tiled/`
-3. Editar capas, objetos, propiedades
-4. Exportar como JSON: File → Export As → JSON
-5. Guardar en `pokemon-frontend/public/assets/game/overworld/tiles/exports/`
+Para editar: abrir desde `docs/tiled/` → exportar JSON → colocar en `pokemon-frontend/public/assets/game/overworld/tiles/exports/` y registrar en `src/phaser/mapas/` y `EscenaPreload.js`
 
-### Testear API
-1. Instalar extensión "REST Client" en IDE
-2. Abrir `docs/api-tests.http`
-3. Click en "Send Request" sobre cada petición
-4. Ver respuestas en el panel lateral
+### Screenshots
 
-### Añadir Screenshots
-1. Capturar pantalla del juego
-2. Guardar en `docs/screenshots/`
-3. Actualizar README.md con la nueva imagen
+Capturas para el README raíz y presentaciones;`docs/screenshots/`.
+
+### API tests
+
+- **api-tests.http**: peticiones de ejemplo (REST Client, Postman, etc.)
+
+## Cómo usar
+
+### Editar mapas
+
+1. Instalar Tiled.
+2. Abrir `.tmx` desde `docs/tiled/`.
+3. Exportar JSON al directorio de exports del frontend.
+
+### Probar la API
+
+1. Arrancar el backend.
+2. Abrir `docs/api-tests.http` en el IDE con REST Client.
+
+### Añadir capturas
+
+1. Capturar pantalla.
+2. Guardar en `docs/screenshots/`.
 
 ## Notas
 
-- Los archivos TMX son la fuente de verdad para los mapas
-- Los JSON exportados NO se deben editar manualmente NUNCA DE NUNCA DE LOS NUNCAS
-- Las screenshots deben ser PNG para mejor calidad
-- Los tests HTTP requieren que el backend esté corriendo en `localhost:8081` (o el puerto definido en `server.port`)
+- Los **TMX** son la fuente de verdad de los mapas; los **JSON exportados** no se editan a mano.
+- Preferir **PNG** para screenshots.

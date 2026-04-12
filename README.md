@@ -17,7 +17,7 @@
 [![Tailwind](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Zustand](https://img.shields.io/badge/Zustand-5-FF9C00?style=for-the-badge)](https://github.com/pmndrs/zustand)
 
-[Estado del proyecto](#estado-actual-del-proyecto) · [Arquitectura](#arquitectura) · [Stack](#stack-tecnológico) · [Galería](#galería-del-proyecto) · [Estructura](#estructura-del-repositorio) · [Notas de desarrollo](docs/dev/NOTAS.md) · [Backend (Swagger, tests)](docs/backend/README.md)
+[Estado del proyecto](#estado-actual-del-proyecto) · [Arquitectura](#arquitectura) · [Stack](#stack-tecnológico) · [Galería](#galería-del-proyecto) · [Estructura](#estructura-del-repositorio) · [Notas de desarrollo](docs/desarrollo/NOTAS.md) · [Backend (Swagger, tests)](docs/referencia/backend/README.md)
 
 </div>
 
@@ -97,7 +97,7 @@ cd pokemon-backend
 .\mvnw.cmd spring-boot:run
 ```
 
-Swagger UI (perfil `dev`): `http://localhost:8081/swagger-ui.html` — ver [docs/backend/README.md](docs/backend/README.md).
+Swagger UI (perfil `dev`): `http://localhost:8081/swagger-ui.html` — ver [docs/referencia/backend/README.md](docs/referencia/backend/README.md).
 
 **Frontend** (Vite, suele ser **5173**):
 
@@ -111,7 +111,7 @@ npm run dev
 
 ## Estado actual del proyecto
 
-> **Nota (2026-04-11):** El detalle de tareas vive en [`docs/dev/NOTAS.md`](docs/dev/NOTAS.md). Aquí va un resumen ejecutivo. Estado general: **frontend en evolución**, **backend operativo**.
+> **Nota (2026-04-11):** El detalle de tareas vive en [`docs/desarrollo/NOTAS.md`](docs/desarrollo/NOTAS.md). Aquí va un resumen ejecutivo. Estado general: **frontend en evolución**, **backend operativo**.
 
 ### Frontend (en desarrollo activo)
 
@@ -151,7 +151,7 @@ npm run dev
 - Mecánica de captura
 - Data seeding automático desde PokéAPI
 - **API de estado de partida** (`/api/v1/juego`): `estado`, `starter`, `equipo`, `guardar` (mapa, posición, dinero, JSON de estado del cliente en `Usuario`). El DTO de cada Pokémon en **equipo** incluye **dos tipos** (`tipo1`, `tipo2` si aplica) y **stats de combate** persistidos para enriquecer el menú del cliente
-- **OpenAPI / Swagger UI** con perfil `dev` (ver `docs/backend/README.md`)
+- **OpenAPI / Swagger UI** con perfil `dev` (ver `docs/referencia/backend/README.md`)
 
 ---
 
@@ -173,7 +173,7 @@ flowchart LR
   API --> DB
 ```
 
-Documentación gráfica del proyecto (**Mermaid** en un solo archivo: seguridad, API, dominio, ACID, captura, arranque, daño): [docs/diagramas/README.md](docs/diagramas/README.md).
+Documentación gráfica del proyecto (**Mermaid** en un solo archivo: seguridad, API, dominio, ACID, captura, arranque, daño): [docs/referencia/diagramas/README.md](docs/referencia/diagramas/README.md).
 
 ### 🧠 Backend (Spring Boot)
 
@@ -211,8 +211,8 @@ Monorepo lógico en carpetas raíz:
 ```text
 root/
 ├── docs/                    # Documentación y assets de diseño
-│   ├── diagramas/           # Diagramas Mermaid (arquitectura, API, ER)
-│   ├── dev/                 # Notas de desarrollo
+│   ├── referencia/          # Backend (README) + diagramas Mermaid
+│   ├── desarrollo/          # NOTAS, mejoras, organización
 │   ├── planning/            # Planificación del proyecto
 │   ├── screenshots/         # Capturas de pantalla
 │   ├── tiled/               # Mapas fuente (Tiled Editor)
