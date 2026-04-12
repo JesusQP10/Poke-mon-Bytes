@@ -68,6 +68,9 @@ tmp_*
 *.aseprite
 
 # ========== Project Specific ==========
+# Notas y guías personales 
+docs/personal/
+
 .claude/
 JesusQP10 pokegold master gfx-tilesets/
 Pokemon-gen-2-style-tilemap-main/

@@ -54,6 +54,22 @@ const PuenteApi = {
     return res.data;
   },
 
+  /** Crea instancia salvaje en BD. Liberar al salir del combate si no hubo captura. */
+  async prepararSalvajePokemon({ pokedexId, nivel }) {
+    const res = await api.post('/api/v1/batalla/salvaje/preparar', { pokedexId, nivel });
+    return res.data;
+  },
+
+  async liberarSalvajePokemon(pokemonUsuarioId) {
+    await api.post('/api/v1/batalla/salvaje/liberar', { pokemonUsuarioId });
+  },
+
+  /** POST /juego/starter — persiste el inicial en BD (requiere JWT). */
+  async elegirStarterServidor(starterId) {
+    const res = await api.post('/api/v1/juego/starter', { starterId });
+    return res.data;
+  },
+
   // ── Tienda ─────────────────────────────────────────────────────────────
 
   async comprarItem(itemId, cantidad) {

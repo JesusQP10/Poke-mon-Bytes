@@ -13,6 +13,8 @@ import lombok.NoArgsConstructor;
 public class RespuestaTurno {
 
     private Integer danoInfligido;
+    /** PS del atacante tras resolver el turno (residual, confusión, etc.). */
+    private Integer hpRestanteAtacante;
     private Integer hpRestanteDefensor;
     private double multiplicadorFinal;
     private boolean golpeCritico;

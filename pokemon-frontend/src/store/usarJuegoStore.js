@@ -71,7 +71,7 @@ export const usarJuegoStore = create((set, get) => ({
       ) {
         teamRaw = state.team;
       }
-      const team = teamRaw.map((p) => ({
+      let team = teamRaw.map((p) => ({
         ...p,
         nombre: p.nombre ?? p.name ?? p.nombreApodo ?? '???',
         nombreApodo: p.nombreApodo ?? p.nombre ?? p.name,
@@ -88,6 +88,9 @@ export const usarJuegoStore = create((set, get) => ({
         tipo1: p.tipo1 ?? p.type,
         tipo2: p.tipo2 ?? null,
       }));
+      if (team.length > 0 && !team.some((p) => p.esStarter) && team[0].pokemonUsuarioId != null) {
+        team = team.map((p, i) => (i === 0 ? { ...p, esStarter: true } : p));
+      }
       let starter = data?.starter ?? ec.starterCliente ?? (team[0] ?? null);
       if (starter) {
         starter = {
@@ -95,6 +98,7 @@ export const usarJuegoStore = create((set, get) => ({
           nombre: starter.nombre ?? starter.name ?? '???',
           id: starter.id ?? starter.pokedexId,
           pokemonUsuarioId: starter.pokemonUsuarioId,
+          esStarter: starter.esStarter ?? team[0]?.esStarter ?? false,
         };
       }
       const inventario = 'inventario' in ec

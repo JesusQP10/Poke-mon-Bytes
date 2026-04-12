@@ -19,12 +19,15 @@ export default class EscenaBatalla extends Phaser.Scene {
 
   init(data) {
     this._pokemonSalvaje = data?.pokemonSalvaje ?? { id: 1, nombre: 'Bulbasaur', nivel: 5 };
+    /** Si existe, se libera en BD al salir del combate. */
+    this._salvajePokemonUsuarioId = null;
   }
 
   async create() {
     this._enturno = false;
     this._pokemonJugador = null;
     this._movimientosJugador = [];
+    this._movimientosEnemigo = [];
 
     this._crearFondo();
     this._crearPlataformas();
@@ -32,17 +35,54 @@ export default class EscenaBatalla extends Phaser.Scene {
     this._crearMenuAcciones();
     this._menuMov = new MenuMovimientos(this);
 
+    const sal = this._pokemonSalvaje;
+    if (sal?.pokemonUsuarioId != null) {
+      this._salvajePokemonUsuarioId = sal.pokemonUsuarioId;
+    } else if (sal?.id != null) {
+      try {
+        const prep = await PuenteApi.prepararSalvajePokemon({
+          pokedexId: sal.id,
+          nivel: sal.nivel ?? 5,
+        });
+        this._pokemonSalvaje = {
+          ...sal,
+          pokemonUsuarioId: prep.pokemonUsuarioId,
+          pokedexId: prep.pokedexId ?? sal.id,
+          id: prep.pokedexId ?? sal.id,
+          nombre: prep.nombre ?? sal.nombre,
+          nivel: prep.nivel ?? sal.nivel,
+          hpActual: prep.hpActual,
+          hpMax: prep.hpMax,
+          ataque: prep.ataque,
+          defensa: prep.defensa,
+        };
+        this._salvajePokemonUsuarioId = prep.pokemonUsuarioId;
+      } catch (e) {
+        console.warn('[EscenaBatalla] preparar salvaje', e);
+      }
+    }
+
     // Cargar datos del equipo del jugador
     try {
       const equipo = await PuenteApi.getEquipo();
       if (equipo && equipo.length > 0) {
         this._pokemonJugador = equipo[0];
-        this._movimientosJugador = await PuenteApi.getMovimientos(
-          this._pokemonJugador.pokemonUsuarioId ?? this._pokemonJugador.id
-        );
+        const pid = this._pokemonJugador.pokemonUsuarioId;
+        if (pid != null) {
+          this._movimientosJugador = await PuenteApi.getMovimientos(pid);
+        }
       }
     } catch (e) {
       console.warn('No se pudo cargar el equipo:', e);
+    }
+
+    if (this._pokemonSalvaje?.pokemonUsuarioId != null) {
+      try {
+        this._movimientosEnemigo = await PuenteApi.getMovimientos(this._pokemonSalvaje.pokemonUsuarioId);
+      } catch (e) {
+        console.warn('No se pudieron cargar movimientos del rival:', e);
+        this._movimientosEnemigo = [];
+      }
     }
 
     this._actualizarInfoPaneles();
@@ -167,7 +207,7 @@ export default class EscenaBatalla extends Phaser.Scene {
   // ── Sprites de Pokémon ────────────────────────────────────────────────
 
   _cargarSprites() {
-    const idEnemigo = this._pokemonSalvaje.id;
+    const idEnemigo = this._pokemonSalvaje.pokedexId ?? this._pokemonSalvaje.id;
     const idJugador = this._pokemonJugador?.idPokedex ?? this._pokemonJugador?.id ?? 1;
 
     const urlFrente = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ii/gold/${idEnemigo}.png`;
@@ -326,24 +366,37 @@ export default class EscenaBatalla extends Phaser.Scene {
     });
   }
 
+  _categoriaEsEspecial(categoria) {
+    const c = String(categoria ?? '').toLowerCase();
+    return c === 'especial' || c === 'special';
+  }
+
   async _ejecutarTurno(indiceMov) {
     const mov = this._movimientosJugador[indiceMov];
     const jugador = this._pokemonJugador;
     const enemigo = this._pokemonSalvaje;
 
+    const atacanteId = jugador.pokemonUsuarioId;
+    const defensorId = enemigo.pokemonUsuarioId;
+    const movimientoId = mov.movimientoId ?? mov.id;
+    if (atacanteId == null || defensorId == null || movimientoId == null) {
+      this._mostrarTexto('Datos de combate\ninválidos.', () => this._mostrarMenuAcciones());
+      return;
+    }
+
     this._mostrarTexto(`${jugador.nombreApodo ?? jugador.nombre}\nusó ${mov.nombre}!`);
 
     try {
       const resultado = await PuenteApi.ejecutarTurno({
-        atacanteId: jugador.id,
-        defensorId: enemigo.id,
-        movimientoId: mov.id,
+        atacanteId,
+        defensorId,
+        movimientoId,
         nivelAtacante: jugador.nivel,
         potenciaMovimiento: mov.potencia ?? 0,
         tipoAtaque: mov.tipo ?? 'NORMAL',
         ataqueStat: jugador.ataque ?? 50,
         defensaStat: enemigo.defensa ?? 50,
-        esEspecial: mov.categoria === 'ESPECIAL',
+        esEspecial: this._categoriaEsEspecial(mov.categoria),
         esMismoTipo: mov.tipo === jugador.tipo1,
       });
 
@@ -361,18 +414,16 @@ export default class EscenaBatalla extends Phaser.Scene {
         this._textoHpNumerico.setText(`${resultado.hpRestanteAtacante}/${jugador.hpMax ?? '??'}`);
       }
 
-      // Animar barra HP del enemigo
       const nuevoHpEnemigo = resultado.hpRestanteDefensor ?? 0;
+      enemigo.hpActual = nuevoHpEnemigo;
       this._barraHpEnemigo.animarHacia(nuevoHpEnemigo, async () => {
         if (nuevoHpEnemigo <= 0) {
           await this._victoria();
           return;
         }
 
-        // Turno del enemigo (500ms después)
         this.time.delayedCall(500, () => this._turnoEnemigo());
       });
-
     } catch (e) {
       console.error('Error en turno de batalla:', e);
       this._mostrarTexto('Error en batalla.', () => this._mostrarMenuAcciones());
@@ -385,34 +436,55 @@ export default class EscenaBatalla extends Phaser.Scene {
     const enemigo = this._pokemonSalvaje;
     const jugador = this._pokemonJugador;
 
-    // IA simple: movimiento aleatorio de los primeros 4 del learnset
-    const movEnemigoIdx = Math.floor(Math.random() * Math.min(this._movimientosEnemigo?.length ?? 1, 4));
+    const n = Math.max(1, this._movimientosEnemigo?.length ?? 0);
+    const movEnemigoIdx = Math.floor(Math.random() * Math.min(n, 4));
     const movEnemigo = this._movimientosEnemigo?.[movEnemigoIdx] ?? {
-      id: 33, nombre: 'Placaje', potencia: 40, tipo: 'NORMAL', categoria: 'FISICO',
+      movimientoId: 33,
+      id: 33,
+      nombre: 'Placaje',
+      potencia: 40,
+      tipo: 'NORMAL',
+      categoria: 'physical',
     };
+
+    const atacanteId = enemigo.pokemonUsuarioId;
+    const defensorId = jugador.pokemonUsuarioId;
+    const movimientoId = movEnemigo.movimientoId ?? movEnemigo.id;
+    if (atacanteId == null || defensorId == null || movimientoId == null) {
+      this._mostrarMenuAcciones();
+      return;
+    }
 
     this._mostrarTexto(`¡${enemigo.nombre} usó\n${movEnemigo.nombre}!`);
 
     try {
       const resultado = await PuenteApi.ejecutarTurno({
-        atacanteId: enemigo.id,
-        defensorId: jugador.id,
-        movimientoId: movEnemigo.id,
+        atacanteId,
+        defensorId,
+        movimientoId,
         nivelAtacante: enemigo.nivel,
         potenciaMovimiento: movEnemigo.potencia ?? 40,
         tipoAtaque: movEnemigo.tipo ?? 'NORMAL',
         ataqueStat: enemigo.ataque ?? 50,
         defensaStat: jugador.defensa ?? 50,
-        esEspecial: movEnemigo.categoria === 'ESPECIAL',
+        esEspecial: this._categoriaEsEspecial(movEnemigo.categoria),
         esMismoTipo: false,
       });
 
-      const nuevoHpJugador = Math.max(
-        0,
-        (jugador.hpActual ?? jugador.hpMax ?? 100) - (resultado.danoInfligido ?? 0)
-      );
+      const nuevoHpJugador =
+        typeof resultado.hpRestanteDefensor === 'number'
+          ? resultado.hpRestanteDefensor
+          : Math.max(
+              0,
+              (jugador.hpActual ?? jugador.hpMax ?? 100) - (resultado.danoInfligido ?? 0),
+            );
       jugador.hpActual = nuevoHpJugador;
       usarJuegoStore.getState().setPokemonHpEnEquipo(0, nuevoHpJugador);
+
+      if (typeof resultado.hpRestanteAtacante === 'number') {
+        enemigo.hpActual = resultado.hpRestanteAtacante;
+        this._barraHpEnemigo.setValores(resultado.hpRestanteAtacante, enemigo.hpMax ?? 100);
+      }
 
       this._barraHpJugador.animarHacia(nuevoHpJugador, () => {
         this._textoHpNumerico.setText(`${nuevoHpJugador}/${jugador.hpMax ?? '??'}`);
@@ -423,7 +495,6 @@ export default class EscenaBatalla extends Phaser.Scene {
           this._mostrarMenuAcciones();
         }
       });
-
     } catch (e) {
       console.error('Error turno enemigo:', e);
       this._mostrarMenuAcciones();
@@ -485,5 +556,10 @@ export default class EscenaBatalla extends Phaser.Scene {
     }
     this._musica?.stop();
     this._menuMov?.ocultar();
+    if (this._salvajePokemonUsuarioId != null) {
+      void PuenteApi.liberarSalvajePokemon(this._salvajePokemonUsuarioId).catch((err) => {
+        console.warn('[batalla] liberar salvaje', err);
+      });
+    }
   }
 }

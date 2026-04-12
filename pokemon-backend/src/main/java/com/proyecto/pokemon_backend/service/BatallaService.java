@@ -21,6 +21,7 @@ import com.proyecto.pokemon_backend.repository.RepositorioPokemonUsuario;
 import com.proyecto.pokemon_backend.repository.RepositorioUsuario;
 import com.proyecto.pokemon_backend.service.api.ServicioPokeApi;
 import com.proyecto.pokemon_backend.service.logica.CalculoService;
+import com.proyecto.pokemon_backend.support.CuentaSalvajes;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,6 +69,8 @@ public class BatallaService {
     /** Cache de learnsets para no consultar PokeAPI en cada turno. */
     private final ConcurrentHashMap<Integer, List<EntradaLearnset>> learnsetCache = new ConcurrentHashMap<>();
 
+    private volatile Long cachedSalvajesUserId;
+
     public BatallaService(
         RepositorioPokemonUsuario pokemonRepo,
         RepositorioPokedexMaestra pokedexRepo,
@@ -92,15 +95,93 @@ public class BatallaService {
         this.moveStateRepo = moveStateRepo;
     }
 
+    private Long idUsuarioCuentaSalvajes() {
+        Long cached = cachedSalvajesUserId;
+        if (cached != null) {
+            return cached;
+        }
+        Long id = userRepo.findByUsername(CuentaSalvajes.USERNAME)
+            .orElseThrow(() -> new RecursoNoEncontrado(
+                "No existe la cuenta técnica de salvajes. Reinicia el servidor."
+            ))
+            .getIdUsuario();
+        cachedSalvajesUserId = id;
+        return id;
+    }
+
     // =========================================================================
     // API PÚBLICA
     // =========================================================================
+
+    /**
+     * Crea un Pokémon salvaje en BD para combate/captura.
+     * El cliente debe llamar a {@link #liberarInstanciaSalvaje} al terminar el combate si no hubo captura.
+     */
+    @Transactional
+    public Map<String, Object> prepararInstanciaSalvaje(Integer pokedexId, Integer nivel) {
+        if (pokedexId == null || pokedexId <= 0) {
+            throw new ErrorNegocio("pokedexId es obligatorio.");
+        }
+        int niv = nivel == null || nivel < 1 ? 1 : Math.min(nivel, 100);
+        Long propietarioSalvajes = idUsuarioCuentaSalvajes();
+        PokedexMaestra especie = pokedexRepo.findById(pokedexId)
+            .orElseThrow(() -> new RecursoNoEncontrado("Pokémon no encontrado en Pokédex: " + pokedexId));
+
+        PokemonUsuario p = new PokemonUsuario();
+        p.setUsuarioId(propietarioSalvajes);
+        p.setPokedexId(pokedexId);
+        p.setNivel(niv);
+        p.setExperiencia(0);
+        p.setPosicionEquipo(100);
+        p.setEstado(Estado.SALUDABLE);
+        p.setTurnosConfusion(0);
+        p.setContadorToxico(0);
+        p.setTurnosSueno(0);
+        p.setTieneDrenadoras(false);
+
+        int hpMax = Math.max(20, nvl(especie.getStat_base_hp(), 20) + 10);
+        p.setHpMax(hpMax);
+        p.setHpActual(hpMax);
+        p.setAtaqueStat(Math.max(5, nvl(especie.getStat_base_ataque(), 10)));
+        p.setDefensaStat(Math.max(5, nvl(especie.getStat_base_defensa(), 10)));
+        p.setAtaqueEspecialStat(Math.max(5, nvl(especie.getStat_base_atq_especial(), 10)));
+        p.setDefensaEspecialStat(Math.max(5, nvl(especie.getStat_base_def_especial(), 10)));
+        p.setVelocidadStat(Math.max(5, nvl(especie.getStat_base_velocidad(), 10)));
+
+        PokemonUsuario guardado = pokemonRepo.save(p);
+
+        Map<String, Object> dto = new LinkedHashMap<>();
+        dto.put("pokemonUsuarioId", guardado.getId());
+        dto.put("pokedexId", pokedexId);
+        dto.put("nombre", especie.getNombre());
+        dto.put("nivel", niv);
+        dto.put("hpActual", guardado.getHpActual());
+        dto.put("hpMax", guardado.getHpMax());
+        dto.put("ataque", guardado.getAtaqueStat());
+        dto.put("defensa", guardado.getDefensaStat());
+        return dto;
+    }
+
+    @Transactional
+    public void liberarInstanciaSalvaje(Long pokemonUsuarioId) {
+        if (pokemonUsuarioId == null) {
+            throw new ErrorNegocio("pokemonUsuarioId es obligatorio.");
+        }
+        PokemonUsuario p = cargarPokemon(pokemonUsuarioId);
+        if (!Objects.equals(p.getUsuarioId(), idUsuarioCuentaSalvajes())) {
+            throw new ErrorNegocio("No se puede liberar un Pokémon que no es una instancia salvaje.");
+        }
+        moveStateRepo.eliminarPorPokemonId(pokemonUsuarioId);
+        pokemonRepo.delete(p);
+    }
 
     public List<Map<String, Object>> listarMovimientos(String username, Long pokemonId) {
         Usuario usuario = cargarUsuario(username);
         PokemonUsuario pokemon = cargarPokemon(pokemonId);
 
-        if (!Objects.equals(pokemon.getUsuarioId(), usuario.getIdUsuario())) {
+        boolean esDelJugador = Objects.equals(pokemon.getUsuarioId(), usuario.getIdUsuario());
+        boolean esSalvajeInstancia = Objects.equals(pokemon.getUsuarioId(), idUsuarioCuentaSalvajes());
+        if (!esDelJugador && !esSalvajeInstancia) {
             throw new ErrorNegocio("No puedes consultar movimientos de un Pokémon que no es tuyo.");
         }
 
@@ -139,7 +220,7 @@ public class BatallaService {
         if (mensajeBloqueo != null) {
             String residual = procesarEfectosFinTurno(atacante);
             pokemonRepo.save(atacante);
-            return sinDanio(defensor.getHpActual(), unir(mensajeBloqueo, residual));
+            return sinDanio(atacante, defensor, unir(mensajeBloqueo, residual));
         }
 
         // --- Precisión ---
@@ -148,7 +229,7 @@ public class BatallaService {
             procesarEfectosFinTurno(atacante);
             pokemonRepo.save(defensor);
             pokemonRepo.save(atacante);
-            return sinDanio(defensor.getHpActual(), "¡El movimiento falló!");
+            return sinDanio(atacante, defensor, "¡El movimiento falló!");
         }
 
         // --- Movimientos de estado (sin daño directo) ---
@@ -160,7 +241,7 @@ public class BatallaService {
             procesarEfectosFinTurno(atacante);
             pokemonRepo.save(defensor);
             pokemonRepo.save(atacante);
-            return sinDanio(defensor.getHpActual(), movimiento.getNombre() + " no causó daño directo.");
+            return sinDanio(atacante, defensor, movimiento.getNombre() + " no causó daño directo.");
         }
 
         // --- Cálculo de daño ---
@@ -212,6 +293,7 @@ public class BatallaService {
 
         return RespuestaTurno.builder()
             .danoInfligido(danio)
+            .hpRestanteAtacante(nvl(atacante.getHpActual(), 0))
             .hpRestanteDefensor(hpRestante)
             .multiplicadorFinal(multiplicadorFinal)
             .golpeCritico(critico)
@@ -612,11 +694,17 @@ public class BatallaService {
     // =========================================================================
 
     private void validarParticipantes(Usuario usuario, PokemonUsuario atacante, PokemonUsuario defensor) {
-        if (!Objects.equals(atacante.getUsuarioId(), usuario.getIdUsuario())) {
-            throw new ErrorNegocio("El atacante no pertenece al usuario autenticado.");
-        }
-        if (Objects.equals(defensor.getUsuarioId(), usuario.getIdUsuario())) {
-            throw new ErrorNegocio("No puedes atacar a un Pokémon de tu propio equipo.");
+        Long uid = usuario.getIdUsuario();
+        Long salvajes = idUsuarioCuentaSalvajes();
+
+        boolean atacanteJugador = Objects.equals(atacante.getUsuarioId(), uid);
+        boolean defensorJugador = Objects.equals(defensor.getUsuarioId(), uid);
+        boolean atacanteSalvaje = Objects.equals(atacante.getUsuarioId(), salvajes);
+        boolean defensorSalvaje = Objects.equals(defensor.getUsuarioId(), salvajes);
+
+        boolean combatePermitido = (atacanteJugador && defensorSalvaje) || (atacanteSalvaje && defensorJugador);
+        if (!combatePermitido) {
+            throw new ErrorNegocio("Participantes de combate no válidos para este usuario.");
         }
         if (nvl(atacante.getHpActual(), 0) <= 0) {
             throw new ErrorNegocio("El Pokémon atacante está debilitado.");
@@ -651,14 +739,15 @@ public class BatallaService {
     // HELPERS DE CONSTRUCCIÓN DE RESPUESTA
     // =========================================================================
 
-    private RespuestaTurno sinDanio(int hpDefensor, String mensaje) {
+    private RespuestaTurno sinDanio(PokemonUsuario atacante, PokemonUsuario defensor, String mensaje) {
         return RespuestaTurno.builder()
             .danoInfligido(0)
-            .hpRestanteDefensor(hpDefensor)
+            .hpRestanteAtacante(nvl(atacante.getHpActual(), 0))
+            .hpRestanteDefensor(nvl(defensor.getHpActual(), 0))
             .multiplicadorFinal(1.0)
             .golpeCritico(false)
             .mensajeEfectividad("")
-            .defensorDerrotado(hpDefensor == 0)
+            .defensorDerrotado(nvl(defensor.getHpActual(), 0) == 0)
             .mensajeGeneral(mensaje)
             .build();
     }

@@ -49,9 +49,11 @@ export default class SistemaEncuentros {
       this._pasosEnHierba = 0;
       this._umbral = this._nuevoUmbral();
 
-      // Guarda: solo emitir encuentro si el jugador tiene starter
+      // Solo con Pokémon persistido en servidor.
       const team = usarJuegoStore.getState().team ?? [];
-      if (team.length === 0 || !team.some(p => p.esStarter)) return;
+      if (team.length === 0) return;
+      const tieneEquipoReal = team.some((p) => p.pokemonUsuarioId != null || p.esStarter);
+      if (!tieneEquipoReal) return;
 
       const pokemon = this._seleccionarPokemon();
       if (pokemon) {

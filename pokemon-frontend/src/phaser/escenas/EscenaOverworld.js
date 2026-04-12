@@ -21,6 +21,8 @@ import {
 import { lineasProfElmTrasStarter, lineasMadreTrasStarter } from '../mapas/dialogosPostStarter';
 import { STATS_MENU_FALLBACK_POR_POKEDEX } from '../../config/statsCombateMenuFallback';
 import { volumenBgmParaPhaser, sfxPermitido } from '../../config/opcionesCliente';
+import PuenteApi from '../puentes/PuenteApi';
+import { usarAutenticacionStore } from '../../store/usarAutenticacionStore';
 
 /** Etiqueta superior en la caja de diálogo (nombre Tiled del NPC → texto). */
 const ETIQUETA_HABLANTE_NPC = {
@@ -411,6 +413,14 @@ export default class EscenaOverworld extends Phaser.Scene {
     });
   }
 
+  _restaurarPokeballsTrasFalloStarter() {
+    this._pokeballs?.forEach((pb) => {
+      pb.setVisible(true);
+      pb.setAlpha(1);
+      pb.setScale(1);
+    });
+  }
+
   // ── Pokeballs de starter ──────────────────────────────────────────────
 
   _crearPokeball(obj) {
@@ -464,7 +474,7 @@ export default class EscenaOverworld extends Phaser.Scene {
             if (!this._uiConfirmStarter) this._uiConfirmStarter = new UIConfirmacionStarter(this);
             this._uiConfirmStarter.mostrar(starter, textureKey, (acepta) => {
               if (acepta) {
-                this._finalizarEleccionStarter(starter);
+                void this._finalizarEleccionStarterAsync(starter);
               } else {
                 pokeball.setVisible(true);
                 pokeball.setAlpha(0);
@@ -488,8 +498,50 @@ export default class EscenaOverworld extends Phaser.Scene {
     });
   }
 
-  _finalizarEleccionStarter(starter) {
+  /**
+   * Persiste el starter en el servidor y sincroniza el store (equipo real en BD).
+   */
+  async _finalizarEleccionStarterAsync(starter) {
     const nombreJugador = usarJuegoStore.getState().nombreJugador || 'Tú';
+    const token = usarAutenticacionStore.getState().token;
+
+    if (!token) {
+      this._restaurarPokeballsTrasFalloStarter();
+      this._dialogo.mostrar(
+        [
+          'Necesitas iniciar sesión',
+          'para guardar tu Pokémon',
+          'en el servidor.',
+        ],
+        () => {
+          this._jugador?.setInputBloqueado(false);
+          this._flujoEleccionStarter = false;
+        },
+        { hablante: 'PROF. ELM' },
+      );
+      return;
+    }
+
+    try {
+      await PuenteApi.elegirStarterServidor(starter.id);
+      await PuenteApi.sincronizarEstadoDesdeServidor();
+    } catch (e) {
+      console.error('[starter]', e);
+      this._restaurarPokeballsTrasFalloStarter();
+      this._dialogo.mostrar(
+        [
+          'No se pudo registrar',
+          'al Pokémon en el servidor.',
+          'Revisa la conexión.',
+        ],
+        () => {
+          this._jugador?.setInputBloqueado(false);
+          this._flujoEleccionStarter = false;
+        },
+        { hablante: 'PROF. ELM' },
+      );
+      return;
+    }
 
     if (sfxPermitido() && this.sound.get('sfx-obtener-starter')) {
       this.sound.play('sfx-obtener-starter', { volume: 0.7 });
@@ -503,26 +555,6 @@ export default class EscenaOverworld extends Phaser.Scene {
     this._dialogo.mostrar(
       lineasObtenido,
       () => {
-        const stBase = STATS_MENU_FALLBACK_POR_POKEDEX[starter.id] ?? {
-          ataque: 12,
-          defensa: 10,
-          ataqueEspecial: 12,
-          defensaEspecial: 11,
-          velocidad: 10,
-        };
-        usarJuegoStore.getState().setStarterElegido({
-          id: starter.id,
-          nombre: starter.nombre,
-          esStarter: true,
-          nivel: 5,
-          hpActual: 20,
-          hpMax: 20,
-          ataque: stBase.ataque,
-          defensa: stBase.defensa,
-          ataqueEspecial: stBase.ataqueEspecial,
-          defensaEspecial: stBase.defensaEspecial,
-          velocidad: stBase.velocidad,
-        });
         this._pokeballs.forEach((pb) => pb.setVisible(false));
         this._jugador?.setInputBloqueado(false);
         this._flujoEleccionStarter = false;
@@ -767,11 +799,51 @@ export default class EscenaOverworld extends Phaser.Scene {
     this.input.keyboard.removeAllListeners(); // Limpieza antes de la batalla
     this._musica?.stop();
     if (!this._jugador) return;
+    void this._iniciarBatallaAsync(pokemon);
+  }
+
+  async _iniciarBatallaAsync(pokemon) {
     const { x, y } = this._jugador.getTilePosicion();
     usarJuegoStore.getState().setPosition(x, y, usarJuegoStore.getState().mapaActual);
+
+    const token = usarAutenticacionStore.getState().token;
+    if (!token) {
+      this._dialogo.mostrar(
+        ['Inicia sesión', 'para poder combatir.'],
+        () => {},
+      );
+      return;
+    }
+
+    let salvaje = { ...pokemon };
+    if (salvaje.pokemonUsuarioId == null && salvaje.id != null) {
+      try {
+        const prep = await PuenteApi.prepararSalvajePokemon({
+          pokedexId: salvaje.id,
+          nivel: salvaje.nivel ?? 5,
+        });
+        salvaje = {
+          ...salvaje,
+          pokemonUsuarioId: prep.pokemonUsuarioId,
+          pokedexId: prep.pokedexId ?? salvaje.id,
+          id: prep.pokedexId ?? salvaje.id,
+          nombre: prep.nombre ?? salvaje.nombre,
+          nivel: prep.nivel ?? salvaje.nivel,
+          hpActual: prep.hpActual,
+          hpMax: prep.hpMax,
+          ataque: prep.ataque,
+          defensa: prep.defensa,
+        };
+      } catch (e) {
+        console.error('[batalla] preparar salvaje', e);
+        this._dialogo.mostrar(['No se pudo iniciar', 'el combate.'], () => {});
+        return;
+      }
+    }
+
     this.scene.launch('EscenaTransicion', {
       siguiente: 'EscenaBatalla',
-      datos: { pokemonSalvaje: pokemon },
+      datos: { pokemonSalvaje: salvaje },
     });
     this.scene.pause();
   }
