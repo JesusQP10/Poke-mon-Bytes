@@ -1,0 +1,11 @@
+# Copia este archivo a application-local.properties (misma carpeta).
+# Ese nombre está en .gitignore y no se sube al repositorio.
+#
+# Alternativa: variables de entorno DB_USERNAME, DB_PASSWORD, JWT_SECRET
+# (y opcionalmente DB_URL).
+
+spring.datasource.username=TU_USUARIO_MYSQL
+spring.datasource.password=TU_PASSWORD_MYSQL
+
+# HS256: usa una cadena larga y aleatoria (p. ej. 32+ bytes en base64).
+jwt.secret.key=TU_CLAVE_SECRETA_JWT_LARGA
