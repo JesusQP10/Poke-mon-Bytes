@@ -125,7 +125,276 @@
 
 .menu-ingame-full--poke-detalle {
   background: linear-gradient(180deg, #e8eef8 0%, #c8d4ec 100%);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
+
+/* Ficha Pokémon: ficha stats ↔ movimientos */
+.menu-ingame-poke-panel-stack {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-ingame-poke-panels-track {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+  width: 200%;
+  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.menu-ingame-poke-panels-track--moves {
+  transform: translate3d(-50%, 0, 0);
+}
+
+.menu-ingame-poke-panel {
+  width: 50%;
+  flex: 0 0 50%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.menu-ingame-poke-panel--stats .menu-ingame-poke-detalle-cuerpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* —— Pantalla movimientos (inspiración EpEc, estilo pixel del menú) —— */
+.menu-ingame-poke-moves {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #0a1018;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  background: linear-gradient(124deg, #a81828 0%, #a81828 36%, #dce2ee 36.5%, #dce2ee 100%);
+}
+
+.menu-ingame-poke-moves-deco {
+  position: absolute;
+  right: -8px;
+  bottom: 18px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid rgba(160, 180, 210, 0.2);
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.menu-ingame-poke-moves-head {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  padding: 3px 4px 2px;
+  min-height: 15px;
+}
+
+.menu-ingame-poke-moves-head-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 5px;
+  line-height: 1.2;
+  color: #f8fafc;
+  text-shadow:
+    1px 0 0 #301018,
+    -1px 0 0 #301018,
+    0 1px 0 #301018,
+    0 -1px 0 #301018;
+}
+
+.menu-ingame-poke-moves-ball {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border: 1px solid #181018;
+  background: linear-gradient(180deg, #ffffff 0 48%, #c01828 48% 100%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+  font-size: 0;
+  color: transparent;
+  overflow: hidden;
+}
+
+.menu-ingame-poke-moves-mon-name {
+  flex: 1;
+  min-width: 0;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
+.menu-ingame-poke-moves-mon-nv {
+  flex-shrink: 0;
+  font-size: 4px;
+  opacity: 0.95;
+}
+
+.menu-ingame-poke-moves-main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 2px;
+  padding: 2px 2px 2px 3px;
+}
+
+.menu-ingame-poke-moves-list {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  justify-content: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 1px;
+}
+
+.menu-ingame-poke-move-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(22px, 30px) 20px;
+  gap: 1px;
+  align-items: stretch;
+  min-height: auto;
+  font-size: 4px;
+  line-height: 1.35;
+  color: #141820;
+  background: linear-gradient(180deg, #fafbfd 0%, #e8ecf4 100%);
+  border: 1px solid rgba(16, 20, 28, 0.35);
+  border-radius: 2px 1px 1px 2px;
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.12);
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 100%, 0 100%);
+}
+
+.menu-ingame-poke-move-name {
+  padding: 2px 2px 2px 3px;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+.menu-ingame-poke-move-tipo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3px;
+  line-height: 1.2;
+  padding: 1px 2px;
+  text-align: center;
+  border-left: 1px solid rgba(16, 20, 28, 0.12);
+  border-right: 1px solid rgba(16, 20, 28, 0.12);
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  color: #0a1018;
+  background: #c8ccd4;
+}
+
+.menu-ingame-poke-move-pp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3px;
+  padding: 0 1px;
+  color: #e8ecf4;
+  background: linear-gradient(180deg, #384858 0%, #283440 100%);
+  border-left: 1px solid #0a1018;
+}
+
+.menu-ingame-poke-moves-sprite {
+  flex-shrink: 0;
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+}
+
+.menu-ingame-poke-moves-sprite-img {
+  max-width: 28px;
+  max-height: 44px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.2));
+}
+
+.menu-ingame-poke-moves-sprite-vacio {
+  font-size: 12px;
+  color: rgba(40, 50, 70, 0.35);
+}
+
+.menu-ingame-poke-moves-foot {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 3px;
+  line-height: 1.4;
+  padding: 2px 4px 3px;
+  color: #283040;
+  background: rgba(255, 255, 255, 0.55);
+  border-top: 1px solid rgba(16, 24, 36, 0.18);
+}
+
+.menu-ingame-poke-moves-foot-k {
+  font-weight: bold;
+  color: #102040;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-ingame-poke-panels-track {
+    transition: none;
+  }
+}
+
+/* Colores tipo (PP y lista) */
+.menu-ingame-poke-move-tipo--normal { background: #c8c8c8; }
+.menu-ingame-poke-move-tipo--fire { background: #f0a070; }
+.menu-ingame-poke-move-tipo--water { background: #78b8f0; }
+.menu-ingame-poke-move-tipo--electric { background: #f8e860; }
+.menu-ingame-poke-move-tipo--grass { background: #88d878; }
+.menu-ingame-poke-move-tipo--ice { background: #a8e8f0; }
+.menu-ingame-poke-move-tipo--fighting { background: #e89868; }
+.menu-ingame-poke-move-tipo--poison { background: #c878d8; }
+.menu-ingame-poke-move-tipo--ground { background: #e0c070; }
+.menu-ingame-poke-move-tipo--flying { background: #c0d0f8; }
+.menu-ingame-poke-move-tipo--psychic { background: #f898b0; }
+.menu-ingame-poke-move-tipo--bug { background: #c8e070; }
+.menu-ingame-poke-move-tipo--rock { background: #d0c060; }
+.menu-ingame-poke-move-tipo--ghost { background: #b898d8; }
+.menu-ingame-poke-move-tipo--dragon { background: #8898f8; }
+.menu-ingame-poke-move-tipo--dark { background: #908878; color: #f4f4f8; }
+.menu-ingame-poke-move-tipo--steel { background: #c0d0d8; }
+.menu-ingame-poke-move-tipo--fairy { background: #f8b8d8; }
 
 /* Ficha de entrenador (estilo 3ª gen.) */
 .menu-ingame-full--trainer-card {

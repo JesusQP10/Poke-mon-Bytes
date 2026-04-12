@@ -34,8 +34,20 @@ export function dibujarPlaceholderCasa(scene, mapaKey) {
  * @param {string} mapaKey
  */
 export function comprobarNarrativaInicio(scene, mapaKey) {
+  if (mapaKey !== 'player-house') return;
   const store = usarJuegoStore.getState();
-  if (mapaKey === 'player-house' && !store.pokegearEntregado) {
+  const tienePokemon =
+    store.starterElegido || (Array.isArray(store.team) && store.team.length > 0);
+  if (tienePokemon && !store.pokegearEntregado) {
+    store.setPokegearEntregado();
+    try {
+      store.guardarPartidaLocal();
+    } catch {
+      /* caché opcional */
+    }
+    return;
+  }
+  if (!store.pokegearEntregado) {
     ejecutarSecuenciaMadre(scene);
   }
 }

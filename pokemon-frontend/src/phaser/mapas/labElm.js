@@ -8,6 +8,8 @@ export const MAPAS_LAB_ELM = ['elm-lab', 'elm_lab'];
 
 export const TILESET_POR_MAPA = {
   'elm-lab': 'new_bark_town',
+  
+  elm_lab: 'new_bark_town',
 };
 
 export const CONFIG_MAPAS = {
@@ -32,7 +34,7 @@ export function dibujarPlaceholderLab(scene) {
  * @returns {boolean} true si se interceptó el warp .
  */
 export function intentarWarpConSecuenciaAyudante(store, scene, ejecutarWarp) {
-  if (store.mapaActual === 'elm-lab' && store.starterElegido && !store.pocionEntregada) {
+  if (esMapaLaboratorioElm(store.mapaActual) && store.starterElegido && !store.pocionEntregada) {
     ejecutarSecuenciaAyudante(scene, ejecutarWarp);
     return true;
   }
@@ -136,7 +138,11 @@ export function crearZonaTriggerElm(scene, obj, warpSystem) {
     if (estado.estabaEnZona || estado.yaActivado || scene._introActiva || scene._secuencias?.activo || scene._cambiandoMapa) return;
 
     const store = usarJuegoStore.getState();
-    if (store.starterElegido || store.elmCharlaEleccionStarter) return;
+    const yaHayPokemon =
+      store.starterElegido ||
+      store.elmCharlaEleccionStarter ||
+      (Array.isArray(store.team) && store.team.length > 0);
+    if (yaHayPokemon) return;
 
     estado.yaActivado = true;
     ejecutarSecuenciaElm(scene);

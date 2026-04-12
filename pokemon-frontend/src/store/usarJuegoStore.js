@@ -84,6 +84,17 @@ function normalizarIdEntrenador5(raw) {
 }
 
 /**
+ * Sin esto, `make.tilemap({ key })` falla y el laboratorio cae en placeholder + guardados incoherentes.
+ * @param {string | null | undefined} mapaKey
+ * NO TOCAR
+ */
+function normalizarMapaActualParaPreload(mapaKey) {
+  const k = String(mapaKey ?? '').trim();
+  if (k === 'elm_lab') return 'elm-lab';
+  return k;
+}
+
+/**
  * Inventario de la tabla servidor: nunca mezclar con `estadoCliente.inventario` del JSON
  * (clientes viejos guardaban mochila ahí y al hidratar se duplicaba con la BD).
  * @param {Record<string, unknown> | null | undefined} data
@@ -221,6 +232,8 @@ export const usarJuegoStore = create((set, get) => ({
       const tiempoJuegoSegundos = Number.isFinite(tiempoEc) && tiempoEc >= 0
         ? Math.floor(tiempoEc)
         : (Number.isFinite(state.tiempoJuegoSegundos) ? state.tiempoJuegoSegundos : 0);
+      /** `estadoCliente` puede traer `starterElegido: false` antiguo; `??` no sustituye `false` y dejaba sin flags con equipo ya en BD (re-disparaba trigger de Elm). */
+      const tieneEquipo = team.length > 0;
       return {
         playerState: data,
         starter,
@@ -230,22 +243,29 @@ export const usarJuegoStore = create((set, get) => ({
         pokedexRegistrados,
         idEntrenadorPublico,
         tiempoJuegoSegundos,
-        mapaActual: data.mapaActual || ec.mapaActual || 'new-bark-town',
+        mapaActual: normalizarMapaActualParaPreload(
+          data.mapaActual || ec.mapaActual || 'new-bark-town',
+        ),
         posX: data.posX ?? ec.posX ?? 5,
         posY: data.posY ?? ec.posY ?? 5,
         loading: false,
         gameStep: 'gameStep' in ec ? ec.gameStep : state.gameStep,
-        hasStarter: Boolean(ec.hasStarter ?? data.starter ?? team.length > 0),
+        hasStarter: tieneEquipo || Boolean(ec.hasStarter ?? data.starter),
         // Si el servidor aún no devuelve `estadoCliente` (JSON null), no forzar false: borraba flags
         // locales y repetía recompensas (ayudante + PC) en cada sincronización.
         pcPocionRetirada: 'pcPocionRetirada' in ec ? Boolean(ec.pcPocionRetirada) : state.pcPocionRetirada,
         nombreJugador: 'nombreJugador' in ec ? String(ec.nombreJugador ?? '') : (state.nombreJugador ?? ''),
         inventario,
-        pokegearEntregado: 'pokegearEntregado' in ec ? Boolean(ec.pokegearEntregado) : state.pokegearEntregado,
-        starterElegido: Boolean(ec.starterElegido ?? team.length > 0),
-        elmCharlaEleccionStarter: Boolean(
-          ec.elmCharlaEleccionStarter ?? ec.starterElegido ?? team.length > 0,
-        ),
+        /** El servidor a veces devuelve `pokegearEntregado: false` en blobs antiguos; no debe pisar un true local (repetía la escena de mamá al volver a casa tras el starter). */
+        pokegearEntregado:
+          state.pokegearEntregado ||
+          Boolean(ec.pokegearEntregado) ||
+          tieneEquipo,
+        starterElegido: tieneEquipo || Boolean(ec.starterElegido),
+        elmCharlaEleccionStarter:
+          tieneEquipo ||
+          Boolean(ec.elmCharlaEleccionStarter) ||
+          Boolean(ec.starterElegido),
         pocionEntregada: 'pocionEntregada' in ec ? Boolean(ec.pocionEntregada) : state.pocionEntregada,
         esNuevaPartida: 'esNuevaPartida' in ec ? ec.esNuevaPartida === true : state.esNuevaPartida,
         reloj:
@@ -379,7 +399,12 @@ export const usarJuegoStore = create((set, get) => ({
   }),
 
   // Actualizar posición (llamado desde Phaser al moverse o guardar)
-  setPosition: (posX, posY, mapaActual) => set({ posX, posY, mapaActual }),
+  setPosition: (posX, posY, mapaActual) =>
+    set({
+      posX,
+      posY,
+      mapaActual: normalizarMapaActualParaPreload(mapaActual),
+    }),
 
   // Activar/desactivar flag de nueva partida
   setNuevaPartida: (nombre) => {
@@ -526,25 +551,29 @@ export const usarJuegoStore = create((set, get) => ({
     }
     if (!data || data.v !== SAVE_VERSION) return false;
 
+    const teamDisk = Array.isArray(data.team) ? data.team : [];
+    const tieneEquipoDisk = teamDisk.length > 0;
+
     set({
       loading: false,
       error: null,
       esNuevaPartida: false,
       nombreJugador: data.nombreJugador ?? '',
-      mapaActual: data.mapaActual ?? 'player-room',
+      mapaActual: normalizarMapaActualParaPreload(data.mapaActual ?? 'player-room'),
       posX: Number.isFinite(data.posX) ? data.posX : 5,
       posY: Number.isFinite(data.posY) ? data.posY : 7,
-      starterElegido: Boolean(data.starterElegido),
-      elmCharlaEleccionStarter: Boolean(
-        data.elmCharlaEleccionStarter ?? data.starterElegido,
-      ),
+      starterElegido: tieneEquipoDisk || Boolean(data.starterElegido),
+      elmCharlaEleccionStarter:
+        tieneEquipoDisk ||
+        Boolean(data.elmCharlaEleccionStarter) ||
+        Boolean(data.starterElegido),
       starter: data.starter ?? null,
-      team: Array.isArray(data.team) ? data.team : [],
+      team: teamDisk,
       inventario: Array.isArray(data.inventario) ? data.inventario : [],
-      pokegearEntregado: Boolean(data.pokegearEntregado),
+      pokegearEntregado: Boolean(data.pokegearEntregado) || tieneEquipoDisk,
       pocionEntregada: Boolean(data.pocionEntregada),
       pcPocionRetirada: Boolean(data.pcPocionRetirada),
-      hasStarter: Boolean(data.hasStarter ?? data.starterElegido),
+      hasStarter: tieneEquipoDisk || Boolean(data.hasStarter ?? data.starterElegido),
       gameStep: data.gameStep ?? 'PLAYING',
       money: Number.isFinite(data.money) ? data.money : 3000,
       badges: Array.isArray(data.badges) ? data.badges : [],
@@ -553,8 +582,8 @@ export const usarJuegoStore = create((set, get) => ({
         ? Math.floor(data.tiempoJuegoSegundos)
         : 0,
       pokedexRegistrados: Array.isArray(data.pokedexRegistrados)
-        ? fusionarPokedexRegistrados(data.pokedexRegistrados, Array.isArray(data.team) ? data.team : [])
-        : fusionarPokedexRegistrados([], Array.isArray(data.team) ? data.team : []),
+        ? fusionarPokedexRegistrados(data.pokedexRegistrados, teamDisk)
+        : fusionarPokedexRegistrados([], teamDisk),
       reloj: data.reloj && typeof data.reloj === 'object'
         ? {
             hora: data.reloj.hora ?? 12,

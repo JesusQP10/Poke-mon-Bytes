@@ -94,6 +94,16 @@ function esMismoPokemonQueStarter(p, starter) {
   return Number(p.id) === Number(starter.id ?? starter.pokedexId);
 }
 
+/** Últimos 4 movimientos del array (orden por nivel asc. de PokéAPI); huecos en `null`. */
+function slotsCuatroMovimientos(movs) {
+  const slots = [null, null, null, null];
+  if (!Array.isArray(movs) || movs.length === 0) return slots;
+  const last = movs.slice(-4);
+  const start = 4 - last.length;
+  for (let i = 0; i < last.length; i++) slots[start + i] = last[i];
+  return slots;
+}
+
 /**
  * Menú in-game (tecla X) en React.
  *
@@ -109,6 +119,7 @@ const MenuIngameReact = ({ onClose }) => {
   const [dialogo, setDialogo] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [detalleApi, setDetalleApi] = useState({ status: "idle" });
+  const [fichaMuestraMovimientos, setFichaMuestraMovimientos] = useState(false);
 
   const tOpc = useMemo(
     () => textosPanelOpciones(prefs.locale === "en" ? "en" : "es"),
@@ -162,6 +173,10 @@ const MenuIngameReact = ({ onClose }) => {
   const pokemonSeleccionado = useMemo(() => equipo[selEquipo] ?? null, [equipo, selEquipo]);
 
   const detallePokedexId = pokemonSeleccionado?.id;
+  const nivelPokemonFicha = (() => {
+    const n = Number(pokemonSeleccionado?.nivel);
+    return Number.isFinite(n) && n > 0 ? Math.min(100, Math.floor(n)) : 5;
+  })();
 
   useEffect(() => {
     if (vista !== "equipo-detalle" || detallePokedexId == null) {
@@ -169,7 +184,7 @@ const MenuIngameReact = ({ onClose }) => {
     }
     const id = detallePokedexId;
     let cancelled = false;
-    fetchResumenPokemonPokeapi(id)
+    fetchResumenPokemonPokeapi(id, nivelPokemonFicha)
       .then((data) => {
         if (!cancelled) setDetalleApi({ status: "ok", data, pokedexId: id });
       })
@@ -179,7 +194,11 @@ const MenuIngameReact = ({ onClose }) => {
     return () => {
       cancelled = true;
     };
-  }, [vista, detallePokedexId]);
+  }, [vista, detallePokedexId, nivelPokemonFicha]);
+
+  useEffect(() => {
+    if (vista !== "equipo-detalle") setFichaMuestraMovimientos(false);
+  }, [vista]);
 
   const detalleApiUi = useMemo(() => {
     if (vista !== "equipo-detalle" || detallePokedexId == null) {
@@ -392,7 +411,33 @@ const MenuIngameReact = ({ onClose }) => {
       if (vista === "equipo-detalle") {
         if (esTeclaAtras(e.code)) {
           e.preventDefault();
+          if (fichaMuestraMovimientos) {
+            setFichaMuestraMovimientos(false);
+            return;
+          }
           setVista("equipo");
+          return;
+        }
+        if (esTeclaAceptar(e.code)) {
+          e.preventDefault();
+          if (fichaMuestraMovimientos) return;
+          const pid = pokemonSeleccionado?.id;
+          const apiParaEstaFicha =
+            pid != null && detalleApi.pokedexId === pid ? detalleApi : null;
+          if (!apiParaEstaFicha || apiParaEstaFicha.status === "idle") {
+            abrirDialogo("Cargando datos\nde PokéAPI…");
+            return;
+          }
+          if (apiParaEstaFicha.status === "err") {
+            abrirDialogo("No se pudieron cargar\nlos movimientos\n(PokéAPI).");
+            return;
+          }
+          const movs = apiParaEstaFicha.data?.movimientosPorNivel;
+          if (!Array.isArray(movs)) {
+            abrirDialogo("Sin lista de\nmovimientos.");
+            return;
+          }
+          setFichaMuestraMovimientos(true);
         }
         return;
       }
@@ -433,6 +478,9 @@ const MenuIngameReact = ({ onClose }) => {
     volverPrincipal,
     abrirDialogo,
     opcionesMenuPrincipal.length,
+    detalleApi,
+    pokemonSeleccionado,
+    fichaMuestraMovimientos,
   ]);
 
   const hint = (() => {
@@ -440,7 +488,9 @@ const MenuIngameReact = ({ onClose }) => {
     if (vista === "principal") return "↑↓ · Z aceptar · X cerrar";
     if (vista === "ficha-entrenador") return "X · volver al menú";
     if (vista === "equipo") return "↑↓ · Z datos · X menú";
-    if (vista === "equipo-detalle") return "X · volver al equipo";
+    if (vista === "equipo-detalle") {
+      return fichaMuestraMovimientos ? "X · volver a la ficha" : "Z · movimientos · X · equipo";
+    }
     if (vista === "mochila") return "↑↓ · Z detalle · X menú";
     if (vista === "opciones") return tOpc.hintOpcionesIngame;
     return "";
@@ -464,6 +514,19 @@ const MenuIngameReact = ({ onClose }) => {
             .filter(Boolean)
             .join(" / ") || "—"
         : "";
+
+  const slotsMovimientosUi = useMemo(
+    () =>
+      detalleApiUi.status === "ok" && Array.isArray(detalleApiUi.data?.movimientosPorNivel)
+        ? slotsCuatroMovimientos(detalleApiUi.data.movimientosPorNivel)
+        : slotsCuatroMovimientos([]),
+    [detalleApiUi],
+  );
+
+  const etiquetaNombrePokemonFicha =
+    (pSel?.nombreApodo && pSel.nombreApodo !== pSel.nombre
+      ? pSel.nombreApodo
+      : pSel?.nombre) || "???";
 
   const idFicha =
     idEntrenadorPublico && String(idEntrenadorPublico).trim() !== ""
@@ -658,57 +721,116 @@ const MenuIngameReact = ({ onClose }) => {
       {mostrarFichaPokemon && (
         <div className="menu-ingame-full menu-ingame-full--poke-detalle">
           <div className="menu-ingame-full-title">POKÉMON</div>
-          <div className="menu-ingame-poke-detalle-cuerpo">
-            <div className="menu-ingame-poke-detalle-sprite-wrap">
-              {imgPokemonDetalle ? (
-                <img
-                  className="menu-ingame-poke-detalle-sprite"
-                  src={imgPokemonDetalle}
-                  alt=""
-                  draggable={false}
-                />
-              ) : (
-                <div className="menu-ingame-poke-detalle-sprite-vacio" aria-hidden>
-                  ?
+          <div className="menu-ingame-poke-panel-stack">
+            <div
+              className={`menu-ingame-poke-panels-track${fichaMuestraMovimientos ? " menu-ingame-poke-panels-track--moves" : ""}`}
+            >
+              <div className="menu-ingame-poke-panel menu-ingame-poke-panel--stats">
+                <div className="menu-ingame-poke-detalle-cuerpo">
+                  <div className="menu-ingame-poke-detalle-sprite-wrap">
+                    {imgPokemonDetalle ? (
+                      <img
+                        className="menu-ingame-poke-detalle-sprite"
+                        src={imgPokemonDetalle}
+                        alt=""
+                        draggable={false}
+                      />
+                    ) : (
+                      <div className="menu-ingame-poke-detalle-sprite-vacio" aria-hidden>
+                        ?
+                      </div>
+                    )}
+                  </div>
+                  <div className="menu-ingame-poke-detalle-texto">
+                    <div className="menu-ingame-poke-detalle-nombre">
+                      {(pSel.nombreApodo && pSel.nombreApodo !== pSel.nombre
+                        ? `${pSel.nombreApodo} (${pSel.nombre})`
+                        : pSel.nombre) || "???"}
+                    </div>
+                    <div className="menu-ingame-poke-detalle-sub">
+                      Nv.{pSel.nivel || 5} · HP {pSel.hpActual ?? pSel.hpMax ?? 20}/{pSel.hpMax ?? 20}
+                    </div>
+                    <div className="menu-ingame-poke-detalle-tipos">Tipo {tiposDetalle}</div>
+                    <div className="menu-ingame-poke-detalle-seccion">En combate</div>
+                    <div className="menu-ingame-poke-detalle-stats">
+                      <span>ATK {statCombateMenu(pSel, "ataque") ?? "—"}</span>
+                      <span>DEF {statCombateMenu(pSel, "defensa") ?? "—"}</span>
+                      <span>AT.ESP. {statCombateMenu(pSel, "ataqueEspecial") ?? "—"}</span>
+                      <span>DEF.ESP. {statCombateMenu(pSel, "defensaEspecial") ?? "—"}</span>
+                      <span>VEL {statCombateMenu(pSel, "velocidad") ?? "—"}</span>
+                    </div>
+                    <div className="menu-ingame-poke-detalle-seccion">
+                      Stats base (Pokédex)
+                      {detalleApiUi.status === "loading" ? " …" : ""}
+                    </div>
+                    {detalleApiUi.status === "ok" && detalleApiUi.data?.statsBase ? (
+                      <div className="menu-ingame-poke-detalle-stats menu-ingame-poke-detalle-stats--base">
+                        <span>PS {detalleApiUi.data.statsBase.ps ?? "—"}</span>
+                        <span>ATK {detalleApiUi.data.statsBase.ataque ?? "—"}</span>
+                        <span>DEF {detalleApiUi.data.statsBase.defensa ?? "—"}</span>
+                        <span>AT.ESP. {detalleApiUi.data.statsBase.ataqueEsp ?? "—"}</span>
+                        <span>DEF.ESP. {detalleApiUi.data.statsBase.defensaEsp ?? "—"}</span>
+                        <span>VEL {detalleApiUi.data.statsBase.velocidad ?? "—"}</span>
+                      </div>
+                    ) : detalleApiUi.status === "err" ? (
+                      <div className="menu-ingame-poke-detalle-aviso">No se pudo cargar PokéAPI.</div>
+                    ) : detalleApiUi.status === "loading" ? (
+                      <div className="menu-ingame-poke-detalle-aviso">Cargando Pokédex…</div>
+                    ) : null}
+                  </div>
                 </div>
-              )}
-            </div>
-            <div className="menu-ingame-poke-detalle-texto">
-              <div className="menu-ingame-poke-detalle-nombre">
-                {(pSel.nombreApodo && pSel.nombreApodo !== pSel.nombre
-                  ? `${pSel.nombreApodo} (${pSel.nombre})`
-                  : pSel.nombre) || "???"}
               </div>
-              <div className="menu-ingame-poke-detalle-sub">
-                Nv.{pSel.nivel || 5} · HP {pSel.hpActual ?? pSel.hpMax ?? 20}/{pSel.hpMax ?? 20}
-              </div>
-              <div className="menu-ingame-poke-detalle-tipos">Tipo {tiposDetalle}</div>
-              <div className="menu-ingame-poke-detalle-seccion">En combate</div>
-              <div className="menu-ingame-poke-detalle-stats">
-                <span>ATK {statCombateMenu(pSel, "ataque") ?? "—"}</span>
-                <span>DEF {statCombateMenu(pSel, "defensa") ?? "—"}</span>
-                <span>AT.ESP. {statCombateMenu(pSel, "ataqueEspecial") ?? "—"}</span>
-                <span>DEF.ESP. {statCombateMenu(pSel, "defensaEspecial") ?? "—"}</span>
-                <span>VEL {statCombateMenu(pSel, "velocidad") ?? "—"}</span>
-              </div>
-              <div className="menu-ingame-poke-detalle-seccion">
-                Stats base (Pokédex)
-                {detalleApiUi.status === "loading" ? " …" : ""}
-              </div>
-              {detalleApiUi.status === "ok" && detalleApiUi.data?.statsBase ? (
-                <div className="menu-ingame-poke-detalle-stats menu-ingame-poke-detalle-stats--base">
-                  <span>PS {detalleApiUi.data.statsBase.ps ?? "—"}</span>
-                  <span>ATK {detalleApiUi.data.statsBase.ataque ?? "—"}</span>
-                  <span>DEF {detalleApiUi.data.statsBase.defensa ?? "—"}</span>
-                  <span>AT.ESP. {detalleApiUi.data.statsBase.ataqueEsp ?? "—"}</span>
-                  <span>DEF.ESP. {detalleApiUi.data.statsBase.defensaEsp ?? "—"}</span>
-                  <span>VEL {detalleApiUi.data.statsBase.velocidad ?? "—"}</span>
+              <div className="menu-ingame-poke-panel menu-ingame-poke-panel--moves">
+                <div className="menu-ingame-poke-moves">
+                  <div className="menu-ingame-poke-moves-deco" aria-hidden />
+                  <div className="menu-ingame-poke-moves-head">
+                    <div className="menu-ingame-poke-moves-head-row">
+                      <span className="menu-ingame-poke-moves-ball" title="Poké Ball" aria-hidden />
+                      <span className="menu-ingame-poke-moves-mon-name">{etiquetaNombrePokemonFicha}</span>
+                      <span className="menu-ingame-poke-moves-mon-nv">Nv.{pSel.nivel || 5}</span>
+                    </div>
+                  </div>
+                  <div className="menu-ingame-poke-moves-main">
+                    <div className="menu-ingame-poke-moves-list">
+                      {slotsMovimientosUi.map((m, idx) => {
+                        const tipoCls = m?.tipoCodigo
+                          ? ` menu-ingame-poke-move-tipo--${String(m.tipoCodigo).toLowerCase()}`
+                          : "";
+                        const ppMax = m?.pp != null ? m.pp : null;
+                        const ppTxt = ppMax != null ? `${ppMax}/${ppMax}` : "—";
+                        return (
+                          <div key={`mv-${idx}`} className="menu-ingame-poke-move-row">
+                            <span className="menu-ingame-poke-move-name">
+                              {m?.nombre ?? "—"}
+                            </span>
+                            <span className={`menu-ingame-poke-move-tipo${tipoCls}`}>
+                              {m?.tipoEs ?? "—"}
+                            </span>
+                            <span className="menu-ingame-poke-move-pp">{ppTxt}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="menu-ingame-poke-moves-sprite">
+                      {imgPokemonDetalle ? (
+                        <img
+                          className="menu-ingame-poke-moves-sprite-img"
+                          src={imgPokemonDetalle}
+                          alt=""
+                          draggable={false}
+                        />
+                      ) : (
+                        <div className="menu-ingame-poke-moves-sprite-vacio" aria-hidden>
+                          ?
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="menu-ingame-poke-moves-foot">
+                    <span className="menu-ingame-poke-moves-foot-k">X</span> volver a la ficha
+                  </div>
                 </div>
-              ) : detalleApiUi.status === "err" ? (
-                <div className="menu-ingame-poke-detalle-aviso">No se pudo cargar PokéAPI.</div>
-              ) : detalleApiUi.status === "loading" ? (
-                <div className="menu-ingame-poke-detalle-aviso">Cargando Pokédex…</div>
-              ) : null}
+              </div>
             </div>
           </div>
         </div>

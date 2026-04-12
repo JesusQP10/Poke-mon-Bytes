@@ -1,6 +1,17 @@
 import { PORTRAIT_URL_INICIAL } from "../assets/pokemon/starters/portraitUrls";
 
 const POKEAPI_POKEMON = "https://pokeapi.co/api/v2/pokemon";
+const POKEAPI_MOVE = "https://pokeapi.co/api/v2/move";
+
+/** Grupos de versión para aprendizaje por nivel (Johto / Crystal primero). */
+const VERSION_GROUP_LEVEL_UP_PREF = ["crystal", "gold-silver"];
+
+/**
+ * @typedef {{ nombre: string, tipoCodigo: string, tipoEs: string, pp: number | null }} DetalleMovimiento
+ */
+
+/** @type {Map<string, DetalleMovimiento>} */
+const cacheDetalleMovimiento = new Map();
 
 /** @type {Record<string, string>} */
 const TIPO_EN_A_ES = {
@@ -60,10 +71,101 @@ function statBase(data, nombreStat) {
 }
 
 /**
+ * Movimientos aprendidos por subida de nivel hasta `nivelMax` (incl.).
+ * Usa Crystal / Oro-Plata si existen.
+ * @param {Record<string, unknown>} data JSON de /pokemon/{id}
+ * @param {number} nivelMax
+ * @returns {{ slugEn: string, nivelAprende: number }[]}
+ */
+function extraerMovimientosPorNivel(data, nivelMax) {
+  const n = Math.max(1, Math.min(100, Math.floor(Number(nivelMax)) || 1));
+  const moves = data?.moves;
+  if (!Array.isArray(moves)) return [];
+
+  /** @type {{ slugEn: string, nivelAprende: number }[]} */
+  const out = [];
+  for (const entry of moves) {
+    const slug = String(entry?.move?.name || "");
+    if (!slug) continue;
+    const details = entry?.version_group_details;
+    if (!Array.isArray(details)) continue;
+
+    const levelUps = details.filter(
+      (d) =>
+        d?.move_learn_method?.name === "level-up" &&
+        typeof d.level_learned_at === "number" &&
+        d.level_learned_at >= 1 &&
+        d.level_learned_at <= n,
+    );
+    if (!levelUps.length) continue;
+
+    let chosen = null;
+    for (const vg of VERSION_GROUP_LEVEL_UP_PREF) {
+      const hit = levelUps.find((d) => d?.version_group?.name === vg);
+      if (hit) {
+        chosen = hit;
+        break;
+      }
+    }
+    if (!chosen) {
+      chosen = levelUps.reduce((a, b) =>
+        a.level_learned_at <= b.level_learned_at ? a : b,
+      );
+    }
+    out.push({ slugEn: slug, nivelAprende: chosen.level_learned_at });
+  }
+
+  out.sort((a, b) => {
+    if (a.nivelAprende !== b.nivelAprende) return a.nivelAprende - b.nivelAprende;
+    return a.slugEn.localeCompare(b.slugEn);
+  });
+  return out;
+}
+
+/**
+ * Nombre, tipo y PP del movimiento (PokéAPI). Cache en memoria por sesión.
+ * @param {string} slugEn kebab-case inglés
+ * @returns {Promise<DetalleMovimiento>}
+ */
+async function fetchDetalleMovimiento(slugEn) {
+  const key = String(slugEn || "").toLowerCase();
+  if (!key) {
+    return { nombre: "???", tipoCodigo: "normal", tipoEs: "Normal", pp: null };
+  }
+  const cached = cacheDetalleMovimiento.get(key);
+  if (cached) return cached;
+  const res = await fetch(`${POKEAPI_MOVE}/${encodeURIComponent(key)}`);
+  if (!res.ok) {
+    const fallback = {
+      nombre: key.replace(/-/g, " "),
+      tipoCodigo: "normal",
+      tipoEs: "Normal",
+      pp: null,
+    };
+    cacheDetalleMovimiento.set(key, fallback);
+    return fallback;
+  }
+  const data = await res.json();
+  const names = Array.isArray(data.names) ? data.names : [];
+  const nombre =
+    names.find((x) => x?.language?.name === "es")?.name ||
+    names.find((x) => x?.language?.name === "en")?.name ||
+    key.replace(/-/g, " ");
+  const tipoCodigo = String(data?.type?.name || "normal").toLowerCase();
+  const tipoEs = TIPO_EN_A_ES[tipoCodigo] || tipoCodigo;
+  const ppRaw = data?.pp;
+  const pp = typeof ppRaw === "number" && ppRaw >= 0 ? ppRaw : null;
+  const detalle = { nombre, tipoCodigo, tipoEs, pp };
+  cacheDetalleMovimiento.set(key, detalle);
+  return detalle;
+}
+
+/**
  * Datos públicos de PokéAPI.
  * @param {number | string} idONombre Número Pokedex nacional o nombre en inglés.
+ * @param {number | null | undefined} nivelPokemon Incluye movimientos aprendidos por nivel hasta ese nivel.
  */
-export async function fetchResumenPokemonPokeapi(idONombre) {
+export async function fetchResumenPokemonPokeapi(idONombre, nivelPokemon) {
   const q = encodeURIComponent(String(idONombre));
   const res = await fetch(`${POKEAPI_POKEMON}/${q}`);
   if (!res.ok) throw new Error(`pokeapi ${res.status}`);
@@ -72,7 +174,7 @@ export async function fetchResumenPokemonPokeapi(idONombre) {
   const tiposEs = tiposOrdenados.map(
     (t) => TIPO_EN_A_ES[String(t?.type?.name || "").toLowerCase()] || t?.type?.name || "?",
   );
-  return {
+  const base = {
     nombreEspecieEn: data.name,
     spriteUrl: spriteAnimadoPreferido(data.sprites),
     tiposEs,
@@ -85,6 +187,28 @@ export async function fetchResumenPokemonPokeapi(idONombre) {
       velocidad: statBase(data, "speed"),
     },
   };
+
+  const nv =
+    nivelPokemon != null && Number.isFinite(Number(nivelPokemon))
+      ? Math.max(1, Math.min(100, Math.floor(Number(nivelPokemon))))
+      : null;
+  if (nv == null) return base;
+
+  const raw = extraerMovimientosPorNivel(data, nv);
+  const detalles = await Promise.all(raw.map((m) => fetchDetalleMovimiento(m.slugEn)));
+  const movimientosPorNivel = raw.map((m, i) => {
+    const d = detalles[i];
+    return {
+      slugEn: m.slugEn,
+      nivelAprende: m.nivelAprende,
+      nombre: d?.nombre || m.slugEn,
+      tipoCodigo: d?.tipoCodigo || "normal",
+      tipoEs: d?.tipoEs || "Normal",
+      pp: d?.pp ?? null,
+    };
+  });
+
+  return { ...base, movimientosPorNivel, nivelMovimientos: nv };
 }
 
 /**
