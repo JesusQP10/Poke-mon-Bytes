@@ -882,7 +882,15 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   // ── Update ────────────────────────────────────────────────────────────
 
-  update() {
+  update(_time, delta) {
+    if (delta > 0) {
+      this._deudaTiempoJuegoMs = (this._deudaTiempoJuegoMs ?? 0) + delta;
+      if (this._deudaTiempoJuegoMs >= 1000) {
+        const sec = Math.floor(this._deudaTiempoJuegoMs / 1000);
+        this._deudaTiempoJuegoMs -= sec * 1000;
+        usarJuegoStore.getState().acumularTiempoJuego(sec);
+      }
+    }
     if (!this._jugador || !this._teclado) return;
     if (
       this._dialogo?.activo ||

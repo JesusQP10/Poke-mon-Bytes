@@ -36,6 +36,53 @@ function nombreClaveFusionInv(nombre) {
   return s;
 }
 
+/** IDs Pokédex nacionales presentes en el equipo (sin duplicados). */
+function idsPokedexDesdeEquipo(team) {
+  if (!Array.isArray(team)) return [];
+  const out = new Set();
+  for (const p of team) {
+    const n = Number(p?.id ?? p?.pokedexId);
+    if (Number.isFinite(n) && n > 0) out.add(n);
+  }
+  return [...out];
+}
+
+/** Une lista guardada + especies del equipo, orden numérico. */
+function fusionarPokedexRegistrados(prev, team) {
+  const s = new Set();
+  if (Array.isArray(prev)) {
+    for (const x of prev) {
+      const n = Number(x);
+      if (Number.isFinite(n) && n > 0) s.add(n);
+    }
+  }
+  for (const n of idsPokedexDesdeEquipo(team)) s.add(n);
+  return [...s].sort((a, b) => a - b);
+}
+
+function generarIdEntrenadorCincoDigitos() {
+  const n = Math.floor(Math.random() * 100000);
+  return String(n).padStart(5, '0');
+}
+
+/** ID estable para guardados antiguos sin `idEntrenadorPublico`. */
+function idEntrenadorDesdeSemilla(semilla) {
+  let h = 2166136261;
+  const str = String(semilla ?? '');
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return String(Math.abs(h) % 100000).padStart(5, '0');
+}
+
+function normalizarIdEntrenador5(raw) {
+  if (raw == null) return '';
+  const digits = String(raw).replace(/\D/g, '');
+  if (!digits) return '';
+  return digits.slice(-5).padStart(5, '0');
+}
+
 /**
  * Inventario de la tabla servidor: nunca mezclar con `estadoCliente.inventario` del JSON
  * (clientes viejos guardaban mochila ahí y al hidratar se duplicaba con la BD).
@@ -63,6 +110,12 @@ export const usarJuegoStore = create((set, get) => ({
   team: [],
   badges: [],
   money: 3000,
+  /** N.º ID visible (5 dígitos), estable por partida. */
+  idEntrenadorPublico: '',
+  /** Segundos de juego en overworld (no cuenta menú React ni escena pausada). */
+  tiempoJuegoSegundos: 0,
+  /** Especies registradas en Pokédex (n.º nacional); se fusiona con el equipo al hidratar. */
+  pokedexRegistrados: [],
   loading: true,
   error: null,
 
@@ -156,12 +209,27 @@ export const usarJuegoStore = create((set, get) => ({
       const money = moneyServidor && Number.isFinite(Number(data.money))
         ? Number(data.money)
         : (Number.isFinite(Number(ec.money)) ? Number(ec.money) : (Number.isFinite(state.money) ? state.money : 3000));
+      const prevDex = 'pokedexRegistrados' in ec ? ec.pokedexRegistrados : state.pokedexRegistrados;
+      const pokedexRegistrados = fusionarPokedexRegistrados(prevDex, team);
+      const idEc = normalizarIdEntrenador5(ec.idEntrenadorPublico);
+      const idPrev = normalizarIdEntrenador5(state.idEntrenadorPublico);
+      const idEntrenadorPublico = idEc || idPrev || '';
+      const tiempoEc =
+        'tiempoJuegoSegundos' in ec && ec.tiempoJuegoSegundos != null
+          ? Number(ec.tiempoJuegoSegundos)
+          : NaN;
+      const tiempoJuegoSegundos = Number.isFinite(tiempoEc) && tiempoEc >= 0
+        ? Math.floor(tiempoEc)
+        : (Number.isFinite(state.tiempoJuegoSegundos) ? state.tiempoJuegoSegundos : 0);
       return {
         playerState: data,
         starter,
         team,
         badges: Array.isArray(ec.badges) ? ec.badges : (data.badges || []),
         money,
+        pokedexRegistrados,
+        idEntrenadorPublico,
+        tiempoJuegoSegundos,
         mapaActual: data.mapaActual || ec.mapaActual || 'new-bark-town',
         posX: data.posX ?? ec.posX ?? 5,
         posY: data.posY ?? ec.posY ?? 5,
@@ -216,7 +284,13 @@ export const usarJuegoStore = create((set, get) => ({
       if (!disk || disk.v !== SAVE_VERSION) return {};
       const teamDisk = Array.isArray(disk.team) ? disk.team : [];
       const next = {};
-      if (!tieneTeam && teamDisk.length) next.team = teamDisk;
+      if (!tieneTeam && teamDisk.length) {
+        next.team = teamDisk;
+        next.pokedexRegistrados = fusionarPokedexRegistrados(
+          state.pokedexRegistrados,
+          teamDisk,
+        );
+      }
       if (!Object.keys(next).length) return {};
       if (!state.starter && disk.starter) next.starter = disk.starter;
       if (!state.starterElegido && disk.starterElegido) next.starterElegido = true;
@@ -245,6 +319,10 @@ export const usarJuegoStore = create((set, get) => ({
       esNuevaPartida: s.esNuevaPartida,
       teamCliente: s.team,
       starterCliente: s.starter,
+      money: s.money,
+      idEntrenadorPublico: s.idEntrenadorPublico,
+      tiempoJuegoSegundos: s.tiempoJuegoSegundos,
+      pokedexRegistrados: s.pokedexRegistrados,
     };
     return {
       posX: s.posX,
@@ -256,13 +334,14 @@ export const usarJuegoStore = create((set, get) => ({
 
   // Setters narrativos
   setPokegearEntregado: () => set({ pokegearEntregado: true }),
-  setStarterElegido: (starter) => set({
+  setStarterElegido: (starter) => set((state) => ({
     starterElegido: true,
     elmCharlaEleccionStarter: true,
     hasStarter: true,
     starter,
     team: [starter],
-  }),
+    pokedexRegistrados: fusionarPokedexRegistrados(state.pokedexRegistrados, [starter]),
+  })),
   setPocionEntregada: () => set({ pocionEntregada: true }),
   setElmCharlaEleccionStarter: () => set({ elmCharlaEleccionStarter: true }),
   setPcPocionRetirada: () => set({ pcPocionRetirada: true }),
@@ -306,6 +385,9 @@ export const usarJuegoStore = create((set, get) => ({
       pocionEntregada: false,
       pcPocionRetirada: false,
       badges: [],
+      idEntrenadorPublico: generarIdEntrenadorCincoDigitos(),
+      tiempoJuegoSegundos: 0,
+      pokedexRegistrados: [],
       mapaActual: 'player-room',
       posX: 5,
       posY: 7,
@@ -314,6 +396,42 @@ export const usarJuegoStore = create((set, get) => ({
         minutos: fechaActual.getMinutes(),
         diaSemana: fechaActual.getDay(),
       },
+    });
+  },
+
+  /** Suma tiempo de juego (p. ej. desde Phaser en bloques de segundos). */
+  acumularTiempoJuego: (segundos) => {
+    const dt = Number(segundos);
+    if (!Number.isFinite(dt) || dt <= 0) return;
+    set((s) => ({
+      tiempoJuegoSegundos: Math.max(0, Math.floor((s.tiempoJuegoSegundos || 0) + dt)),
+    }));
+  },
+
+  /**
+   * Garantiza N.º ID de 5 dígitos (nuevas partidas ya lo tienen; guardados antiguos no).
+   * @param {{ nombreJugador?: string, mapaActual?: string, posX?: number, posY?: number }} ctx
+   */
+  asegurarIdEntrenadorPublico: (ctx) => {
+    set((s) => {
+      if (s.idEntrenadorPublico && String(s.idEntrenadorPublico).trim() !== '') return {};
+      const nombre = ctx?.nombreJugador ?? s.nombreJugador ?? '';
+      const mapa = ctx?.mapaActual ?? s.mapaActual ?? '';
+      const x = ctx?.posX ?? s.posX ?? 0;
+      const y = ctx?.posY ?? s.posY ?? 0;
+      const id = idEntrenadorDesdeSemilla(`${nombre}|${mapa}|${x}|${y}`);
+      return { idEntrenadorPublico: id };
+    });
+  },
+
+  /** Registra una especie en la Pokédex (p. ej. al capturar). */
+  registrarPokedexId: (pokedexId) => {
+    const n = Number(pokedexId);
+    if (!Number.isFinite(n) || n <= 0) return;
+    set((s) => {
+      const prev = fusionarPokedexRegistrados(s.pokedexRegistrados, s.team);
+      if (prev.includes(n)) return {};
+      return { pokedexRegistrados: [...prev, n].sort((a, b) => a - b) };
     });
   },
   clearNuevaPartida: () => set({ esNuevaPartida: false }),
@@ -345,6 +463,9 @@ export const usarJuegoStore = create((set, get) => ({
       badges: s.badges,
       reloj: s.reloj,
       esNuevaPartida: false,
+      idEntrenadorPublico: s.idEntrenadorPublico,
+      tiempoJuegoSegundos: s.tiempoJuegoSegundos,
+      pokedexRegistrados: s.pokedexRegistrados,
     };
     try {
       localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(payload));
@@ -396,6 +517,13 @@ export const usarJuegoStore = create((set, get) => ({
       gameStep: data.gameStep ?? 'PLAYING',
       money: Number.isFinite(data.money) ? data.money : 3000,
       badges: Array.isArray(data.badges) ? data.badges : [],
+      idEntrenadorPublico: normalizarIdEntrenador5(data.idEntrenadorPublico),
+      tiempoJuegoSegundos: Number.isFinite(data.tiempoJuegoSegundos) && data.tiempoJuegoSegundos >= 0
+        ? Math.floor(data.tiempoJuegoSegundos)
+        : 0,
+      pokedexRegistrados: Array.isArray(data.pokedexRegistrados)
+        ? fusionarPokedexRegistrados(data.pokedexRegistrados, Array.isArray(data.team) ? data.team : [])
+        : fusionarPokedexRegistrados([], Array.isArray(data.team) ? data.team : []),
       reloj: data.reloj && typeof data.reloj === 'object'
         ? {
             hora: data.reloj.hora ?? 12,

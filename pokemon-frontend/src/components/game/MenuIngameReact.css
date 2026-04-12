@@ -35,6 +35,17 @@
   pointer-events: auto;
 }
 
+.menu-ingame-panel--wide {
+  width: min(118px, calc(100vw - 8px));
+  max-width: 118px;
+}
+
+.menu-ingame-row-label {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
 .menu-ingame-title {
   font-size: 6px;
   line-height: 1.4;
@@ -114,6 +125,217 @@
 
 .menu-ingame-full--poke-detalle {
   background: linear-gradient(180deg, #e8eef8 0%, #c8d4ec 100%);
+}
+
+/* Ficha de entrenador (estilo 3ª gen.) */
+.menu-ingame-full--trainer-card {
+  background: repeating-linear-gradient(
+    180deg,
+    #e8eef8 0px,
+    #e8eef8 1px,
+    #dce6f4 1px,
+    #dce6f4 2px
+  );
+  padding: 5px 5px 6px;
+  overflow-y: auto;
+}
+
+.menu-ingame-trainer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.menu-ingame-trainer-title {
+  font-size: 6px;
+  line-height: 1.2;
+  color: #d8b820;
+  text-shadow:
+    1px 0 0 #604008,
+    -1px 0 0 #604008,
+    0 1px 0 #604008,
+    0 -1px 0 #604008;
+  letter-spacing: 0.02em;
+}
+
+.menu-ingame-trainer-idbox {
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #c8dcf8 0%, #a8c4e8 100%);
+  border: 1px solid #304878;
+  border-radius: 1px;
+  padding: 2px 4px;
+  font-size: 4px;
+  line-height: 1.35;
+  color: #102040;
+  max-width: 52px;
+}
+
+.menu-ingame-trainer-id-lab {
+  color: #284060;
+}
+
+.menu-ingame-trainer-id-val {
+  font-weight: normal;
+}
+
+.menu-ingame-trainer-body {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.menu-ingame-trainer-datos {
+  flex: 1;
+  min-width: 0;
+  font-size: 4px;
+  line-height: 1.45;
+  color: #182838;
+}
+
+.menu-ingame-trainer-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 4px;
+  margin-bottom: 3px;
+}
+
+.menu-ingame-trainer-line--nombre {
+  border-bottom: 1px solid rgba(24, 40, 72, 0.22);
+  padding-bottom: 2px;
+  margin-bottom: 4px;
+}
+
+.menu-ingame-trainer-bullet {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #88b0e0;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.menu-ingame-trainer-line--nombre .menu-ingame-trainer-bullet {
+  display: none;
+}
+
+.menu-ingame-trainer-k {
+  color: #304868;
+  flex-shrink: 0;
+}
+
+.menu-ingame-trainer-slash {
+  color: #405878;
+}
+
+.menu-ingame-trainer-v {
+  color: #101820;
+  font-weight: normal;
+}
+
+.menu-ingame-pokedollar {
+  display: inline-flex;
+  align-items: flex-end;
+  margin-left: 2px;
+  vertical-align: baseline;
+}
+
+.menu-ingame-pokedollar-p {
+  display: inline-block;
+  font-size: 5px;
+  line-height: 0.75;
+  font-weight: bold;
+  color: #182838;
+  border-bottom: 2px double currentColor;
+  padding-bottom: 0;
+  margin-left: 1px;
+}
+
+.menu-ingame-trainer-portrait {
+  flex-shrink: 0;
+  width: 36px;
+  height: 44px;
+  position: relative;
+  border: 1px solid rgba(32, 56, 96, 0.25);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+}
+
+.menu-ingame-trainer-portrait-deco {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 2px solid rgba(180, 190, 200, 0.35);
+  clip-path: inset(0 0 48% 0);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.menu-ingame-trainer-portrait-img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.menu-ingame-trainer-badges-bar {
+  font-size: 4px;
+  line-height: 1.2;
+  text-align: center;
+  color: #f0f4f8;
+  background: linear-gradient(180deg, #203060 0%, #102040 100%);
+  padding: 2px 4px;
+  margin: 0 -1px 3px;
+  border: 1px solid #081018;
+}
+
+.menu-ingame-trainer-badges-slots {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.menu-ingame-trainer-badge-slot {
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 1;
+  max-height: 14px;
+  background: linear-gradient(180deg, #b8d0f0 0%, #98b8e0 100%);
+  border: 1px solid #406090;
+  border-radius: 1px;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 1px;
+}
+
+.menu-ingame-trainer-badge-slot--on {
+  background: linear-gradient(180deg, #f0e060 0%, #d0a820 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.menu-ingame-trainer-badge-num {
+  font-size: 3px;
+  color: #f8fafc;
+  text-shadow: 1px 1px 0 #102030;
+}
+
+.menu-ingame-trainer-badge-slot--on .menu-ingame-trainer-badge-num {
+  color: #302008;
+  text-shadow: none;
 }
 
 .menu-ingame-poke-detalle-cuerpo {

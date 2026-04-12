@@ -19,6 +19,7 @@ import "./MenuIngameReact.css";
 import "./DialogoRetro.css";
 import iconSlotParty from "../../assets/ui/menu/icon_slot_party.png";
 import iconPocion from "../../assets/ui/menu/icon_pocion.png";
+import retratoEntrenadorFicha from "../../assets/game/overworld/sprites/player/pixilart_drawing.png";
 import {
   fetchResumenPokemonPokeapi,
   urlGifCrystalStarter,
@@ -27,7 +28,19 @@ import {
 import { urlMiniMenuInicialPorPokedexId } from "../../assets/pokemon/starters/portraitUrls";
 import { statCombateMenu } from "../../config/statsCombateMenuFallback";
 
-const OPCIONES = ["POKÉMON", "MOCHILA", "GUARDAR", "OPCIONES", "SALIR"];
+/** @param {number} totalSeg */
+function formatearTiempoJuegoGen3(totalSeg) {
+  const s = Math.max(0, Math.floor(totalSeg));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return `${h} ${String(m).padStart(2, "0")}`;
+}
+
+/** @param {unknown[]} badges */
+function contarMedallas(badges) {
+  if (!Array.isArray(badges)) return 0;
+  return badges.length;
+}
 
 /** @returns {{ clave: string, nombre: string, cantidad: number }[]} */
 function agregarInventarioAgrupado(inventario) {
@@ -108,12 +121,43 @@ const MenuIngameReact = ({ onClose }) => {
   const inventario = usarJuegoStore((s) => s.inventario);
   const team = usarJuegoStore((s) => s.team);
   const starter = usarJuegoStore((s) => s.starter);
+  const nombreJugador = usarJuegoStore((s) => s.nombreJugador);
+  const money = usarJuegoStore((s) => s.money);
+  const badges = usarJuegoStore((s) => s.badges);
+  const pokedexRegistrados = usarJuegoStore((s) => s.pokedexRegistrados);
+  const tiempoJuegoSegundos = usarJuegoStore((s) => s.tiempoJuegoSegundos);
+  const idEntrenadorPublico = usarJuegoStore((s) => s.idEntrenadorPublico);
+  const mapaActual = usarJuegoStore((s) => s.mapaActual);
+  const posX = usarJuegoStore((s) => s.posX);
+  const posY = usarJuegoStore((s) => s.posY);
   const token = usarAutenticacionStore((s) => s.token);
+
+  const opcionesMenuPrincipal = useMemo(() => {
+    const etiquetaNombre = (nombreJugador?.trim() || "…").toUpperCase();
+    return [
+      { clave: "ficha", label: etiquetaNombre },
+      { clave: "pokemon", label: "POKÉMON" },
+      { clave: "mochila", label: "MOCHILA" },
+      { clave: "guardar", label: "GUARDAR" },
+      { clave: "opciones", label: "OPCIONES" },
+      { clave: "salir", label: "SALIR" },
+    ];
+  }, [nombreJugador]);
 
   /** Si RAM y Phaser divergieron del guardado en disco, recupera equipo/mochila sin tocar mapa/posición. */
   useEffect(() => {
     usarJuegoStore.getState().rellenarEquipoYmochilaDesdeGuardadoLocal();
   }, []);
+
+  useEffect(() => {
+    if (vista !== "ficha-entrenador") return;
+    usarJuegoStore.getState().asegurarIdEntrenadorPublico({
+      nombreJugador,
+      mapaActual,
+      posX,
+      posY,
+    });
+  }, [vista, nombreJugador, mapaActual, posX, posY]);
 
   const lineasMochila = useMemo(() => agregarInventarioAgrupado(inventario), [inventario]);
   const equipo = useMemo(() => (Array.isArray(team) ? team : []), [team]);
@@ -204,8 +248,12 @@ const MenuIngameReact = ({ onClose }) => {
 
   const accionPrincipal = useCallback(
     (indice) => {
-      const op = OPCIONES[indice];
-      if (op === "POKÉMON") {
+      const op = opcionesMenuPrincipal[indice]?.clave;
+      if (op === "ficha") {
+        setVista("ficha-entrenador");
+        return;
+      }
+      if (op === "pokemon") {
         if (!equipo.length) {
           abrirDialogo("Sin Pokémon en\nel equipo.");
           return;
@@ -214,7 +262,7 @@ const MenuIngameReact = ({ onClose }) => {
         setVista("equipo");
         return;
       }
-      if (op === "MOCHILA") {
+      if (op === "mochila") {
         if (!lineasMochila.length) {
           abrirDialogo("La mochila está vacía.");
           return;
@@ -223,21 +271,21 @@ const MenuIngameReact = ({ onClose }) => {
         setVista("mochila");
         return;
       }
-      if (op === "GUARDAR") {
+      if (op === "guardar") {
         void ejecutarGuardar();
         return;
       }
-      if (op === "OPCIONES") {
+      if (op === "opciones") {
         setSelOpciones(0);
         setPrefs(leerOpcionesCliente());
         setVista("opciones");
         return;
       }
-      if (op === "SALIR") {
+      if (op === "salir") {
         cerrarTodo();
       }
     },
-    [abrirDialogo, cerrarTodo, equipo.length, ejecutarGuardar, lineasMochila.length],
+    [abrirDialogo, cerrarTodo, equipo.length, ejecutarGuardar, lineasMochila.length, opcionesMenuPrincipal],
   );
 
   useEffect(() => {
@@ -252,13 +300,22 @@ const MenuIngameReact = ({ onClose }) => {
         return;
       }
 
+      if (vista === "ficha-entrenador") {
+        if (esTeclaAtras(e.code)) {
+          e.preventDefault();
+          volverPrincipal();
+        }
+        return;
+      }
+
       if (vista === "principal") {
+        const nOp = opcionesMenuPrincipal.length;
         if (esTeclaArriba(e.code)) {
           e.preventDefault();
           setSelPrincipal((i) => Math.max(0, i - 1));
         } else if (esTeclaAbajo(e.code)) {
           e.preventDefault();
-          setSelPrincipal((i) => Math.min(OPCIONES.length - 1, i + 1));
+          setSelPrincipal((i) => Math.min(nOp - 1, i + 1));
         } else if (esTeclaAceptar(e.code)) {
           e.preventDefault();
           accionPrincipal(selPrincipal);
@@ -372,11 +429,13 @@ const MenuIngameReact = ({ onClose }) => {
     vista,
     volverPrincipal,
     abrirDialogo,
+    opcionesMenuPrincipal.length,
   ]);
 
   const hint = (() => {
     if (dialogo || guardando) return "Z / Enter / X · continuar";
     if (vista === "principal") return "↑↓ · Z aceptar · X cerrar";
+    if (vista === "ficha-entrenador") return "X · volver al menú";
     if (vista === "equipo") return "↑↓ · Z datos · X menú";
     if (vista === "equipo-detalle") return "X · volver al equipo";
     if (vista === "mochila") return "↑↓ · Z detalle · X menú";
@@ -403,22 +462,94 @@ const MenuIngameReact = ({ onClose }) => {
             .join(" / ") || "—"
         : "";
 
+  const idFicha =
+    idEntrenadorPublico && String(idEntrenadorPublico).trim() !== ""
+      ? String(idEntrenadorPublico)
+      : "-----";
+  const nombreFicha = (nombreJugador?.trim() || "???").toUpperCase();
+  const nPokedex = Array.isArray(pokedexRegistrados) ? pokedexRegistrados.length : 0;
+  const nMedallas = contarMedallas(badges);
+  const tiempoFicha = formatearTiempoJuegoGen3(tiempoJuegoSegundos ?? 0);
+
   return (
     <div className="menu-ingame-root" role="dialog" aria-modal="true">
       <div className="menu-ingame-backdrop" aria-hidden />
 
       {vista === "principal" && (
-        <div className="menu-ingame-panel">
+        <div className="menu-ingame-panel menu-ingame-panel--wide">
           <div className="menu-ingame-title">MENÚ</div>
-          {OPCIONES.map((label, i) => (
+          {opcionesMenuPrincipal.map((op, i) => (
             <div
-              key={label}
+              key={op.clave}
               className={`menu-ingame-row${i === selPrincipal ? " menu-ingame-row--active" : ""}`}
             >
               <span className="menu-ingame-cursor">{i === selPrincipal ? "▶" : ""}</span>
-              <span>{label}</span>
+              <span className="menu-ingame-row-label">{op.label}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {vista === "ficha-entrenador" && (
+        <div className="menu-ingame-full menu-ingame-full--trainer-card">
+          <div className="menu-ingame-trainer-head">
+            <div className="menu-ingame-trainer-title">FICHA ENTR.</div>
+            <div className="menu-ingame-trainer-idbox" aria-label="Número de identificación">
+              <span className="menu-ingame-trainer-id-lab">N.º ID.</span>
+              <span className="menu-ingame-trainer-id-val">/ {idFicha}</span>
+            </div>
+          </div>
+          <div className="menu-ingame-trainer-body">
+            <div className="menu-ingame-trainer-datos">
+              <div className="menu-ingame-trainer-line menu-ingame-trainer-line--nombre">
+                <span className="menu-ingame-trainer-k">NOMBRE</span>
+                <span className="menu-ingame-trainer-slash">/</span>
+                <span className="menu-ingame-trainer-v">{nombreFicha}</span>
+              </div>
+              <div className="menu-ingame-trainer-line">
+                <span className="menu-ingame-trainer-bullet" aria-hidden />
+                <span className="menu-ingame-trainer-k">DINERO</span>
+                <span className="menu-ingame-trainer-v">
+                  {Number(money ?? 0).toLocaleString("es-ES")}
+                  <span className="menu-ingame-pokedollar" title="Pokédollar">
+                    <span className="menu-ingame-pokedollar-p">P</span>
+                  </span>
+                </span>
+              </div>
+              <div className="menu-ingame-trainer-line">
+                <span className="menu-ingame-trainer-bullet" aria-hidden />
+                <span className="menu-ingame-trainer-k">POKÉDEX</span>
+                <span className="menu-ingame-trainer-v">{nPokedex}</span>
+              </div>
+              <div className="menu-ingame-trainer-line">
+                <span className="menu-ingame-trainer-bullet" aria-hidden />
+                <span className="menu-ingame-trainer-k">TIEMPO J.</span>
+                <span className="menu-ingame-trainer-v">{tiempoFicha}</span>
+              </div>
+            </div>
+            <div className="menu-ingame-trainer-portrait" aria-hidden>
+              <div className="menu-ingame-trainer-portrait-deco" />
+              <img
+                className="menu-ingame-trainer-portrait-img"
+                src={retratoEntrenadorFicha}
+                alt=""
+                width={36}
+                height={44}
+                draggable={false}
+              />
+            </div>
+          </div>
+          <div className="menu-ingame-trainer-badges-bar">MEDALLAS</div>
+          <div className="menu-ingame-trainer-badges-slots">
+            {Array.from({ length: 8 }, (_, i) => (
+              <div
+                key={`badge-slot-${i}`}
+                className={`menu-ingame-trainer-badge-slot${i < Math.min(nMedallas, 8) ? " menu-ingame-trainer-badge-slot--on" : ""}`}
+              >
+                <span className="menu-ingame-trainer-badge-num">{i + 1}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
