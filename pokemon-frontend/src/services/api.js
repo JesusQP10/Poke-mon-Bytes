@@ -22,14 +22,19 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Si el token expira (401), cerrar sesión y redirigir al login
+// Si el token expira (401), cerrar sesión y redirigir al login.
+// No aplicar a POST /auth/iniciarSesion
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      usarAutenticacionStore.getState().cerrarSesion();
-      if (typeof window !== 'undefined') {
-        window.location.href = '/iniciarSesion';
+      const reqUrl = String(error.config?.url ?? '');
+      const isLoginIntent = reqUrl.includes('iniciarSesion');
+      if (!isLoginIntent) {
+        usarAutenticacionStore.getState().cerrarSesion();
+        if (typeof window !== 'undefined') {
+          window.location.href = '/iniciarSesion';
+        }
       }
     }
     return Promise.reject(error);

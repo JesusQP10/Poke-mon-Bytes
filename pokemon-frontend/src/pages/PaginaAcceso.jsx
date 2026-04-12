@@ -147,7 +147,12 @@ const PaginaAcceso = () => {
       usarAutenticacionStore.getState().establecerInicioSesion(response.user, response.token);
       navigate("/game");
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "Error de conexion. Intenta de nuevo.");
+      const data = err?.response?.data;
+      const serverMsg =
+        (typeof data?.error === 'string' && data.error) ||
+        (typeof data?.message === 'string' && data.message) ||
+        '';
+      setError(serverMsg || err?.message || "Error de conexion. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
