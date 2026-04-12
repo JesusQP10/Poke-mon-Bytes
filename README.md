@@ -88,7 +88,7 @@ Simular un **RPG clásico** con la sensación de **Game Boy Color**: grid, tiles
 ## Inicio rápido
 
 > [!TIP]
-> Necesitas **JDK 21**, **Node.js** reciente, **MySQL 8** y variables / `application.properties` configurados para tu entorno (ver documentación del backend).
+> Necesario **JDK 21**, **Node.js** reciente, **MySQL 8** y variables / `application.properties` configurados para el entorno (ver documentación del backend).
 
 **Backend** (puerto por defecto **8081**):
 
