@@ -109,7 +109,6 @@ El cliente web se centra en la fidelidad visual y la experiencia de usuario:
 
 ## 📸 Galería del Proyecto
 
-Las cuatro primeras imágenes corresponden al flujo de arranque (web → título → intro Oak → nombre). Deben existir en `docs/screenshots/` con los nombres indicados para que se vean en GitHub.
 
 | Landing Page & Portada | Pantalla de Título Original |
 |:---:|:---:|
