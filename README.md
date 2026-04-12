@@ -1,8 +1,10 @@
 <div align="center">
 
-# Pokémon Bytes
+# 🎮🕹️ Pokémon Bytes
 
 **RPG en el navegador** con mecánicas **Gen II** (Oro / Plata): overworld en **Phaser**, menús en **React**, reglas y persistencia en **Spring Boot**.
+
+![poka0012](https://github.com/user-attachments/assets/1b762be8-007d-4b03-a254-1519428a8862)
 
 [![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
@@ -15,24 +17,65 @@
 [![Tailwind](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Zustand](https://img.shields.io/badge/Zustand-5-FF9C00?style=for-the-badge)](https://github.com/pmndrs/zustand)
 
-![poka0012](https://github.com/user-attachments/assets/1b762be8-007d-4b03-a254-1519428a8862)
-
 [Estado del proyecto](#estado-actual-del-proyecto) · [Arquitectura](#arquitectura) · [Stack](#stack-tecnológico) · [Galería](#galería-del-proyecto) · [Estructura](#estructura-del-repositorio) · [Notas de desarrollo](docs/dev/NOTAS.md) · [Backend (Swagger, tests)](docs/backend/README.md)
 
 </div>
+
+> **Arquitectura para la simulación de RPG basada en mecánicas Gen-II (Pokémon Oro/Plata) corriendo nativamente en el navegador.**
 
 ---
 
 ## Tabla de contenidos
 
+- [Galería](#galería-del-proyecto)
 - [Visión](#visión)
 - [Inicio rápido](#inicio-rápido)
 - [Estado actual del proyecto](#estado-actual-del-proyecto)
 - [Arquitectura](#arquitectura)
 - [Stack tecnológico](#stack-tecnológico)
-- [Galería](#galería-del-proyecto)
 - [Estructura del repositorio](#estructura-del-repositorio)
 - [Nota personal](#nota-personal)
+
+---
+
+## Galería del proyecto
+
+### 📸 Capturas de pantalla
+
+| Landing Page & Portada | Pantalla de Título Original |
+|:---:|:---:|
+| ![Landing](docs/screenshots/landing.png) | ![Título](docs/screenshots/titulo.png) |
+| *Página de inicio con la "carcasa" de GBC.* | *Recreación pixel de la intro de Oro.* |
+
+| Cinemática de Introducción | Sistema de Entrada de Nombre |
+|:---:|:---:|
+| ![Profesor Oak](docs/screenshots/oak.png) | ![Name Input](docs/screenshots/nombre.png) |
+| *Diálogo narrativo con el Profesor Oak.* | *Teclado en pantalla y sprite del jugador.* |
+
+| Habitación del jugador | Ejemplo de combate |
+|:---:|:---:|
+| ![Habitación](docs/screenshots/player_room.png) | ![Combate](docs/screenshots/ejemplo_combate.png) |
+| *Interior Tiled: capas, movimiento por grid y colisiones.* | *`EscenaBatalla` y turnos resueltos vía API (ejemplo visual).* |
+
+| Diálogo en casa | Diálogo en el laboratorio |
+|:---:|:---:|
+| ![Diálogo con mamá](docs/screenshots/captura-dialogo-mama.png) | ![Diálogo Prof. Elm](docs/screenshots/captura-dialogo-profesor-elm.png) |
+| *Secuencia narrativa en interiores (NPC / familia).* | *Diálogo con el Prof. Elm y seguimiento de la aventura.* |
+
+| Menú in-game | Equipo Pokémon |
+|:---:|:---:|
+| ![Menú principal](docs/screenshots/captura-menu-principal.png) | ![Equipo Pokémon](docs/screenshots/captura-equipo-pokemon.png) |
+| *Menú pausado sobre el mapa (UI en React).* | *Lista del equipo: nivel, PS y navegación estilo clásico.* |
+
+| Ficha de Pokémon | Mochila |
+|:---:|:---:|
+| ![Ficha Totodile](docs/screenshots/captura-ficha-totodile.png) | ![Mochila](docs/screenshots/captura-mochila.png) |
+| *Detalle de stats, tipo y datos de combate / Pokédex.* | *Inventario de objetos y cantidades.* |
+
+| Opciones | Guardado |
+|:---:|:---:|
+| ![Opciones](docs/screenshots/captura-opciones.png) | ![Guardado](docs/screenshots/captura-guardado.png) |
+| *Música, sonidos y ritmo del texto.* | *Confirmación de partida guardada (local y servidor).* |
 
 ---
 
@@ -156,45 +199,6 @@ El servidor cubre persistencia, seguridad y cálculos en **cinco bloques**:
 |------|-------------|
 | **Backend** | Java 21, Spring Boot 3.5.x, MySQL 8, Spring Security 6 + JJWT, Maven, Lombok |
 | **Frontend** | React 19, Vite 7, Phaser 3.90, Tailwind CSS 3.4, Zustand 5, Axios, Framer Motion 12, Tiled (export JSON) |
-
----
-
-## Galería del proyecto
-
-| Landing Page & Portada | Pantalla de Título Original |
-|:---:|:---:|
-| ![Landing](docs/screenshots/landing.png) | ![Título](docs/screenshots/titulo.png) |
-| *Página de inicio con la "carcasa" de GBC.* | *Recreación pixel de la intro de Oro.* |
-
-| Cinemática de Introducción | Sistema de Entrada de Nombre |
-|:---:|:---:|
-| ![Profesor Oak](docs/screenshots/oak.png) | ![Name Input](docs/screenshots/nombre.png) |
-| *Diálogo narrativo con el Profesor Oak.* | *Teclado en pantalla y sprite del jugador.* |
-
-| Habitación del jugador | Ejemplo de combate |
-|:---:|:---:|
-| ![Habitación](docs/screenshots/player_room.png) | ![Combate](docs/screenshots/ejemplo_combate.png) |
-| *Interior Tiled: capas, movimiento por grid y colisiones.* | *`EscenaBatalla` y turnos resueltos vía API (ejemplo visual).* |
-
-| Diálogo en casa | Diálogo en el laboratorio |
-|:---:|:---:|
-| ![Diálogo con mamá](docs/screenshots/captura-dialogo-mama.png) | ![Diálogo Prof. Elm](docs/screenshots/captura-dialogo-profesor-elm.png) |
-| *Secuencia narrativa en interiores (NPC / familia).* | *Diálogo con el Prof. Elm y seguimiento de la aventura.* |
-
-| Menú in-game | Equipo Pokémon |
-|:---:|:---:|
-| ![Menú principal](docs/screenshots/captura-menu-principal.png) | ![Equipo Pokémon](docs/screenshots/captura-equipo-pokemon.png) |
-| *Menú pausado sobre el mapa (UI en React).* | *Lista del equipo: nivel, PS y navegación estilo clásico.* |
-
-| Ficha de Pokémon | Mochila |
-|:---:|:---:|
-| ![Ficha Totodile](docs/screenshots/captura-ficha-totodile.png) | ![Mochila](docs/screenshots/captura-mochila.png) |
-| *Detalle de stats, tipo y datos de combate / Pokédex.* | *Inventario de objetos y cantidades.* |
-
-| Opciones | Guardado |
-|:---:|:---:|
-| ![Opciones](docs/screenshots/captura-opciones.png) | ![Guardado](docs/screenshots/captura-guardado.png) |
-| *Música, sonidos y ritmo del texto.* | *Confirmación de partida guardada (local y servidor).* |
 
 ---
 
