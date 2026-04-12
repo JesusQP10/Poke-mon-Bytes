@@ -72,6 +72,7 @@ public class JuegoService {
         return estado;
     }
 
+    @SuppressWarnings("null")
     @Transactional
     public Map<String, Object> guardarPartida(String username, Map<String, Object> body) {
         if (body == null) {

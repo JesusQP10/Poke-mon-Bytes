@@ -58,6 +58,7 @@ class JuegoServiceTest {
             .hasMessageContaining("Chikorita");
     }
 
+    @SuppressWarnings("null")
     @Test
     void elegirStarter_equipoYaConPokemon_devuelveExistenteSinGuardarOtro() {
         Usuario u = new Usuario();
@@ -85,6 +86,7 @@ class JuegoServiceTest {
         verify(pokemonRepo, never()).save(any());
     }
 
+    @SuppressWarnings("null")
     @Test
     void elegirStarter_vacio_persisteStarter() {
         Usuario u = new Usuario();
