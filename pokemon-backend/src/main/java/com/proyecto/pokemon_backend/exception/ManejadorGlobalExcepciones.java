@@ -47,6 +47,12 @@ public class ManejadorGlobalExcepciones {
         return respuesta(HttpStatus.UNAUTHORIZED, "Credenciales inválidas.");
     }
 
+    /** Login: usuario inexistente o contraseña errónea (mensajes explícitos para la UI). */
+    @ExceptionHandler(FalloInicioSesion.class)
+    public ResponseEntity<Map<String, Object>> manejarFalloInicioSesion(FalloInicioSesion ex) {
+        return respuesta(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
     /** Errores de validación de Bean Validation (@NotNull, @NotBlank, etc.). */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> manejarValidacion(MethodArgumentNotValidException ex) {

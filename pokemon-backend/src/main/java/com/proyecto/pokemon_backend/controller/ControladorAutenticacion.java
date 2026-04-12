@@ -1,5 +1,6 @@
 package com.proyecto.pokemon_backend.controller;
 
+import com.proyecto.pokemon_backend.dto.SolicitudInicioSesion;
 import com.proyecto.pokemon_backend.dto.SolicitudRegistro;
 import com.proyecto.pokemon_backend.model.Usuario;
 import com.proyecto.pokemon_backend.security.ServicioJwt;
@@ -7,8 +8,6 @@ import com.proyecto.pokemon_backend.service.ServicioAutenticacion;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,16 +18,10 @@ import java.util.Map;
 @RequestMapping("/auth")
 public class ControladorAutenticacion {
 
-    private final AuthenticationManager authManager;
     private final ServicioJwt jwtService;
     private final ServicioAutenticacion authService;
 
-    public ControladorAutenticacion(
-        AuthenticationManager authManager,
-        ServicioJwt jwtService,
-        ServicioAutenticacion authService
-    ) {
-        this.authManager = authManager;
+    public ControladorAutenticacion(ServicioJwt jwtService, ServicioAutenticacion authService) {
         this.jwtService = jwtService;
         this.authService = authService;
     }
@@ -46,16 +39,15 @@ public class ControladorAutenticacion {
     }
 
     /**
-     * Autentica contra Spring Security y devuelve JWT + username. El mismo DTO que registro reutiliza
-     * usuario/contraseña para no duplicar esquema en OpenAPI a mano.
+     * Autentica con mensajes distintos si el usuario no existe o la contraseña no coincide.
+     * DTO {@link SolicitudInicioSesion} evita reglas de registro (p. ej. mínimo 6 en password) en este endpoint.
      */
     @PostMapping("/iniciarSesion")
-    public ResponseEntity<Map<String, Object>> iniciarSesion(@Valid @RequestBody SolicitudRegistro request) {
-        authManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+    public ResponseEntity<Map<String, Object>> iniciarSesion(@Valid @RequestBody SolicitudInicioSesion request) {
+        UserDetails userDetails = authService.autenticarParaLogin(
+            request.getUsername().trim(),
+            request.getPassword()
         );
-
-        UserDetails userDetails = authService.cargarUsuarioPorNombreUsuario(request.getUsername());
         String token = jwtService.generarToken(userDetails);
 
         return ResponseEntity.ok(Map.of(

@@ -1,6 +1,7 @@
 package com.proyecto.pokemon_backend.service;
 
 import com.proyecto.pokemon_backend.exception.ErrorNegocio;
+import com.proyecto.pokemon_backend.exception.FalloInicioSesion;
 import com.proyecto.pokemon_backend.model.Usuario;
 import com.proyecto.pokemon_backend.repository.RepositorioUsuario;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -36,5 +37,21 @@ public class ServicioAutenticacion {
     public UserDetails cargarUsuarioPorNombreUsuario(String username) {
         return userRepository.findByUsername(username)
             .orElseThrow(() -> new ErrorNegocio("Usuario no encontrado: " + username));
+    }
+
+    /**
+     * Comprueba usuario y contraseña con mensajes explícitos para la UI
+     * (no reutiliza {@code AuthenticationManager}, que unifica todo en {@code BadCredentialsException}).
+     */
+    public UserDetails autenticarParaLogin(String username, String passwordPlano) {
+        return userRepository
+            .findByUsername(username)
+            .map((Usuario u) -> {
+                if (!passwordEncoder.matches(passwordPlano, u.getPasswordHash())) {
+                    throw new FalloInicioSesion("Contraseña incorrecta");
+                }
+                return u;
+            })
+            .orElseThrow(() -> new FalloInicioSesion("Usuario no registrado"));
     }
 }
