@@ -1,11 +1,44 @@
-@token = eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJBc2giLCJpYXQiOjE3NzU3NDA5NTEsImV4cCI6MTc3NTgyNzM1MX0.cwCEw_8Zsrz8OeuJLiGnTpFzA-IlHj3M0r1fIyfcRR2oYhXj9hCMhIGU4JDHmQtwoAZyigFNGS_zPqg26sgmQQ
+@token = PEGA_AQUI_EL_JWT_TRAS_LOGIN
+
+# Tras login (paso B): sustituye el valor de @token por el JWT (un solo renglón). No subas tokens reales al repositorio.
+# REST Client: @token solo en esta zona inicial. En cada petición usa Authorization: Bearer {{token}}. No pegues @token = dentro de un bloque GET/POST (el cliente lo toma por cabecera y falla).
+
+# =============================================================================
+# GUÍA RÁPIDA — Probar el cableado (starter + salvaje + turnos + liberar)
+# =============================================================================
+#
+# Requisitos:
+#   1. Backend en marcha: http://localhost:8081 (perfil dev con MySQL.
+#   2. Cliente HTTP: VS Code "REST Client", IntelliJ HTTP, Postman o curl.
+#
+# Orden:
+#   A) Registrar usuario (si "username_test" ya existe, cambia el username en el JSON) → 201.
+#   B) Login con ese usuario → copiar el valor de "token" del JSON y pegarlo arriba en @token.
+#   C) POST /juego/starter → crear el Pokémon inicial en BD (152, 155 o 158).
+#   D) GET /juego/equipo → "pokemonUsuarioId" del primer elemento (tu activo).
+#   E) GET /batalla/movimientos/{pokemonUsuarioId} → "movimientoId" del primer movimiento.
+#   F) POST /batalla/salvaje/preparar → "pokemonUsuarioId" del salvaje (instancia en BD).
+#   G) GET /batalla/movimientos/{idSalvaje} → movimientoId del rival.
+#   H) POST /batalla/turno → atacanteId = usuario, defensorId = salvaje, movimientoId del paso E.
+#   I) POST /batalla/turno → atacanteId = salvaje, defensorId = usuario, movimientoId del paso G.
+#   J) POST /batalla/salvaje/liberar → borra la instancia salvaje (simula salir del combate).
+#
+# Comprobar en MySQL:
+#   SELECT id_usuario FROM USUARIOS WHERE username = '__wild_battle_pool__';
+#   SELECT * FROM POKEMON_USUARIO WHERE id_usuario = <id de la consulta anterior>;
+#   Tras (J), el Pokémon salvaje no debería seguir existiendo (salvo que se haya capturado).
+#
+# Automático (sin Postman): desde la carpeta pokemon-backend :
+#   .\mvnw.cmd test -Dtest=FlujoCableadoBatallaIT
+# Ese test hace A→J en H2 (perfil test), sin PokéAPI ni MySQL.
+# =============================================================================
 
 ### Registrar usuario
 POST http://localhost:8081/auth/registrar
 Content-Type: application/json
 
 {
-  "username": "ash",
+  "username": "username_test",
   "password": "pikachu123"
 }
 
@@ -16,13 +49,14 @@ POST http://localhost:8081/auth/iniciarSesion
 Content-Type: application/json
 
 {
-  "username": "ash",
+  "username": "username_test",
   "password": "pikachu123"
 }
 
 ###
 
 ### Estado del juego
+
 GET http://localhost:8081/api/v1/juego/estado
 Authorization: Bearer {{token}}
 
@@ -60,3 +94,54 @@ Authorization: Bearer {{token}}
   "itemId": 1,
   "cantidad": 3
 }
+
+###
+
+### Preparar instancia salvaje (Rattata #19 nivel 4) — devuelve pokemonUsuarioId
+POST http://localhost:8081/api/v1/batalla/salvaje/preparar
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "pokedexId": 19,
+  "nivel": 4
+}
+
+###
+
+### Ejemplo turno: Pokémon Usuario ataca al SALVAJE (sustituye atacanteId, defensorId y movimientoId por los de GET equipo / preparar / movimientos)
+POST http://localhost:8081/api/v1/batalla/turno
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "atacanteId": 1,
+  "defensorId": 2,
+  "movimientoId": 33
+}
+
+###
+
+### Ejemplo turno: SALVAJE ataca 
+POST http://localhost:8081/api/v1/batalla/turno
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "atacanteId": 2,
+  "defensorId": 1,
+  "movimientoId": 33
+}
+
+###
+
+### Liberar instancia salvaje 
+POST http://localhost:8081/api/v1/batalla/salvaje/liberar
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "pokemonUsuarioId": 2
+}
+
+###
