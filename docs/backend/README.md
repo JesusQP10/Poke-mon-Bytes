@@ -34,17 +34,12 @@ docs/backend/
 │   ├── Documentación FASE III.pdf  # Economía (Tienda e Inventario)
 │   ├── Documentación FASE IV.pdf   # Mecánica de Captura
 │   ├── Documentación FASE V.pdf    # Data Seeding (PokéAPI)
-│   └── Diagramas/                   # Diagramas UML y de arquitectura
-│       ├── Diagrama de Arquitectura Modular del Backend.png
-│       ├── Diagrama de Casos de Uso del Sistema.png
-│       ├── Diagrama de Clases UML del Modelo de Dominio.png
-│       ├── Diagrama de Secuencia Flujo Transaccional (ACID).png
-│       ├── Diagrama de Secuencia Lógica de Persistencia Dinámica.png
-│       ├── ER Relación de Inventario.png
-│       ├── Esquema de Entradas, Variables y Salidas del Algoritmo de Cálculo de Daño.png
-│       └── Cronograma de Rendimiento (Gantt).png
+│   └── Diagramas/                   # Opcional: PNG viejos; ver README
+│       └── README.md
 └── README.md                        # Este archivo
 ```
+
+**Diagramas mantenidos (Mermaid):** [docs/diagramas/README.md](../diagramas/README.md) — incluye casos de uso, clases, ACID, captura, arranque y daño (**secciones 13–18**).
 
 ## Fases del Proyecto
 
@@ -54,7 +49,7 @@ docs/backend/
 Implementación de:
 - Arquitectura Stateless con JWT
 - Cifrado BCrypt para contraseñas
-- Filtro de autenticación `JwtAuthenticationFilter`
+- Filtro de autenticación `FiltroAutenticacionJwt`
 - Endpoints de registro y login
 
 **Documentación:** `fases/Documentación FASE I.pdf`
@@ -72,8 +67,7 @@ Implementación de:
 
 **Documentación:** `fases/Documentación FASE II.pdf`
 
-**Diagramas:**
-- Esquema del Algoritmo de Cálculo de Daño
+**Diagrama:** [Algoritmo de daño Gen II (Mermaid)](../diagramas/README.md#18-algoritmo-de-daño-gen-ii)
 
 ---
 
@@ -88,9 +82,7 @@ Implementación de:
 
 **Documentación:** `fases/Documentación FASE III.pdf`
 
-**Diagramas:**
-- Diagrama de Secuencia Flujo Transaccional (ACID)
-- ER Relación de Inventario
+**Diagramas:** [Compra ACID](../diagramas/README.md#15-compra-en-tienda-transaccional-acid) · [ER / modelo datos](../diagramas/README.md#12-modelo-de-datos-núcleo)
 
 ---
 
@@ -105,8 +97,7 @@ Implementación de:
 
 **Documentación:** `fases/Documentación FASE IV.pdf`
 
-**Diagramas:**
-- Diagrama de Secuencia Lógica de Persistencia Dinámica
+**Diagrama:** [Captura y persistencia](../diagramas/README.md#16-captura-y-persistencia-del-pokémon-salvaje)
 
 ---
 
@@ -121,39 +112,17 @@ Implementación de:
 
 **Documentación:** `fases/Documentación FASE V.pdf`
 
-**Diagramas:**
-- Cronograma de Rendimiento (Gantt)
+**Diagrama:** [Arranque y carga de datos](../diagramas/README.md#17-arranque-del-servidor-y-carga-de-datos)
 
 ---
 
-## Diagramas de Arquitectura
+## Diagramas de arquitectura y dominio
 
-### Diagrama de Arquitectura Modular
-Muestra la estructura en capas del backend:
-- Controller (API REST)
-- Service (Lógica de negocio)
-- Repository (Persistencia)
-- Model (Entidades JPA)
+Todo en un solo sitio (Mermaid, versionable con el código):
 
-**Archivo:** `fases/Diagramas/Diagrama de Arquitectura Modular del Backend.png`
-
-### Diagrama de Casos de Uso
-Muestra los roles y funcionalidades del sistema:
-- Usuario (Jugador)
-- Sistema (Backend)
-- Interacciones principales
-
-**Archivo:** `fases/Diagramas/Diagrama de Casos de Uso del Sistema.png`
-
-### Diagrama de Clases UML
-Modelo de dominio completo con entidades JPA:
-- Usuario
-- Pokemon
-- Movimientos
-- Inventario
-- Tipos
-
-**Archivo:** `fases/Diagramas/Diagrama de Clases UML del Modelo de Dominio.png`
+- **Capas Controller → Service → Repository:** [diagramas §5](../diagramas/README.md#5-capas-del-backend)
+- **Casos de uso (resumen):** [diagramas §13](../diagramas/README.md#13-casos-de-uso)
+- **Clases del dominio principal:** [diagramas §14](../diagramas/README.md#14-modelo-de-dominio-clases)
 
 ---
 
@@ -199,24 +168,20 @@ Los objetos de **equipo** en las respuestas incluyen, `tipo1`, `tipo2` (si la es
 ### Configuración
 - Base de datos: `application.properties`
 - JWT Secret: Variable de entorno `JWT_SECRET`
-- Puerto: 8080 (por defecto)
+- Puerto: **8081** por defecto (`server.port` en `application.properties`, sobreescribible con `SERVER_PORT`)
 
 ### Testing
-```bash
-# Ejecutar tests
-mvn test
+Desde la carpeta `pokemon-backend` (Windows):
 
-# Ejecutar con cobertura
-mvn test jacoco:report
+```bash
+.\mvnw.cmd test
 ```
 
-### Build
-```bash
-# Compilar
-mvn clean install
+### Build y arranque
 
-# Ejecutar
-mvn spring-boot:run
+```bash
+.\mvnw.cmd clean verify
+.\mvnw.cmd spring-boot:run
 ```
 
 ---

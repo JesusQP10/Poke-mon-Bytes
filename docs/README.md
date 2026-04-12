@@ -13,19 +13,19 @@ docs/
 │   │   ├── Documentación FASE III.pdf  # Economía
 │   │   ├── Documentación FASE IV.pdf   # Captura
 │   │   ├── Documentación FASE V.pdf    # Data Seeding
-│   │   └── Diagramas/           # Diagramas UML y arquitectura
+│   │   └── Diagramas/           # Opcional: PNG viejos (no son la doc oficial)
 │   └── README.md                # Índice de documentación backend
+│
+├── diagramas/                   # Diagramas Mermaid (fuente única)
+│   └── README.md
 │
 ├── dev/                          # Documentación de desarrollo
 │   ├── MEJORAS_ARQUITECTURA.md  # Propuesta de refactorización del código
 │   ├── NOTAS.md                 # Notas personales y TODOs
-│   ├── ORGANIZACION.md          # Explicación de la estructura
-│   ├── PRE_COMMIT_CHECK.md      # Verificación antes de commitear
-│   ├── SAFE_COMMIT.ps1          # Script de commit seguro (Windows)
-│   └── SAFE_COMMIT.sh           # Script de commit seguro (Linux/Mac)
+│   └── ORGANIZACION.md          # Explicación de la estructura
 │
 ├── planning/                     # Planificación del proyecto
-│   └── PLAN_PARTE_1_POKEMON_ORO.txt  # Plan inicial del juego
+│   └── PLAN_POKEMON_ORO.txt      # Plan inicial del juego
 │
 ├── screenshots/                  # Capturas para README / presentaciones (renovar cuando cambie la UI)
 │   ├── landing.png               # Página de inicio 
@@ -57,7 +57,7 @@ docs/
 
 ### 🏗️ Backend
 - **fases/**: Documentación técnica de las 5 fases del proyecto (PDFs)
-- **Diagramas/**: Diagramas UML, arquitectura, secuencia, ER, etc.
+- **Diagramas técnicos (Mermaid):** [docs/diagramas/README.md](diagramas/README.md) — fuente única. `fases/Diagramas/` solo si guardas PNG aparte ([nota](backend/fases/Diagramas/README.md))
 
 Ver detalles en: `backend/README.md`
 
@@ -107,4 +107,4 @@ Capturas de pantalla para el README principal y presentaciones
 - Los archivos TMX son la fuente de verdad para los mapas
 - Los JSON exportados NO se deben editar manualmente NUNCA DE NUNCA DE LOS NUNCAS
 - Las screenshots deben ser PNG para mejor calidad
-- Los tests HTTP requieren que el backend esté corriendo en `localhost:8080`
+- Los tests HTTP requieren que el backend esté corriendo en `localhost:8081` (o el puerto definido en `server.port`)

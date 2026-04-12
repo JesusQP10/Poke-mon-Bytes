@@ -1,114 +1,66 @@
-# Pokemon Backend - Copilot Instructions
+# Pokemon Backend — Copilot Instructions
 
-## Architecture Overview
+## Architecture overview
 
-**Tech Stack**: Spring Boot 3.5.7, Java 21, MySQL, JWT Authentication
+**Stack:** Spring Boot **3.5.x** (parent BOM, p. ej. 3.5.13), **Java 21**, **MySQL**, **JWT** (JJWT), **Spring Data JPA**, **WebClient** (reactivo).
 
-**Core Layers** (see `src/main/java/com/proyecto/pokemon_backend/`):
-- **Controller** (`/controller`): REST endpoints with JWT protection
-- **Service** (`/service`): Business logic (Auth, Game calculations, API integration)
-- **Model** (`/model`): JPA entities mapped to MySQL tables (Usuario, PokemonUsuario, Tipo, Ataques, etc.)
-- **Repository** (`/repository`): Spring Data JPA interfaces for DB access
-- **Security** (`/security`, `/config`, `/filter`): JWT token generation and HTTP filter chain
-- **Component** (`/component`): Data initialization tasks (TipoInitializer loads Pokemon types on startup)
+**Paquetes** (`src/main/java/com/proyecto/pokemon_backend/`):
 
-## Key Design Patterns
+- **`controller`**: REST (`ControladorAutenticacion`, `JuegoController`, `BatallaController`, `TiendaController`, …).
+- **`service`**: reglas de negocio (`JuegoService`, `BatallaService`, `TiendaService`, `ServicioAutenticacion`, …) y **`service.logica.CalculoService`** (fórmulas puras).
+- **`service.api`**: integración externa (**`ServicioPokeApi`** con **WebClient**).
+- **`model`**: entidades JPA (`Usuario`, `PokemonUsuario`, `PokedexMaestra`, `Item`, `InventarioUsuario`, `Ataques`, `Tipo`, …).
+- **`repository`**: prefijo español **`Repositorio*`** (Spring Data o JDBC, p. ej. `RepositorioEstadoMovimientoPokemon` para tabla auxiliar `POKEMON_MOVIMIENTOS_USUARIO`).
+- **`config`**, **`filter`**, **`security`**: **`ConfiguracionSeguridad`**, **`FiltroAutenticacionJwt`**, **`ServicioJwt`**, codificador BCrypt, etc.
+- **`component`**: varios **`CommandLineRunner`** al arranque (`CargadorDatos`, `InicializadorTipos`, `SembradorObjetos`, `SembradorUsuarioSalvajes`, …).
 
-### 1. JWT Authentication Flow
-- **Entry point**: `AuthController.java` with `/register` (201 CREATED) and `/login` (200 OK with token)
-- **Token generation**: `JwtService.generateToken()` creates 24-hour tokens with HMAC-SHA
-- **Validation**: `JwtAuthenticationFilter` extracts "Bearer {token}" from Authorization header, validates via `SecurityConfig`
-- **Critical**: Token secret injected from `application.properties` via `@Value("${jwt.secret.key}")`
-- **User model**: `Usuario.java` implements `UserDetails` interface for Spring Security integration
+## JWT
 
-### 2. Request/Response Pattern
-- All DTOs in `/dto/` (currently `RegistroRequest.java` for auth)
-- Endpoints return `ResponseEntity<?>` with appropriate HTTP status codes
-- Constructor injection for all dependencies (no `@Autowired` field injection)
+- **Login / registro:** `ControladorAutenticacion` bajo **`/auth/registrar`** y **`/auth/iniciarSesion`** (públicos).
+- **Token:** generado en **`ServicioJwt`** / flujo de **`ServicioAutenticacion`**; cabecera **`Authorization: Bearer …`**.
+- **Validación HTTP:** **`FiltroAutenticacionJwt`** (OncePerRequestFilter) registrado en **`ConfiguracionSeguridad`** antes de `UsernamePasswordAuthenticationFilter`.
+- **Usuario en contexto:** **`Usuario`** implementa **`UserDetails`**; **`ServicioDetallesUsuario`** carga por username.
 
-### 3. Game Logic Separation
-- Pure calculation service: `CalculoService.java` contains Pokemon combat formulas
-- **Damage formula** (Gen II/III): `calcularDaño()` uses base stats, type effectiveness, randomization (85-100 variation)
-- **Accuracy**: `verificaImpacto()` - probabilistic hit calculation
-- **Critical hits**: `fueGolpeCritico()` - 6.25% base probability
-- Type effectiveness multipliers (0.25x, 0.5x, 1x, 2x, 4x) managed via type matrix in `TipoInitializer`
+## Seguridad y CORS
 
-### 4. Data Initialization
-- `TipoInitializer` runs once on startup via `CommandLineRunner` interface
-- Loads 17 Pokemon types (Gen II) with effectiveness matrix
-- **Pattern**: Bean registered in `PokemonBackendApplication.java` main class
-- Avoids reloading if data already exists (`tipoRepository.count()`)
+- **`ConfiguracionSeguridad`**: dos **`SecurityFilterChain`**: **`@Order(1)`** para **`/actuator/**`** sin JWT; **`@Order(2)`** para el resto (CORS en el propio `HttpSecurity`, sesión **STATELESS**, JWT en rutas autenticadas).
+- Rutas públicas además de `/auth/**`: p. ej. **OPTIONS**, Swagger en perfil dev, etc. (ver código).
 
-## Critical Configuration
+## Juego y persistencia
 
-**Database** (`application.properties`):
-```
-server.port=8081
-spring.datasource.url=jdbc:mysql://localhost:3306/pokemon_web_db
-spring.jpa.hibernate.ddl-auto=validate  # Production: validate only, no auto-creation
-```
+- **Estado de partida:** **`JuegoController`** bajo **`/api/v1/juego`** (`estado`, `equipo`, `starter`, `guardar`, `reiniciar`, `inventario/anadir`).
+- **`guardarPartida`**: actualiza mapa/posición y JSON de cliente según implementación; **no sustituye dinero ni inventario desde el cuerpo del guardado** (dinero/inventario vía tienda y endpoints dedicados). Revisar Javadoc en **`JuegoService`**.
 
-**JWT**:
-```
-jwt.secret.key=ESTA_ES_LA_CLAVE_SECRETA_LARGA_DEL_PROYECTO_DAW_POKEMON_Y_DEBE_SER_ALFANUMERICA
-```
-- Must be alphanumeric, stored in `application.properties`
-- Token expiration: 24 hours (86,400,000ms)
+## Motor de batalla
 
-**Security**:
-- BCrypt password encoding via `BCryptPasswordEncoder` bean
-- CORS enabled in `SecurityConfig` (implements `WebMvcConfigurer`)
-- Session management: `SessionCreationPolicy.STATELESS` (no cookies, JWT only)
-- All endpoints under `/api/v1/**` require JWT except `/auth/register` and `/auth/login`
+- **`BatallaService`**: turnos, captura, salvajes, persistencia de HP/PP según diseño actual.
+- **`CalculoService`**: **`calcularDanio`**, **`verificaImpacto`**, **`fueGolpeCritico`**, **`calcularCaptura`**, etc. (Gen II). Variación de daño: factor aleatorio **\[0.85, 1.0)** sobre la base, no “85–100” como porcentaje suelto.
+- **Tipos:** matriz en tabla **`TIPOS`**; carga / coherencia con **`TipoService`** e **`InicializadorTipos`** (no existe clase `TipoInitializer`).
 
-## Build & Test
+## Puerto y arranque
 
-**Maven commands** (from workspace root):
+- Por defecto **`server.port=8081`** (configurable con **`SERVER_PORT`**).
+
+Desde **`pokemon-backend/`** (Windows):
+
 ```bash
-./mvnw clean package              # Full build with tests
-./mvnw test -Dtest=CalculoServiceTest  # Run specific test
-./mvnw spring-boot:run            # Run dev server on :8081
+.\mvnw.cmd test
+.\mvnw.cmd spring-boot:run
 ```
 
-**Test location**: `src/test/java/com/proyecto/pokemon_backend/`
-- Example: `CalculoServiceTest.java` validates damage calculation formula
+## DTOs y convenciones
 
-## Common Workflows
+- DTOs en **`dto`**: p. ej. **`SolicitudRegistro`**, **`SolicitudTurno`**, **`SolicitudCaptura`**, **`SolicitudCompra`**, **`RespuestaTurno`**, …
+- Repositorios: nombre **`RepositorioXxx`**, no `UserRepository`.
+- Inyección por **constructor** en servicios y controladores.
 
-1. **Add new endpoint**: Create method in `/controller/{Feature}Controller.java`, return `ResponseEntity<?>`, add @PostMapping/@GetMapping
-2. **Add business logic**: Create service class in `/service/{Domain}Service.java`, inject repositories via constructor
-3. **Add new Pokemon type**: Modify type matrix in `TipoInitializer.loadTipoMatrix()` using `addDebility()`, `addResistance()`, `addImmunity()` helpers
-4. **Modify game balance**: Adjust constants in `CalculoService` (e.g., `EXPIRATION_TIME`, damage formula multipliers)
+## Integración PokéAPI
 
-## Package Naming Convention
+- **`ServicioPokeApi`**: **WebClient** contra `https://pokeapi.co/api/v2/`.
+- **`CargadorDatos`** (y otros runners): población de catálogos al arranque según el diseño actual.
 
-- Controllers: `*.controller.{Feature}Controller`
-- Services: `*.service.{Domain}Service` or `*.service.api.ExternalApiService` or `*.service.logica.CalculoService`
-- Models: `*.model.{EntityName}` (JPA @Entity classes)
-- Repositories: `*.repository.{EntityName}Repository`
-- DTOs: `*.dto.{RequestResponseName}`
-- Components: `*.component.{ComponentName}` (initialization tasks, listeners)
+## Notas
 
-## Database Schema Insight
-
-Tables mapped to entities in `/model`:
-- `USUARIOS` ← Usuario.java (username unique, passwordHash encrypted)
-- `POKEMON_USUARIO` ← PokemonUsuario.java (user's caught Pokemon)
-- `TIPOS` ← Tipo.java (17 types with effectiveness matrix)
-- `ATAQUES` ← Ataques.java (moves/attacks with power/precision)
-- `POKEDEX_MAESTRA` ← PokedexMaestra.java (base Pokemon species data)
-
-Foreign keys link user data to base data (user has many pokemon, each pokemon has many moves).
-
-## External Integration
-
-- **PokeApi**: `PokeApiService.java` in `/service/api/` handles external Pokemon data fetching
-- Pattern: Stateless service, likely uses `RestTemplate` or `WebClient`
-- Cache Pokemon species details to avoid redundant API calls
-
-## Important Notes
-
-- **No role-based access control yet**: `Usuario.getAuthorities()` returns empty list - implement roles when needed
-- **Password reset not implemented**: Users cannot change passwords after registration
-- **Game state ephemeral**: `Usuario.mapaActual`, `posX`, `posY`, `dinero` fields exist but no persistence endpoints yet
-- **Type effectiveness computed at request time**: Type matrix stored in DB, used for real-time damage calculations
+- **RBAC:** `Usuario.getAuthorities()` puede devolver lista vacía (autenticación binaria).
+- **Reset de contraseña:** no implementado salvo que se añada explícitamente.
+- **Estado de juego:** **sí** hay persistencia vía **`/api/v1/juego`** y tablas; ignorar cualquier nota antigua que diga que mapa/dinero “no persisten”.

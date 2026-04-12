@@ -173,11 +173,13 @@ flowchart LR
   API --> DB
 ```
 
+Documentación gráfica del proyecto (**Mermaid** en un solo archivo: seguridad, API, dominio, ACID, captura, arranque, daño): [docs/diagramas/README.md](docs/diagramas/README.md).
+
 ### 🧠 Backend (Spring Boot)
 
 El servidor cubre persistencia, seguridad y cálculos en **cinco bloques**:
 
-1. **Seguridad (Fase I):** stateless con **JWT**, **BCrypt** y `JwtAuthenticationFilter`
+1. **Seguridad (Fase I):** stateless con **JWT**, **BCrypt** y `FiltroAutenticacionJwt`
 2. **Motor de batalla (Fase II):** daño Gen II, matriz de tipos ($\times 4.0$ a $\times 0.0$) y estados alterados persistentes
 3. **Economía (Fase III):** tienda e inventario con `@Transactional`
 4. **Captura (Fase IV):** probabilidades al estilo Oro, stock de Pokéballs y persistencia de nuevas capturas
@@ -209,6 +211,7 @@ Monorepo lógico en carpetas raíz:
 ```text
 root/
 ├── docs/                    # Documentación y assets de diseño
+│   ├── diagramas/           # Diagramas Mermaid (arquitectura, API, ER)
 │   ├── dev/                 # Notas de desarrollo
 │   ├── planning/            # Planificación del proyecto
 │   ├── screenshots/         # Capturas de pantalla
@@ -216,11 +219,8 @@ root/
 │   └── api-tests.http       # Tests de la API REST
 │
 ├── pokemon-backend/         # Servidor Spring Boot (API REST)
-│   ├── config/              # Seguridad (CORS, CSRF)
-│   ├── controller/          # Endpoints HTTP
-│   ├── model/               # Entidades JPA (MySQL)
-│   ├── security/            # Lógica JWT
-│   └── service/             # Motor de batalla y lógica de negocio
+│   ├── src/main/java/.../   # config, controller, filter, model, repository, security, service, …
+│   └── pom.xml
 │
 └── pokemon-frontend/        # Cliente React (SPA)
     ├── src/

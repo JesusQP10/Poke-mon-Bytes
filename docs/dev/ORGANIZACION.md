@@ -31,7 +31,7 @@ root/
 │   │   └── player_house.tmx
 │   │
 │   ├── planning/                      ✅ Planificación
-│   │   └── PLAN_PARTE_1_POKEMON_ORO.txt
+│   │   └── PLAN_POKEMON_ORO.txt
 │   │
 │   ├── screenshots/                   ✅ Capturas (README; p. ej. habitación, combate, menús in-game)
 │   │

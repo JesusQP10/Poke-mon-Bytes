@@ -3,7 +3,7 @@
 ## Registro
 
 - Actualización de documentación **11-04-2026**:
-  - **Menú in-game en React** (`MenuIngameReact.jsx` / `.css`): equipo, mochila, guardado; detalle de Pokémon con stats y tipos; **mini sprites** de iniciales y URLs de retrato en `src/assets/pokemon/starters/portraitUrls.js`; datos de especie vía **`src/services/pokemonDetallePokeapi.js`**; fallback de stats en `config/statsCombateMenuFallback.js`.
+  - **Menú in-game en React** (`components/game/MenuIngameReact.jsx` / `.css`): equipo, mochila, guardado; detalle de Pokémon con stats y tipos; **mini sprites** de iniciales y URLs de retrato en `src/assets/pokemon/starters/portraitUrls.js`; datos de especie vía **`src/services/pokemonDetallePokeapi.js`**; fallback de stats en `config/statsCombateMenuFallback.js`.
   - **Diálogo overworld retro** (`SistemaDialogo.js`, `marcoDialogoRetro.js`) con **etiqueta de hablante** y opciones de ritmo en `config/opcionesCliente.js`.
   - **Overworld:** lógica de mapas extraída a **`src/phaser/mapas/`** (`index.js`, `casaJugador.js`, `labElm.js`, `johtoOverworld.js`, `placeholders.js`, `constantes.js`, `dialogosPostStarter.js`); confirmación de starter en **`UIConfirmacionStarter.js`**.
   - **Backend:** en el mapeo de equipo (`JuegoService`), el DTO por Pokémon incluye **`tipo1` / `tipo2`** y campos de **stats** (`ataque`, `defensa`, `ataqueEspecial`, `defensaEspecial`, `velocidad`) además de HP, nivel y sprite.
@@ -31,7 +31,7 @@
   - `GET /api/v1/juego/estado` — equipo, dinero, `mapaActual`, `posX`/`posY`, blob `estadoCliente` (JSON arbitrario del front).
   - `POST /api/v1/juego/starter` — starter Johto (IDs 152 / 155 / 158).
   - `GET /api/v1/juego/equipo`.
-  - `POST /api/v1/juego/guardar` — persiste posición, mapa, dinero y `estadoCliente` (`JuegoService` / entidad `Usuario`).
+  - `POST /api/v1/juego/guardar` — persiste posición, mapa y blob `estadoCliente` (`JuegoService.guardarPartida`); **no modifica dinero** en BD (dinero vía tienda u otras rutas). Ver Javadoc en `JuegoController` / `JuegoService`.
   - Respuesta de **equipo**: tipos en inglés normalizados (`tipo1`, `tipo2` opcional) y **stats de combate** por Pokémon para el cliente (menú / UI).
 
 ### Frontend (Phaser + React + Zustand)
