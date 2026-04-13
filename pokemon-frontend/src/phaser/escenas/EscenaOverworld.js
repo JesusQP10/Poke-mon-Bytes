@@ -316,15 +316,24 @@ export default class EscenaOverworld extends Phaser.Scene {
         typeof tilesetCfg === 'string' && tilesetCfg ? tilesetCfg : 'new_bark_town';
 
       // Enlazar cada tileset del JSON a la textura Phaser (un mapa puede usar varios PNG).
+      // Tiled puede exportar tilesets duplicados o referencias externas (.tsx) que
+      // Phaser no resuelve; se omiten sin romper la carga del mapa.
       const tilesetsEnlazados = [];
+      const nombresYaEnlazados = new Set();
       for (const ts of mapa.tilesets) {
+        if (!ts.name || nombresYaEnlazados.has(ts.name)) continue;
         const textureKey = texturaPorNombre
           ? resolverTexturaPorNombreTileset(texturaPorNombre, ts.name, tilesetKeyUnico)
           : tilesetKeyUnico;
         const enlazado = mapa.addTilesetImage(ts.name, textureKey);
-        if (!enlazado) throw new Error(`Failed to load tileset: ${ts.name} -> ${textureKey}`);
+        if (!enlazado) {
+          console.warn(`[tilemap] ⚠ Tileset "${ts.name}" no enlazado (${textureKey}); omitido.`);
+          continue;
+        }
+        nombresYaEnlazados.add(ts.name);
         tilesetsEnlazados.push(enlazado);
       }
+      if (!tilesetsEnlazados.length) throw new Error(`No tileset could be linked for map ${mapaKey}`);
       const tilesetCapas = tilesetsEnlazados.length === 1 ? tilesetsEnlazados[0] : tilesetsEnlazados;
 
       // Evita posX/posY fuera del mapa (p. ej. fila 9 en mapa de 9 filas → desalineación)

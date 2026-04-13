@@ -1,0 +1,39 @@
+flowchart LR
+    subgraph "Capa de presentación"
+        Pages["Páginas React\nInicio · Acceso · Registro · Juego"]
+        Menu["MenuIngameReact\nEquipo · Mochila · Opciones · Guardar"]
+    end
+
+    subgraph "Motor de juego"
+        Preload["EscenaPreload"]
+        OW["EscenaOverworld"]
+        Battle["EscenaBatalla"]
+        ScMenu["EscenaMenu"]
+        Trans["EscenaTransicion"]
+    end
+
+    subgraph "Sistemas Phaser"
+        Warp["WarpSystem"]
+        Enc["SistemaEncuentros"]
+        Dial["SistemaDialogo"]
+        Seq["SistemaSecuencias"]
+    end
+
+    subgraph "Estado y comunicación"
+        Store["usarJuegoStore\n+ usarAutenticacionStore"]
+        Bridge["PuenteApi"]
+        HTTP["api.js (Axios + JWT)"]
+    end
+
+    Pages --> Store
+    Menu --> Store
+    OW --> Warp
+    OW --> Enc
+    OW --> Dial
+    OW --> Seq
+    Enc -->|"encuentro"| Battle
+    Battle --> Bridge
+    Menu --> Bridge
+    Bridge --> HTTP
+    Bridge --> Store
+    HTTP -->|"HTTP"| API["API REST"]

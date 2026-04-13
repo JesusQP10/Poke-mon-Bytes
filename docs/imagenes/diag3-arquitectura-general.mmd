@@ -1,0 +1,32 @@
+flowchart TB
+    subgraph Navegador["Navegador (cliente)"]
+        direction TB
+        React["React 19\nPáginas · Menú · Overlays"]
+        Phaser["Phaser 3\nOverworld · Batalla · Diálogos"]
+        Zustand["Zustand\nEstado global"]
+        Axios["Axios\nCliente HTTP + JWT"]
+
+        React <--> Zustand
+        Phaser <--> Zustand
+        React --> Axios
+        Phaser -->|"PuenteApi"| Axios
+    end
+
+    subgraph Servidor["Servidor (Spring Boot 3.5)"]
+        direction TB
+        Security["Filtro JWT\n+ Spring Security"]
+        Controllers["Controladores REST\nAuth · Juego · Batalla · Tienda"]
+        Services["Servicios\nAutenticación · Juego · Batalla\nTienda · Cálculo · PokeAPI"]
+        Repos["Repositorios JPA"]
+
+        Security --> Controllers
+        Controllers --> Services
+        Services --> Repos
+    end
+
+    BD[("MySQL 8\npokemon_web_db")]
+    PokeAPI["PokéAPI\n(externa)"]
+
+    Axios -- "HTTP + Bearer JWT" --> Security
+    Repos --> BD
+    Services -. "WebClient\n(seeding + learnsets)" .-> PokeAPI

@@ -1,0 +1,54 @@
+flowchart TB
+    subgraph "Controladores"
+        C1["ControladorAutenticacion\n/auth/**"]
+        C2["JuegoController\n/api/v1/juego/**"]
+        C3["BatallaController\n/api/v1/batalla/**"]
+        C4["TiendaController\n/api/v1/tienda/**"]
+    end
+
+    subgraph "Servicios"
+        S1["ServicioAutenticacion"]
+        S2["JuegoService"]
+        S3["BatallaService"]
+        S4["TiendaService"]
+        S5["CalculoService\n(lógica pura)"]
+        S6["TipoService"]
+        S7["ServicioPokeApi"]
+    end
+
+    subgraph "Repositorios"
+        R1["RepositorioUsuario"]
+        R2["RepositorioPokemonUsuario"]
+        R3["RepositorioPokedexMaestra"]
+        R4["RepositorioAtaques"]
+        R5["RepositorioObjeto"]
+        R6["RepositorioInventarioUsuario"]
+        R7["RepositorioTipo"]
+        R8["RepositorioEstadoMovimientoPokemon\n(JDBC)"]
+    end
+
+    C1 --> S1
+    C2 --> S2
+    C3 --> S3
+    C4 --> S4
+    S3 --> S5
+    S3 --> S6
+    S3 --> S7
+    S1 --> R1
+    S2 --> R1
+    S2 --> R2
+    S2 --> R3
+    S2 --> R5
+    S2 --> R6
+    S2 --> R8
+    S3 --> R1
+    S3 --> R2
+    S3 --> R3
+    S3 --> R4
+    S3 --> R5
+    S3 --> R6
+    S3 --> R8
+    S4 --> R1
+    S4 --> R5
+    S4 --> R6
+    S6 --> R7

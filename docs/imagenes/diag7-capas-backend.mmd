@@ -1,0 +1,54 @@
+flowchart TB
+    subgraph Transversal
+        direction LR
+        CONFIG["config\nConfiguracionSeguridad\nPropiedadesJwt"]
+        FILTER["filter\nFiltroAutenticacionJwt"]
+        SECURITY["security\nServicioJwt"]
+        EXCEPTION["exception\nManejadorGlobalExcepciones\nErrorNegocio · RecursoNoEncontrado\nFalloInicioSesion"]
+    end
+
+    subgraph "Capa de presentación"
+        CTRL["controller\nControladorAutenticacion\nJuegoController\nBatallaController\nTiendaController"]
+        DTO["dto\nSolicitudRegistro · SolicitudInicioSesion\nSolicitudTurno · SolicitudCaptura\nSolicitudCompra · RespuestaTurno"]
+    end
+
+    subgraph "Capa de negocio"
+        SVC["service\nServicioAutenticacion\nServicioDetallesUsuario\nJuegoService · BatallaService\nTiendaService · TipoService"]
+        LOGICA["service.logica\nCalculoService"]
+        API["service.api\nServicioPokeApi"]
+    end
+
+    subgraph "Capa de acceso a datos"
+        REPO["repository\nRepositorioUsuario\nRepositorioPokemonUsuario\nRepositorioPokedexMaestra\nRepositorioAtaques · RepositorioObjeto\nRepositorioInventarioUsuario\nRepositorioTipo"]
+        JDBC["repository\nRepositorioEstadoMovimientoPokemon\n(JDBC nativo)"]
+        MODEL["model\nUsuario · PokemonUsuario\nPokedexMaestra · Ataques\nItem · Tipo\nInventarioUsuario · InventarioId"]
+        ENUMS["model.enums\nEstado"]
+    end
+
+    subgraph Inicialización
+        COMP["component\nSembradorUsuarioSalvajes @Order 1\nInicializadorTipos\nCargadorDatos\nSembradorObjetos"]
+        SUPPORT["support\nCuentaSalvajes"]
+    end
+
+    BD[("MySQL 8\npokemon_web_db")]
+    EXT["PokéAPI\n(externa)"]
+
+    FILTER --> SECURITY
+    FILTER --> SVC
+    CONFIG --> FILTER
+    CTRL --> SVC
+    CTRL --> DTO
+    SVC --> REPO
+    SVC --> JDBC
+    SVC --> LOGICA
+    SVC --> API
+    REPO --> MODEL
+    REPO --> ENUMS
+    JDBC --> MODEL
+    REPO --> BD
+    JDBC --> BD
+    API --> EXT
+    COMP --> REPO
+    COMP --> API
+    COMP --> SUPPORT
+    EXCEPTION -.->|"intercepta"| CTRL

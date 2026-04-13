@@ -1,0 +1,93 @@
+erDiagram
+    USUARIOS {
+        BIGINT id_usuario PK
+        VARCHAR username UK
+        VARCHAR password_hash
+        INT dinero
+        VARCHAR mapa_actual
+        INT pos_x
+        INT pos_y
+        LONGTEXT estado_cliente_json
+    }
+
+    POKEMON_USUARIO {
+        BIGINT id_pokemon_usuario PK
+        BIGINT id_usuario FK
+        INT id_pokedex FK
+        INT nivel
+        INT experiencia
+        INT hp_max
+        INT hp_actual
+        INT posicion_equipo
+        INT ataque_stat
+        INT defensa_stat
+        INT ataque_especial_stat
+        INT defensa_especial_stat
+        INT velocidad_stat
+        ENUM estado
+        INT turnos_confusion
+        INT contador_toxico
+        INT turnos_sueno
+        BOOLEAN tiene_drenadoras
+    }
+
+    POKEDEX_MAESTRA {
+        INT id_pokedex PK
+        VARCHAR nombre
+        VARCHAR tipo_1
+        VARCHAR tipo_2
+        INT stat_base_hp
+        INT stat_base_ataque
+        INT stat_base_defensa
+        INT stat_base_velocidad
+        INT stat_base_atq_especial
+        INT stat_base_def_especial
+        INT xp_base
+        INT id_evolucion
+        INT ratio_captura
+    }
+
+    ATAQUES {
+        INT id_ataque PK
+        VARCHAR nombre
+        VARCHAR tipo
+        VARCHAR categoria
+        INT potencia
+        INT precision_base
+        INT pp_base
+    }
+
+    ITEMS {
+        INT id_item PK
+        VARCHAR nombre
+        INT precio
+        VARCHAR efecto
+    }
+
+    INVENTARIO_USUARIO {
+        BIGINT id_usuario PK_FK
+        INT id_item PK_FK
+        INT cantidad
+    }
+
+    TIPOS {
+        INT id_tipo PK
+        VARCHAR atacante
+        VARCHAR defensor
+        DOUBLE multiplicador
+    }
+
+    POKEMON_MOVIMIENTOS_USUARIO {
+        BIGINT id_pokemon_usuario PK_FK
+        INT id_ataque PK_FK
+        INT slot_index
+        INT pp_actual
+    }
+
+    USUARIOS ||--o{ POKEMON_USUARIO : "posee"
+    USUARIOS ||--o{ INVENTARIO_USUARIO : "tiene en mochila"
+    POKEDEX_MAESTRA ||--o{ POKEMON_USUARIO : "define especie"
+    POKEDEX_MAESTRA o|--o| POKEDEX_MAESTRA : "evoluciona a"
+    ITEMS ||--o{ INVENTARIO_USUARIO : "se almacena en"
+    POKEMON_USUARIO ||--o{ POKEMON_MOVIMIENTOS_USUARIO : "aprende"
+    ATAQUES ||--o{ POKEMON_MOVIMIENTOS_USUARIO : "se asigna a"

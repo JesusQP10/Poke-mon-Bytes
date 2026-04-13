@@ -123,8 +123,8 @@ export default class WarpSystem {
    * @param {(payload: { destino: string, tileX: number, tileY: number, spawnAt: string | null, spawnOffsetX: number, spawnOffsetY: number }) => void | Promise<void>} alActivar
    */
   registrarZonaWarp(obj, jugador, estaBloqueado, alActivar) {
-    const width = obj.width ?? this.tileSize;
-    const height = obj.height ?? this.tileSize;
+    const width = obj.width || this.tileSize;
+    const height = obj.height || this.tileSize;
     const centroX = obj.x + width / 2;
     const centroY = obj.y + height / 2;
 

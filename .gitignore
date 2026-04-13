@@ -108,5 +108,12 @@ pokemon-frontend/public/assets/game/overworld/tiles/exports/*.json
 # pokemon-frontend/src/store/usarJuegoStoreRefactorizado.js
 # pokemon-frontend/src/utils/
 
+# ========== Exportación memoria Word (Pandoc) ==========
+_memoria_merge.md
+docs/diagramas_generados/word_memoria/
+
+# Memoria / documentación con datos personales (mantener solo en local)
+PROYECTO.md
+
 # ========== Archivos Entregables ==========
 docs/documentacion-proyecto.html

@@ -160,10 +160,6 @@ Opcional: copia `pokemon-frontend/.env.example` → `.env` y ajusta **`VITE_API_
 |--------|----------------|
 | [docs/README.md](docs/README.md) | Índice de toda la carpeta `docs/`. |
 | [docs/desarrollo/NOTAS.md](docs/desarrollo/NOTAS.md) | Bugs, prioridades y registro por fecha. |
-| [PLAN_TRABAJO_FP.md](PLAN_TRABAJO_FP.md) | Plan del FP: fases y orden de trabajo. |
-| [docs/desarrollo/DEFENSA_FP_BANCO_PREGUNTAS.md](docs/desarrollo/DEFENSA_FP_BANCO_PREGUNTAS.md) | Repaso / defensa oral. |
-| [docs/proyecto/DOCUMENTACION_INTEGRAL_MEMORIA.md](docs/proyecto/DOCUMENTACION_INTEGRAL_MEMORIA.md) | Memoria / visión amplia. |
-| [Memoria PDF — Parte 1](docs/proyecto/MEMORIA_PDF_PARTE1_FUNDAMENTOS_Y_DISENO.md) · [Parte 2](docs/proyecto/MEMORIA_PDF_PARTE2_MODULOS_CODIGO.md) | Texto listo para exportar. |
 | [docs/referencia/backend/README.md](docs/referencia/backend/README.md) | API, Maven, puertos. |
 | [docs/referencia/diagramas/README.md](docs/referencia/diagramas/README.md) | Diagramas **Mermaid**. |
 
@@ -195,7 +191,7 @@ Opcional: copia `pokemon-frontend/.env.example` → `.env` y ajusta **`VITE_API_
 #### En marcha
 
 - **Post-batalla**: HP y estado en store/servidor en todos los casos; pantalla de fin de combate.
-- **Tienda en overworld**: backend de compra listo; falta UI enlazada a NPC (ver plan FP).
+- **Tienda en overworld**: backend de compra listo; falta UI enlazada a NPC.
 - **Centro Pokémon**, **Pokédex** ampliada, **tirar/usar ítems** vía API según fases del plan.
 - **Más mundo**; pulido de colisiones y eventos ([NOTAS](docs/desarrollo/NOTAS.md)).
 

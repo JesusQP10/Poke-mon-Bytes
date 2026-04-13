@@ -1,0 +1,40 @@
+flowchart LR
+    subgraph Público
+        AUTH["/auth"]
+        AUTH1["POST /registrar"]
+        AUTH2["POST /iniciarSesion"]
+        AUTH --> AUTH1
+        AUTH --> AUTH2
+    end
+
+    subgraph Protegido
+        JUEGO["/api/v1/juego"]
+        J1["GET /estado"]
+        J2["GET /equipo"]
+        J3["POST /starter"]
+        J4["POST /guardar"]
+        J5["POST /reiniciar"]
+        J6["POST /inventario/anadir"]
+        JUEGO --> J1
+        JUEGO --> J2
+        JUEGO --> J3
+        JUEGO --> J4
+        JUEGO --> J5
+        JUEGO --> J6
+
+        BATALLA["/api/v1/batalla"]
+        B1["GET /movimientos/{id}"]
+        B2["POST /turno"]
+        B3["POST /captura"]
+        B4["POST /salvaje/preparar"]
+        B5["POST /salvaje/liberar"]
+        BATALLA --> B1
+        BATALLA --> B2
+        BATALLA --> B3
+        BATALLA --> B4
+        BATALLA --> B5
+
+        TIENDA["/api/v1/tienda"]
+        T1["POST /comprar"]
+        TIENDA --> T1
+    end

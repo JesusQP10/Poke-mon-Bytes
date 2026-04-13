@@ -1,0 +1,32 @@
+flowchart LR
+    V["Visitante"]
+    J["Jugador"]
+    UT["__wild_battle_pool__\n(usuario técnico)"]
+
+    subgraph Público
+        R1[Registro]
+        R2[Inicio de sesión]
+        R3[Landing page]
+    end
+
+    subgraph Protegido por JWT
+        G[Gestión de partida]
+        B[Combate por turnos]
+        T[Tienda]
+        I[Inventario]
+    end
+
+    subgraph Interno
+        S[Instancias salvajes\nen POKEMON_USUARIO]
+    end
+
+    V --> R1
+    V --> R2
+    V --> R3
+    R2 -->|"JWT"| J
+    J --> G
+    J --> B
+    J --> T
+    J --> I
+    B -.->|"preparar / liberar"| S
+    UT ---|"FK propietario"| S

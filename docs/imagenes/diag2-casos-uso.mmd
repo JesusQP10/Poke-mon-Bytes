@@ -1,0 +1,42 @@
+flowchart TB
+    subgraph Visitante
+        CU01["CU-01: Registrarse"]
+        CU02["CU-02: Iniciar sesión"]
+    end
+
+    subgraph Jugador
+        subgraph Partida
+            CU03["CU-03: Obtener estado de partida"]
+            CU04["CU-04: Elegir Pokémon inicial"]
+            CU05["CU-05: Guardar partida"]
+            CU06["CU-06: Reiniciar partida"]
+            CU07["CU-07: Consultar equipo"]
+        end
+
+        subgraph Combate
+            CU08["CU-08: Iniciar combate salvaje"]
+            CU09["CU-09: Consultar movimientos"]
+            CU10["CU-10: Ejecutar turno de batalla"]
+            CU11["CU-11: Intentar captura"]
+            CU12["CU-12: Finalizar combate sin captura"]
+        end
+
+        subgraph Economía
+            CU13["CU-13: Comprar objeto en tienda"]
+            CU14["CU-14: Añadir objeto al inventario"]
+        end
+
+        subgraph Exploración
+            CU15["CU-15: Explorar el overworld"]
+            CU16["CU-16: Interactuar con NPC"]
+            CU17["CU-17: Encuentro aleatorio en hierba"]
+        end
+    end
+
+    CU02 -->|"precondición"| CU03
+    CU03 -->|"incluye"| CU07
+    CU08 -->|"incluye"| CU09
+    CU08 -->|"incluye"| CU10
+    CU10 -->|"extiende"| CU11
+    CU10 -->|"extiende"| CU12
+    CU17 -->|"dispara"| CU08
