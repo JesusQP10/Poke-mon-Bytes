@@ -3,6 +3,7 @@ import PantallaJuego from "../components/game/PantallaJuego";
 import EscenaApertura from "../components/game/EscenaApertura";
 import CanvasPhaser from "../components/game/CanvasPhaser";
 import MenuIngameReact from "../components/game/MenuIngameReact";
+import BattleMenu from "../components/game/BattleMenu";
 import { SAVE_STORAGE_KEY, usarJuegoStore } from "../store/usarJuegoStore";
 import { usarAutenticacionStore } from "../store/usarAutenticacionStore";
 import PuenteApi from "../phaser/puentes/PuenteApi";
@@ -58,6 +59,7 @@ const PaginaJuego = () => {
   const [scene, setScene] = useState("title");
   const [textoEstaticoReact, setTextoEstaticoReact] = useState(null);
   const [menuIngame, setMenuIngame] = useState(null);
+  const [battleUi, setBattleUi] = useState(null);
   const gameCallbacksRef = useRef({});
   const textoEstaticoSeqRef = useRef(0);
 
@@ -74,6 +76,10 @@ const PaginaJuego = () => {
       },
       onAbrirMenuIngame: ({ resumePhaser }) => {
         setMenuIngame((cur) => (cur ? cur : { resumePhaser }));
+      },
+      onBatallaUi: (payload) => {
+        // payload puede ser null para cerrar
+        setBattleUi(payload || null);
       },
     };
   }, [setScene, setTextoEstaticoReact, setMenuIngame]);
@@ -176,6 +182,15 @@ const PaginaJuego = () => {
             }}
           >
             <CanvasPhaser callbacksRef={gameCallbacksRef} />
+            {battleUi && (
+              <BattleMenu
+                mensaje={battleUi.mensaje}
+                opciones={battleUi.opciones}
+                seleccion={battleUi.seleccion}
+                menuVisible={battleUi.menuVisible}
+                onSeleccion={battleUi.onSeleccion}
+              />
+            )}
             {textoEstaticoReact && (
               <PanelTextoEstaticoReact
                 key={textoEstaticoReact.id}

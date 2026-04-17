@@ -5,6 +5,8 @@ import PuenteApi from '../puentes/PuenteApi';
 import { usarJuegoStore } from '../../store/usarJuegoStore';
 import { volumenBgmParaPhaser } from '../../config/opcionesCliente';
 
+const MOSTRAR_SPRITES_POKEMON = false;
+
 /**
  * EscenaBatalla — pantalla de combate fiel a Pokémon GBC.
  *
@@ -33,12 +35,15 @@ export default class EscenaBatalla extends Phaser.Scene {
     this._pokemonJugador = null;
     this._movimientosJugador = [];
     this._movimientosEnemigo = [];
+    this._uiReact = this.game.registry.get('callbacks')?.onBatallaUi ?? null;
 
     this._crearFondo();
     this._crearPlataformas();
     this._crearInfoPaneles();
-    this._crearMenuAcciones();
-    this._menuMov = new MenuMovimientos(this);
+    if (!this._uiReact) {
+      this._crearMenuAcciones();
+      this._menuMov = new MenuMovimientos(this);
+    }
 
     const sal = this._pokemonSalvaje;
     if (sal?.pokemonUsuarioId != null) {
@@ -91,7 +96,9 @@ export default class EscenaBatalla extends Phaser.Scene {
     }
 
     this._actualizarInfoPaneles();
-    this._cargarSprites();
+    if (MOSTRAR_SPRITES_POKEMON) {
+      this._cargarSprites();
+    }
 
     // Música
     if (this.cache.audio.exists('bgm-batalla-salvaje')) {
@@ -261,6 +268,7 @@ export default class EscenaBatalla extends Phaser.Scene {
   // ── Sprites de Pokémon ────────────────────────────────────────────────
 
   _cargarSprites() {
+    if (!MOSTRAR_SPRITES_POKEMON) return;
     const idEnemigo = this._pokemonSalvaje.pokedexId ?? this._pokemonSalvaje.id;
     const idJugador = this._pokemonJugador?.idPokedex ?? this._pokemonJugador?.id ?? 1;
 
@@ -312,42 +320,77 @@ export default class EscenaBatalla extends Phaser.Scene {
   // ── Caja de texto ─────────────────────────────────────────────────────
 
   _crearMenuAcciones() {
-    // Fondo caja de texto
+    // Marco exterior (estilo GBA: borde rojo + cajas internas)
     this._cajaTexto = this.add.graphics().setDepth(40);
-    this._cajaTexto.fillStyle(0xf8f8f8, 1);
-    this._cajaTexto.fillRect(0, 96, 160, 48);
-    this._cajaTexto.lineStyle(1, 0x000000);
-    this._cajaTexto.strokeRect(0, 96, 160, 48);
 
-    // Texto de mensaje
-    this._textoMensaje = this.add.text(6, 100, '', {
+    const UI_X = 0;
+    const UI_Y = 96;
+    const UI_W = 160;
+    const UI_H = 48;
+
+    const BORDE_ROJO = 0xcc3b3b;
+    const BORDE_NEGRO = 0x000000;
+    const TEAL = 0x5aa9a9;
+    const GRIS = 0xf2f2f2;
+
+    // Borde rojo exterior
+    this._cajaTexto.fillStyle(BORDE_ROJO, 1);
+    this._cajaTexto.fillRect(UI_X, UI_Y, UI_W, UI_H);
+
+    // Área interior (1px de margen dentro del rojo)
+    const IN_X = UI_X + 1;
+    const IN_Y = UI_Y + 1;
+    const IN_W = UI_W - 2;
+    const IN_H = UI_H - 2;
+
+    // Split izquierda/derecha (como la referencia)
+    const LEFT_W = 96; // caja texto
+    const RIGHT_W = IN_W - LEFT_W; // caja menú
+
+    // Caja izquierda (texto) con borde negro
+    this._cajaTexto.fillStyle(TEAL, 1);
+    this._cajaTexto.fillRect(IN_X + 1, IN_Y + 1, LEFT_W - 3, IN_H - 3);
+    this._cajaTexto.lineStyle(1, BORDE_NEGRO, 1);
+    this._cajaTexto.strokeRect(IN_X, IN_Y, LEFT_W, IN_H);
+
+    // Caja derecha (menú) con borde negro
+    const RIGHT_X = IN_X + LEFT_W;
+    this._cajaTexto.fillStyle(GRIS, 1);
+    this._cajaTexto.fillRect(RIGHT_X + 1, IN_Y + 1, RIGHT_W - 2, IN_H - 2);
+    this._cajaTexto.lineStyle(1, BORDE_NEGRO, 1);
+    this._cajaTexto.strokeRect(RIGHT_X, IN_Y, RIGHT_W, IN_H);
+
+    // Texto de mensaje (Gen III: blanco sobre teal)
+    this._textoMensaje = this.add.text(6, 101, '', {
       fontFamily: '"Press Start 2P"',
-      fontSize: '6px',
-      fill: '#000000',
+      fontSize: '5px',
+      fill: '#ffffff',
       wordWrap: { width: 86 },
-      lineSpacing: 4,
+      lineSpacing: 3,
     }).setOrigin(0).setDepth(41);
 
-    // Menú de acciones (derecha de la caja)
-    const acciones = this.add.graphics().setDepth(40);
-    acciones.lineStyle(1, 0x000000);
-    acciones.strokeRect(82, 96, 78, 48);
+    // Menú de acciones (derecha)
+    const acciones = this.add.graphics().setDepth(40); // solo para agrupar profundidad; el marco ya lo pinta _cajaTexto
+    acciones.setVisible(false);
 
-    const textoAcciones = ['LUCHAR', 'POKEMON', 'MOCHILA', 'HUIR'];
+    const textoAcciones = ['LUCHAR', 'MOCHILA', 'POKÉMON', 'HUIR'];
     const posAcciones = [
-      { x: 88, y: 101 }, { x: 120, y: 101 },
-      { x: 88, y: 120 }, { x: 120, y: 120 },
+      { x: 98, y: 102 }, { x: 124, y: 102 },
+      { x: 98, y: 121 }, { x: 124, y: 121 },
     ];
 
     this._cursores = [];
     this._textosAcciones = posAcciones.map((pos, i) => {
       const cursor = this.add.text(pos.x - 6, pos.y, '▶', {
-        fontFamily: '"Press Start 2P"', fontSize: '5px', fill: '#000',
+        fontFamily: '"Press Start 2P"', fontSize: '4px', fill: '#000000',
       }).setOrigin(0).setDepth(42).setVisible(false);
       this._cursores.push(cursor);
 
       return this.add.text(pos.x, pos.y, textoAcciones[i], {
-        fontFamily: '"Press Start 2P"', fontSize: '5px', fill: '#000',
+        fontFamily: '"Press Start 2P"',
+        fontSize: '4px',
+        fill: '#000000',
+        letterSpacing: -1,
       }).setOrigin(0).setDepth(42);
     });
 
@@ -358,7 +401,28 @@ export default class EscenaBatalla extends Phaser.Scene {
   }
 
   _mostrarMenuAcciones() {
-    this._textoMensaje.setText('¿Qué hará\n' + (this._pokemonJugador?.nombreApodo ?? 'Pokémon') + '?');
+    if (this._uiReact) {
+      const nombre =
+        (this._pokemonJugador?.nombreApodo ?? this._pokemonJugador?.nombre ?? 'Pokémon')
+          .toString()
+          .trim()
+          .toUpperCase() || 'POKÉMON';
+      const msg = `¿Qué hará\n${nombre}?`;
+      this._uiReact({
+        mensaje: msg,
+        menuVisible: true,
+        opciones: ['LUCHAR', 'MOCHILA', 'POKÉMON', 'HUIR'],
+        seleccion: 0,
+        onSeleccion: (i) => this._ejecutarAccion(i),
+      });
+      return;
+    }
+    const nombre =
+      (this._pokemonJugador?.nombreApodo ?? this._pokemonJugador?.nombre ?? 'POKÉMON')
+        .toString()
+        .trim()
+        .toUpperCase() || 'POKÉMON';
+    this._textoMensaje.setText(`¿Qué hará\n${nombre}?`);
     this._seleccionAccion = 0;
     this._menuAccionesVisible = true;
     this._contenedorAcciones.forEach(o => o.setVisible(true));
@@ -583,6 +647,7 @@ export default class EscenaBatalla extends Phaser.Scene {
 
   _terminarBatalla() {
     this._musica?.stop();
+    this._uiReact?.(null);
     this.cameras.main.fadeOut(400, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.stop();
@@ -593,6 +658,21 @@ export default class EscenaBatalla extends Phaser.Scene {
   // ── Texto de batalla ───────────────────────────────────────────────────
 
   _mostrarTexto(texto, onFin) {
+    if (this._uiReact) {
+      this._uiReact({
+        mensaje: texto,
+        menuVisible: false,
+        opciones: ['LUCHAR', 'MOCHILA', 'POKÉMON', 'HUIR'],
+        seleccion: 0,
+        onSeleccion: (i) => this._ejecutarAccion(i),
+      });
+      if (onFin) {
+        this.time.delayedCall(1500, () => {
+          if (onFin) onFin();
+        });
+      }
+      return;
+    }
     this._textoMensaje.setText(texto);
     if (!onFin) return;
 

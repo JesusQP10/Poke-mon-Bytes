@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 // Assets de audio que ya existen (importados como URL via Vite)
 import bgmOverworld from '../../assets/game/audio/bgm/an_adventure_begins.mp3';
 import bgmBatalla from '../../assets/game/audio/bgm/title_screen_gold_silver.mp3'; // placeholder
+import fondoBatallaHierba from '../../assets/battle/batalla-fondo-hierba.jpg';
 
 /**
  * EscenaPreload — carga todos los assets antes de iniciar el juego.
@@ -77,6 +78,9 @@ export default class EscenaPreload extends Phaser.Scene {
     // ── Tabla de encuentros (clave = `encuentros-${mapaKey}` en EscenaOverworld) ──
     this.load.json('encuentros-new-bark-town', '/assets/game/overworld/tiles/events/encuentros_new_bark_town.json');
     this.load.json('encuentros-ruta-29', '/assets/game/overworld/tiles/events/encuentros_ruta_29.json');
+
+    // ── Batalla ──────────────────────────────────────────────────────────
+    this.load.image('batalla-fondo-hierba', fondoBatallaHierba);
 
     this.load.on('loaderror', (file) => {
       console.error(`[Preload] ❌ Error cargando asset: ${file.key} - ${file.src}`);

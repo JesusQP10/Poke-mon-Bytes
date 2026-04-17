@@ -1,0 +1,101 @@
+.battle-ui-root {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 160px;
+  height: 144px;
+  z-index: 14;
+  pointer-events: none;
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  -webkit-font-smoothing: none;
+}
+
+.battle-ui-frame {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 160px;
+  height: 48px;
+  background: #cc3b3b; /* borde rojo */
+}
+
+.battle-ui-inner {
+  position: absolute;
+  left: 1px;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  display: grid;
+  /* Español tiene etiquetas más largas: damos más ancho al menú */
+  grid-template-columns: 80px 1fr;
+  gap: 0;
+}
+
+.battle-ui-left {
+  position: relative;
+  background: #5aa9a9;
+  border: 1px solid #000;
+}
+
+.battle-ui-right {
+  position: relative;
+  background: #f2f2f2;
+  border: 1px solid #000;
+  border-left: 0;
+}
+
+.battle-ui-text {
+  position: absolute;
+  left: 6px;
+  top: 5px;
+  right: 6px;
+  bottom: 5px;
+  color: #fff;
+  font-size: 6px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.battle-ui-grid {
+  position: absolute;
+  left: 4px;
+  top: 5px;
+  right: 2px;
+  bottom: 3px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  column-gap: 1px;
+  row-gap: 3px;
+  pointer-events: auto;
+  align-items: stretch;
+}
+
+.battle-ui-opt {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  color: #000;
+  font-size: 4px;
+  line-height: 1;
+  min-width: 0;
+  height: 14px; /* fija altura para evitar solapes */
+  overflow: visible; /* evita cortar últimos píxeles de letras */
+}
+
+.battle-ui-cursor {
+  width: 6px;
+  display: inline-block;
+  color: #000;
+  flex-shrink: 0;
+}
+
+.battle-ui-label {
+  display: inline-block;
+  min-width: 0;
+  overflow: visible;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+
