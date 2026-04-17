@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -189,6 +190,8 @@ public class JuegoService {
 
         userRepo.save(u);
 
+        sincronizarHpPokemonConTeamClienteEnBlob(u);
+
         Map<String, Object> resp = new HashMap<>();
         resp.put("success", true);
         resp.put("message", "Partida guardada.");
@@ -196,6 +199,16 @@ public class JuegoService {
         resp.put("posY", u.getPosY());
         resp.put("mapaActual", u.getMapaActual());
         return resp;
+    }
+
+    /**
+     * Alinea {@code hp_actual} en BD con {@code teamCliente} del JSON guardado (último POST /guardar).
+     * Sin esto, el combate iba persistiendo PS en filas mientras el checkpoint del jugador solo vivía en el blob.
+     */
+    @Transactional
+    public void sincronizarHpEquipoDesdeBlobGuardado(String username) {
+        Usuario u = cargarUsuario(username);
+        sincronizarHpPokemonConTeamClienteEnBlob(u);
     }
 
     /**
@@ -361,6 +374,70 @@ public class JuegoService {
         m.put("cantidad", e.getCantidad());
         m.put("efecto", it.getEfecto());
         return m;
+    }
+
+    /**
+     * Lee {@code estadoClienteJson} del usuario y aplica {@code teamCliente[].hpActual} a cada fila
+     * {@link PokemonUsuario} del jugador (ids que no coinciden o salvajes se ignoran).
+     */
+    private void sincronizarHpPokemonConTeamClienteEnBlob(Usuario usuario) {
+        String blob = usuario.getEstadoClienteJson();
+        if (blob == null || blob.isBlank()) {
+            return;
+        }
+        Map<String, Object> ec;
+        try {
+            ec = JSON.readValue(blob, new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            return;
+        }
+        Object raw = ec.get("teamCliente");
+        if (!(raw instanceof List<?> lista)) {
+            return;
+        }
+        Long uid = usuario.getIdUsuario();
+        for (Object o : lista) {
+            if (!(o instanceof Map<?, ?> m)) {
+                continue;
+            }
+            Long pokemonId = extraerLongId(m.get("pokemonUsuarioId"));
+            if (pokemonId == null) {
+                continue;
+            }
+            Object hpObj = m.get("hpActual");
+            if (hpObj == null) {
+                hpObj = m.get("hp");
+            }
+            if (hpObj == null) {
+                continue;
+            }
+            int hp = ((Number) hpObj).intValue();
+            Optional<PokemonUsuario> opt = pokemonRepo.findById(pokemonId);
+            if (opt.isEmpty()) {
+                continue;
+            }
+            PokemonUsuario p = opt.get();
+            if (!Objects.equals(p.getUsuarioId(), uid)) {
+                continue;
+            }
+            int max = Math.max(1, nvl(p.getHpMax(), 1));
+            p.setHpActual(Math.max(0, Math.min(max, hp)));
+            pokemonRepo.save(p);
+        }
+    }
+
+    private static Long extraerLongId(Object o) {
+        if (o == null) {
+            return null;
+        }
+        if (o instanceof Number n) {
+            return n.longValue();
+        }
+        try {
+            return Long.parseLong(String.valueOf(o).trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /** {@code null}-safe: devuelve {@code defecto} si el Integer es null. */

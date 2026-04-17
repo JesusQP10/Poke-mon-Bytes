@@ -1,0 +1,127 @@
+.battle-bag-root {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 160px;
+  height: 144px;
+  z-index: 15;
+  pointer-events: none;
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  -webkit-font-smoothing: none;
+}
+
+.battle-bag-frame {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 160px;
+  height: 48px;
+  background: #cc3b3b;
+}
+
+.battle-bag-inner {
+  position: absolute;
+  left: 1px;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 0;
+}
+
+.battle-bag-left {
+  position: relative;
+  background: #5aa9a9;
+  border: 1px solid #000;
+}
+
+.battle-bag-msg {
+  position: absolute;
+  left: 6px;
+  top: 5px;
+  right: 6px;
+  bottom: 14px;
+  color: #fff;
+  font-size: 6px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.battle-bag-right {
+  position: relative;
+  background: #f2f2f2;
+  border: 1px solid #000;
+  border-left: 0;
+}
+
+.battle-bag-scroll {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  right: 1px;
+  bottom: 2px;
+  overflow: hidden auto;
+  pointer-events: auto;
+}
+
+.battle-bag-seccion-tit {
+  font-size: 4px;
+  line-height: 1.2;
+  color: #404860;
+  margin: 2px 0 1px;
+  letter-spacing: 0.02em;
+}
+
+.battle-bag-seccion-tit--2 {
+  margin-top: 4px;
+}
+
+.battle-bag-vacio {
+  font-size: 4px;
+  color: #708090;
+  padding: 0 2px 2px;
+}
+
+.battle-bag-fila {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 11px;
+  padding: 1px 2px;
+  font-size: 4px;
+  line-height: 1.15;
+  color: #1a222c;
+}
+
+.battle-bag-fila--sel {
+  background: rgba(80, 120, 220, 0.18);
+  outline: 1px solid rgba(40, 72, 160, 0.4);
+}
+
+.battle-bag-cur {
+  width: 5px;
+  flex-shrink: 0;
+}
+
+.battle-bag-nombre {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: clip;
+}
+
+.battle-bag-cant {
+  flex-shrink: 0;
+  font-size: 3px;
+  color: #303840;
+}
+
+.battle-bag-vacio-todo {
+  font-size: 4px;
+  color: #506070;
+  padding: 4px 2px;
+  line-height: 1.35;
+}

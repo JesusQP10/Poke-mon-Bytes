@@ -1,0 +1,126 @@
+/* Mismo marco inferior que BattleMenu: borde rojo + teal + panel gris con cajitas */
+
+.battle-moves-root {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 160px;
+  height: 144px;
+  z-index: 15;
+  pointer-events: none;
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  -webkit-font-smoothing: none;
+}
+
+.battle-moves-frame {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 160px;
+  height: 48px;
+  background: #cc3b3b;
+}
+
+.battle-moves-inner {
+  position: absolute;
+  left: 1px;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 0;
+}
+
+.battle-moves-left {
+  position: relative;
+  background: #5aa9a9;
+  border: 1px solid #000;
+}
+
+.battle-moves-msg {
+  position: absolute;
+  left: 6px;
+  top: 5px;
+  right: 6px;
+  bottom: 14px;
+  color: #fff;
+  font-size: 6px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.battle-moves-right {
+  position: relative;
+  background: #f2f2f2;
+  border: 1px solid #000;
+  border-left: 0;
+}
+
+.battle-moves-grid {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  right: 2px;
+  bottom: 2px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 2px;
+  pointer-events: auto;
+}
+
+.battle-move-slot {
+  display: flex;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  padding: 2px 2px 2px 1px;
+  background: linear-gradient(180deg, #fafaf8 0%, #e8e8e4 100%);
+  border: 1px solid #141820;
+  border-radius: 2px;
+  box-shadow:
+    1px 1px 0 rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.battle-move-slot--empty {
+  opacity: 0.55;
+}
+
+.battle-move-slot--active {
+  outline: 1px solid rgba(40, 72, 160, 0.55);
+  background: rgba(80, 120, 220, 0.12);
+}
+
+.battle-move-cursor {
+  width: 5px;
+  flex-shrink: 0;
+  font-size: 4px;
+  line-height: 1.2;
+  color: #000;
+  padding-top: 1px;
+}
+
+.battle-move-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.battle-move-name {
+  font-size: 4px;
+  line-height: 1.2;
+  color: #1a222c;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+
+.battle-move-pp {
+  margin-top: 2px;
+  font-size: 3px;
+  line-height: 1.2;
+  color: #303840;
+}

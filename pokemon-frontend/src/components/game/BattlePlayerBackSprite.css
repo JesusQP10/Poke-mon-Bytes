@@ -1,0 +1,29 @@
+/*
+ * Primer plano abajo-izquierda (como GBC): pies cerca del borde inferior del campo (~y96).
+ * Antes subíamos el `top` por error; abajo en pantalla = `top` MÁS ALTO en px.
+ */
+.battle-player-back-wrap {
+  position: absolute;
+  left: 46px;
+  top: 90px;
+  transform: translate(-50%, -100%);
+  z-index: 12;
+  width: 52px;
+  max-height: 68px;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: visible;
+}
+
+.battle-player-back-img {
+  display: block;
+  max-width: 52px;
+  max-height: 64px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}

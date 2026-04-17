@@ -1,0 +1,28 @@
+/*
+ * Sobre la sombra del rival: pies en y≈58 (mismo valor en Phaser).
+ */
+.battle-status-sprite-wrap {
+  position: absolute;
+  left: 110px;
+  top: 58px;
+  transform: translate(-50%, -100%);
+  z-index: 12;
+  width: 60px;
+  max-height: 72px;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: visible;
+}
+
+.battle-status-sprite-img {
+  display: block;
+  max-width: 60px;
+  max-height: 70px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}

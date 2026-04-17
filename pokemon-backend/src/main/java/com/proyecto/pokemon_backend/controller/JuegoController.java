@@ -68,6 +68,16 @@ public class JuegoController {
     }
 
     /**
+     * Alinea las filas de PS en BD con el {@code teamCliente} del último guardado en servidor (blob).
+     * Llamar antes de GET /estado al continuar partida (p. ej. tras recargar sin haber guardado en menú).
+     */
+    @PostMapping("/restaurar-hp-checkpoint")
+    public ResponseEntity<Map<String, Object>> restaurarHpCheckpoint(Authentication auth) {
+        juegoService.sincronizarHpEquipoDesdeBlobGuardado(auth.getName());
+        return ResponseEntity.ok(Map.of("ok", true));
+    }
+
+    /**
      * Nueva partida en servidor: borra Pokémon del usuario (y PP asociados), vacía mochila, anula JSON de
      * cliente, dinero base y spawn en habitación. Devuelve el mismo shape que {@code GET /estado}.
      */

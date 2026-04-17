@@ -184,9 +184,8 @@ export default class EscenaOverworld extends Phaser.Scene {
 
     if (this._flujoEleccionStarter) return;
 
-    let objetivoMasCercano = null;
-    let distanciaMinima = Infinity;
-
+    /** Si dos NPC están a la misma distancia (empate numérico), antes ganaba el primero en el array del mapa; eso hacía que Courtney (veneno) «comiera» a Jack (congelado) en la sala debug. */
+    const candidatos = [];
     this._interactuables.forEach((obj) => {
       if (obj.sprite && !obj.sprite.visible && obj.tipo === 'pokeball') return;
 
@@ -199,15 +198,20 @@ export default class EscenaOverworld extends Phaser.Scene {
           : obj.tipo === 'npc'
             ? TAM_TILE * 2.35
             : TAM_TILE * 1.8;
-      if (dist <= alcanceMax && dist < distanciaMinima) {
-        distanciaMinima = dist;
-        objetivoMasCercano = obj;
+      if (dist <= alcanceMax) {
+        candidatos.push({ obj, dist, nombreMapa: String(obj.nombreMapa ?? '') });
       }
     });
 
-    if (objetivoMasCercano) {
-      objetivoMasCercano.accion();
-    }
+    if (!candidatos.length) return;
+
+    candidatos.sort((a, b) => {
+      const d = a.dist - b.dist;
+      if (Math.abs(d) > 1e-4) return d;
+      return a.nombreMapa.localeCompare(b.nombreMapa, 'es');
+    });
+
+    candidatos[0].obj.accion();
   }
 
   // ── Animación de intro nueva partida ──────
@@ -490,6 +494,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     this._interactuables.push({
       sprite: pokeball,
       tipo: 'pokeball',
+      nombreMapa: String(obj.name ?? ''),
       accion: () => {
         const st = usarJuegoStore.getState();
         if (st.starterElegido) return;
@@ -682,6 +687,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     this._interactuables.push({
       sprite: npc,
       tipo: 'npc',
+      nombreMapa: String(obj.name ?? ''),
       xRadar,
       yRadar,
       accion: () => {
@@ -734,9 +740,14 @@ export default class EscenaOverworld extends Phaser.Scene {
             const prevOnFin = onFinDialogo;
             onFinDialogo = () => {
               if (typeof prevOnFin === 'function') prevOnFin();
-              this._iniciarBatalla(
-                this._payloadBatallaDebugDesdePar(obj, props, npcBatallaEsCaptura),
-              );
+              const payload = {
+                ...this._payloadBatallaDebugDesdePar(obj, props, npcBatallaEsCaptura),
+              };
+              // Combate de captura / prueba: como un salvaje, se puede huir. Solo entrenador → no huir.
+              if (!npcBatallaEsCaptura) {
+                payload.esBatallaEntrenador = true;
+              }
+              this._iniciarBatalla(payload);
             };
           }
           this._dialogo.mostrar(lineas, onFinDialogo, cajaNpcOpts);
@@ -797,22 +808,30 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   /**
    * Payload para `_iniciarBatalla` desde props Tiled (zonas `battle` o NPCs con batalla tras diálogo).
-   * Por defecto el estado de prueba afecta al **Pokémon del jugador** (`estadoJugadorDebug`).
-   * Prop `estadoAfectaA` = `rival` para el mensaje antiguo (estado en el salvaje).
+   * - Zonas `battle_*` sin prefijo NPC: por defecto estado en el **jugador** (`estadoJugadorDebug`).
+   * - Objetos `npc_battle_*`: los textos del mapa describen el **rival** → por defecto `estadoSalvajeDebug`.
+   * - Prop `estadoAfectaA` = `rival` | `jugador` fuerza quién lleva el estado de prueba.
    */
   _payloadBatallaDebugDesdePar(obj, props, esTestCaptura) {
     const rawId = WarpSystem.prop(props, 'pokedexId');
     const rawNv = WarpSystem.prop(props, 'nivel');
-    const pokedexId = Number.isFinite(Number(rawId)) ? Number(rawId) : 19;
+    const pokedexId = Number.isFinite(Number(rawId))
+      ? Number(rawId)
+      : (esTestCaptura ? 137 : 19);
     const nivel = Number.isFinite(Number(rawNv)) ? Number(rawNv) : 5;
     const nombreHint = String(WarpSystem.prop(props, 'nombre') ?? '').trim();
+    const nombrePorDefecto = esTestCaptura ? 'Porygon' : '???';
     const claveEstado = esTestCaptura ? null : this._estadoBatallaDebugDesdeObjeto(obj, props);
     const afecta = String(WarpSystem.prop(props, 'estadoAfectaA') ?? '').trim().toLowerCase();
-    const estadoEnRival = afecta === 'rival';
+    const esNpcBattleNombre = /^npc_battle_/i.test(String(obj.name ?? ''));
+    let estadoEnRival;
+    if (afecta === 'rival') estadoEnRival = true;
+    else if (afecta === 'jugador') estadoEnRival = false;
+    else estadoEnRival = esNpcBattleNombre;
 
     const pokemon = {
       id: pokedexId,
-      nombre: nombreHint || '???',
+      nombre: nombreHint || nombrePorDefecto,
       nivel,
       ...(esTestCaptura ? { esDebugCaptura: true } : {}),
     };
@@ -832,6 +851,7 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   _npcEsBatallaDebugCaptura(obj, props) {
     if (this._propBool(props, 'esDebugCaptura')) return true;
+    if (String(obj.name ?? '').trim().toLowerCase() === 'npc_captura') return true;
     const cls = String(obj.class ?? obj.type ?? '').trim().toLowerCase();
     return cls === 'captura';
   }
@@ -949,6 +969,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     this._interactuables.push({
       sprite: marcador,
       tipo: 'react_texto',
+      nombreMapa: String(obj.name ?? ''),
       accion: () => {
         this._mostrarReactTextoEstatico(lineas, optsReactTexto);
       },
@@ -970,6 +991,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     this._interactuables.push({
       sprite: marcador,
       tipo: 'battle_debug',
+      nombreMapa: String(obj.name ?? ''),
       accion: () => {
         this._iniciarBatalla(this._payloadBatallaDebugDesdePar(obj, props, esTestCaptura));
       },
@@ -987,6 +1009,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     this._interactuables.push({
       sprite: marcador,
       tipo: 'pc',
+      nombreMapa: String(obj.name ?? ''),
       accion: () => this._abrirMenuPc(),
     });
   }
@@ -1077,7 +1100,8 @@ export default class EscenaOverworld extends Phaser.Scene {
   // ── Batalla ───────────────────────────────────────────────────────────
 
   _iniciarBatalla(pokemon) {
-    this.input.keyboard.removeAllListeners(); // Limpieza antes de la batalla
+    // No usar input.keyboard.removeAllListeners(): la escena sigue viva en pausa tras el combate
+    // y al hacer resume se perderían el Z de interacción y los handlers del diálogo hasta recrear la escena.
     this._musica?.stop();
     if (!this._jugador) return;
     void this._iniciarBatallaAsync(pokemon);

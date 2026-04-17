@@ -22,8 +22,13 @@ const PuenteApi = {
   /**
    * Guarda partida en servidor (posición, mapa + JSON `estadoCliente`).
    * Dinero e inventario viven en tablas servidor; no se sobrescribe desde el cliente.
+   *
+   * @param {object} payload
+   * @param {{ actualizarCacheLocal?: boolean }} [opts] Si `false`, no escribe `localStorage`
+   *   (el “último guardado” para Continuar debe ser solo GUARDAR en menú, no combates ni syncs).
    */
-  async guardarJuegoEnServidor(payload) {
+  async guardarJuegoEnServidor(payload, opts = {}) {
+    const actualizarCacheLocal = opts.actualizarCacheLocal !== false;
     const res = await api.post('/api/v1/juego/guardar', payload);
     if (payload?.posX != null && payload?.mapaActual != null) {
       usarJuegoStore.getState().setPosition(payload.posX, payload.posY, payload.mapaActual);
@@ -34,13 +39,25 @@ const PuenteApi = {
       } catch (e) {
         console.warn('[guardar] sincronizar tras guardar', e);
       }
-      try {
-        usarJuegoStore.getState().guardarPartidaLocal();
-      } catch (e) {
-        console.warn('[guardar] caché local tras sincronizar', e);
+      if (actualizarCacheLocal) {
+        try {
+          usarJuegoStore.getState().guardarPartidaLocal();
+        } catch (e) {
+          console.warn('[guardar] caché local tras sincronizar', e);
+        }
       }
     }
     return res.data;
+  },
+
+  /**
+   * Alinea PS en BD con el último `teamCliente` guardado en servidor (blob).
+   * Solo debe llamarse al **cargar partida** (p. ej. Continuar en el título), no en cada sync:
+   * si se hace tras un combate sin guardar, revertiría los PS persistidos en BD por los turnos.
+   */
+  async restaurarHpCheckpointDesdeBlob() {
+    if (!usarAutenticacionStore.getState().token) return;
+    await api.post("/api/v1/juego/restaurar-hp-checkpoint");
   },
 
   /** GET /estado y aplica al store (multi-dispositivo). */

@@ -4,6 +4,12 @@ import EscenaApertura from "../components/game/EscenaApertura";
 import CanvasPhaser from "../components/game/CanvasPhaser";
 import MenuIngameReact from "../components/game/MenuIngameReact";
 import BattleMenu from "../components/game/BattleMenu";
+import BattleMoves from "../components/game/BattleMoves";
+import BattleBag from "../components/game/BattleBag";
+import BattleParty from "../components/game/BattleParty";
+import BattleHud from "../components/game/BattleHud";
+import BattleStatusSprite from "../components/game/BattleStatusSprite";
+import BattlePlayerBackSprite from "../components/game/BattlePlayerBackSprite";
 import { SAVE_STORAGE_KEY, usarJuegoStore } from "../store/usarJuegoStore";
 import { usarAutenticacionStore } from "../store/usarAutenticacionStore";
 import PuenteApi from "../phaser/puentes/PuenteApi";
@@ -60,6 +66,7 @@ const PaginaJuego = () => {
   const [textoEstaticoReact, setTextoEstaticoReact] = useState(null);
   const [menuIngame, setMenuIngame] = useState(null);
   const [battleUi, setBattleUi] = useState(null);
+  const [combateActivo, setCombateActivo] = useState(false);
   const gameCallbacksRef = useRef({});
   const textoEstaticoSeqRef = useRef(0);
 
@@ -78,9 +85,18 @@ const PaginaJuego = () => {
         setMenuIngame((cur) => (cur ? cur : { resumePhaser }));
       },
       onBatallaUi: (payload) => {
-        // payload puede ser null para cerrar
-        setBattleUi(payload || null);
+        if (payload == null) {
+          setBattleUi(null);
+          return;
+        }
+        setBattleUi((prev) => {
+          if (prev && typeof prev === "object") {
+            return { ...prev, ...payload };
+          }
+          return payload;
+        });
       },
+      onCombateActivo: setCombateActivo,
     };
   }, [setScene, setTextoEstaticoReact, setMenuIngame]);
 
@@ -120,7 +136,7 @@ const PaginaJuego = () => {
           boxShadow: "0 0 20px rgba(0,0,0,0.5)",
           backgroundColor: "#000",
           position: "relative",
-          overflow: "hidden",
+          overflow: "visible",
         }}
       >
         {scene === "title" && (
@@ -129,6 +145,7 @@ const PaginaJuego = () => {
             onContinue={async () => {
               if (usarAutenticacionStore.getState().token) {
                 try {
+                  await PuenteApi.restaurarHpCheckpointDesdeBlob();
                   await PuenteApi.sincronizarEstadoDesdeServidor();
                   try {
                     usarJuegoStore.getState().guardarPartidaLocal();
@@ -179,17 +196,50 @@ const PaginaJuego = () => {
               position: "relative",
               width: 160,
               height: 144,
+              overflow: "visible",
             }}
           >
             <CanvasPhaser callbacksRef={gameCallbacksRef} />
             {battleUi && (
-              <BattleMenu
-                mensaje={battleUi.mensaje}
-                opciones={battleUi.opciones}
-                seleccion={battleUi.seleccion}
-                menuVisible={battleUi.menuVisible}
-                onSeleccion={battleUi.onSeleccion}
-              />
+              <>
+                <BattleStatusSprite
+                  spriteEstadoClave={battleUi.spriteEstadoClave ?? "normal"}
+                  esDebugCaptura={Boolean(battleUi.esDebugCaptura)}
+                />
+                <BattlePlayerBackSprite src={battleUi.spriteJugadorCampoUrl} />
+                <BattleHud jugador={battleUi.jugador} enemigo={battleUi.enemigo} />
+                {battleUi.equipoPicker ? (
+                  <BattleParty
+                    equipo={battleUi.equipoPicker.equipo}
+                    starter={battleUi.equipoPicker.starter}
+                    onPick={battleUi.equipoPicker.onPick}
+                    onCancel={battleUi.equipoPicker.onCancel}
+                  />
+                ) : battleUi.mochilaPicker ? (
+                  <BattleBag
+                    mensaje={battleUi.mensaje}
+                    curativos={battleUi.mochilaPicker.curativos}
+                    balls={battleUi.mochilaPicker.balls}
+                    onPick={battleUi.mochilaPicker.onPick}
+                    onCancel={battleUi.mochilaPicker.onCancel}
+                  />
+                ) : battleUi.movimientosPicker ? (
+                  <BattleMoves
+                    mensaje={battleUi.mensaje}
+                    slots={battleUi.movimientosPicker.slots}
+                    onPick={battleUi.movimientosPicker.onPick}
+                    onCancel={battleUi.movimientosPicker.onCancel}
+                  />
+                ) : (
+                  <BattleMenu
+                    mensaje={battleUi.mensaje}
+                    opciones={battleUi.opciones}
+                    seleccion={battleUi.seleccion}
+                    menuVisible={battleUi.menuVisible}
+                    onSeleccion={battleUi.onSeleccion}
+                  />
+                )}
+              </>
             )}
             {textoEstaticoReact && (
               <PanelTextoEstaticoReact
@@ -215,36 +265,38 @@ const PaginaJuego = () => {
         )}
       </div>
 
-      <div
-        style={{
-          position: "absolute",
-          left: 18,
-          top: 18,
-          zIndex: 20,
-          width: "min(42vw, 420px)",
-          minWidth: 280,
-          padding: "14px 16px",
-          borderRadius: 12,
-          border: "1px solid rgba(180, 190, 205, 0.25)",
-          background: "rgba(6, 10, 16, 0.58)",
-          color: "#a7b4c6",
-          fontFamily: "'Press Start 2P', monospace",
-          fontSize: 10,
-          lineHeight: 1.95,
-          letterSpacing: "0.03em",
-          textAlign: "left",
-          backdropFilter: "blur(2px)",
-          pointerEvents: "none",
-        }}
-      >
-        <div style={{ color: "#d8e0eb", marginBottom: 8 }}>CONTROLES</div>
-        <div>ACEPTAR: Z o Enter</div>
-        <div>ATRAS: X o Escape</div>
-        <div>ARRIBA: W o Flecha Arriba</div>
-        <div>IZQUIERDA: A o Flecha Izquierda</div>
-        <div>DERECHA: D o Flecha Derecha</div>
-        <div>ABAJO: S o Flecha Abajo</div>
-      </div>
+      {!combateActivo && (
+        <div
+          style={{
+            position: "absolute",
+            left: 18,
+            top: 18,
+            zIndex: 20,
+            width: "min(42vw, 420px)",
+            minWidth: 280,
+            padding: "14px 16px",
+            borderRadius: 12,
+            border: "1px solid rgba(180, 190, 205, 0.25)",
+            background: "rgba(6, 10, 16, 0.58)",
+            color: "#a7b4c6",
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: 10,
+            lineHeight: 1.95,
+            letterSpacing: "0.03em",
+            textAlign: "left",
+            backdropFilter: "blur(2px)",
+            pointerEvents: "none",
+          }}
+        >
+          <div style={{ color: "#d8e0eb", marginBottom: 8 }}>CONTROLES</div>
+          <div>ACEPTAR: Z o Enter</div>
+          <div>ATRAS: X o Escape</div>
+          <div>ARRIBA: W o Flecha Arriba</div>
+          <div>IZQUIERDA: A o Flecha Izquierda</div>
+          <div>DERECHA: D o Flecha Derecha</div>
+          <div>ABAJO: S o Flecha Abajo</div>
+        </div>
+      )}
     </div>
   );
 };

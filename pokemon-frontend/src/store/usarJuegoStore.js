@@ -110,6 +110,34 @@ function normalizarMapaActualParaPreload(mapaKey) {
  * @param {Record<string, unknown> | null | undefined} data
  * @param {{ inventario?: unknown[] }} state
  */
+/**
+ * El combate persiste PS en BD en cada turno; el checkpoint explícito vive en `estadoCliente.teamCliente`
+ * (actualizado con POST /guardar). Tras alinear BD vía `/restaurar-hp-checkpoint`, GET ya coincide;
+ * si no, prioriza el HP del blob sobre la lista `team` del servidor para la UI.
+ * @param {object[]} equipo
+ * @param {object[]} teamCliente
+ */
+function fusionarHpEquipoDesdeTeamCliente(equipo, teamCliente) {
+  if (!Array.isArray(equipo) || !Array.isArray(teamCliente) || teamCliente.length === 0) {
+    return equipo;
+  }
+  return equipo.map((p) => {
+    const pid = p?.pokemonUsuarioId;
+    let snap =
+      pid != null ? teamCliente.find((t) => t && t.pokemonUsuarioId === pid) : null;
+    if (!snap && p?.id != null) {
+      snap = teamCliente.find(
+        (t) => t && (t.id === p.id || t.pokedexId === p.id),
+      );
+    }
+    if (snap && Number.isFinite(Number(snap.hpActual))) {
+      const h = Math.max(0, Math.floor(Number(snap.hpActual)));
+      return { ...p, hpActual: h };
+    }
+    return p;
+  });
+}
+
 function inventarioParaStore(data, state) {
   if (data != null && Object.prototype.hasOwnProperty.call(data, 'inventario')) {
     const raw = data.inventario;
@@ -215,6 +243,10 @@ export const usarJuegoStore = create((set, get) => ({
       if (team.length > 0 && !team.some((p) => p.esStarter) && team[0].pokemonUsuarioId != null) {
         team = team.map((p, i) => (i === 0 ? { ...p, esStarter: true } : p));
       }
+      const equipoDesdeServidor = Array.isArray(data?.team) && data.team.length > 0;
+      if (equipoDesdeServidor && Array.isArray(ec.teamCliente) && ec.teamCliente.length) {
+        team = fusionarHpEquipoDesdeTeamCliente(team, ec.teamCliente);
+      }
       let starter = data?.starter ?? ec.starterCliente ?? (team[0] ?? null);
       if (starter) {
         starter = {
@@ -224,6 +256,15 @@ export const usarJuegoStore = create((set, get) => ({
           pokemonUsuarioId: starter.pokemonUsuarioId,
           esStarter: starter.esStarter ?? team[0]?.esStarter ?? false,
         };
+        if (
+          team[0]
+          && starter.pokemonUsuarioId != null
+          && team[0].pokemonUsuarioId != null
+          && starter.pokemonUsuarioId === team[0].pokemonUsuarioId
+        ) {
+          starter.hpActual = team[0].hpActual;
+          starter.hpMax = team[0].hpMax ?? starter.hpMax;
+        }
       }
       const inventario = inventarioParaStore(data, state);
       const moneyServidor = data != null && Object.prototype.hasOwnProperty.call(data, 'money');

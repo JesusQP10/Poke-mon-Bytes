@@ -8,7 +8,8 @@ import { crearJuegoPhaser } from '../../phaser/PhaserJuego';
  *   onCambioPantalla?: (p: string) => void,
  *   onTextoEstatico?: (p: { lineas: string[], onCerrar: () => void }) => void,
  *   onAbrirMenuIngame?: (p: { resumePhaser: () => void }) => void,
- *   onBatallaUi?: (p: unknown) => void
+ *   onBatallaUi?: (p: unknown) => void,
+ *   onCombateActivo?: (activo: boolean) => void
  * } }} callbacksRef
  *        Ref actualizada por el padre en cada render para que los callbacks no queden obsoletos.
  */
@@ -25,6 +26,7 @@ const CanvasPhaser = ({ callbacksRef }) => {
       onTextoEstatico: (payload) => ref.current.onTextoEstatico?.(payload),
       onAbrirMenuIngame: (payload) => ref.current.onAbrirMenuIngame?.(payload),
       onBatallaUi: (payload) => ref.current.onBatallaUi?.(payload),
+      onCombateActivo: (activo) => ref.current.onCombateActivo?.(activo),
     });
 
     // El canvas real lo inyecta Phaser dentro del contenedor; hay que forzarle
