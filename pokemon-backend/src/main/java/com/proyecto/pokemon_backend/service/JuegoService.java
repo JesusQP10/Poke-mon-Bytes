@@ -205,12 +205,19 @@ public class JuegoService {
 
     /**
      * Alinea {@code hp_actual} en BD con {@code teamCliente} del JSON guardado (último POST /guardar).
-     * Sin esto, el combate iba persistiendo PS en filas mientras el checkpoint del jugador solo vivía en el blob.
+     * También borra los registros de PP persistidos en batalla: el siguiente combate los reiniciará a ppMax.
+     * Sin esto, recargar sin guardar dejaba PS y PP del combate en BD aunque el jugador no hubiera guardado.
      */
     @Transactional
     public void sincronizarHpEquipoDesdeBlobGuardado(String username) {
         Usuario u = cargarUsuario(username);
         sincronizarHpPokemonConTeamClienteEnBlob(u);
+        for (PokemonUsuario p : pokemonRepo.findByUsuarioId(u.getIdUsuario())) {
+            int pos = nvl(p.getPosicionEquipo(), 99);
+            if (pos >= 0 && pos <= 5) {
+                estadoMovimientoRepo.eliminarPorPokemonId(p.getId());
+            }
+        }
     }
 
     /**
@@ -284,6 +291,7 @@ public class JuegoService {
             p.setTurnosSueno(0);
             p.setTieneDrenadoras(false);
             pokemonRepo.save(p);
+            estadoMovimientoRepo.eliminarPorPokemonId(p.getId());
         }
         Map<String, Object> res = new HashMap<>();
         res.put("mensaje", "¡Tu equipo ha recuperado la energía!");

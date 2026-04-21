@@ -31,6 +31,19 @@ public class BatallaController {
     // --- Moveset ---
 
     /**
+     * Limpia PP persistidos del Pokémon del jugador. Llamar al inicio de cada batalla para
+     * que el combate empiece siempre con PP máximos (sin visita obligatoria al Centro).
+     */
+    @DeleteMapping("/pp/{pokemonId}")
+    public ResponseEntity<Void> resetearPp(
+        @PathVariable Long pokemonId,
+        Authentication auth
+    ) {
+        batallaService.resetearPp(auth.getName(), pokemonId);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
      * Cuatro huecos con PP actual/máximo; el {@code pokemonUsuarioId} debe ser del usuario autenticado
      * o de la cuenta pool de salvajes tras {@code /salvaje/preparar}.
      */

@@ -28,6 +28,14 @@
   top: 60px;
 }
 
+.battle-hud-estado-row {
+  min-height: 7px;
+  display: flex;
+  align-items: center;
+  margin-top: 1px;
+  margin-bottom: 1px;
+}
+
 /* Evita blur por subpíxeles al escalar el bloque 160×144 */
 .battle-hud-root,
 .battle-hud-root * {

@@ -222,6 +222,20 @@ public class BatallaService {
      * Expone los 4 huecos (o menos) con PP persistido. Permite consultar al rival salvaje recién creado
      * aunque no sea del {@code username}, siempre que el Pokémon sea del pool técnico.
      */
+    /**
+     * Limpia los PP persistidos de un Pokémon del jugador para que el siguiente combate empiece con PP máximos.
+     * Solo válido para Pokémon del propio usuario (no afecta a salvajes).
+     */
+    @Transactional
+    public void resetearPp(String username, Long pokemonId) {
+        Usuario usuario = cargarUsuario(username);
+        PokemonUsuario pokemon = cargarPokemon(pokemonId);
+        if (!Objects.equals(pokemon.getUsuarioId(), usuario.getIdUsuario())) {
+            throw new ErrorNegocio("Ese Pokémon no es tuyo.");
+        }
+        moveStateRepo.eliminarPorPokemonId(pokemonId);
+    }
+
     public List<Map<String, Object>> listarMovimientos(String username, Long pokemonId) {
         Usuario usuario = cargarUsuario(username);
         PokemonUsuario pokemon = cargarPokemon(pokemonId);
@@ -282,7 +296,7 @@ public class BatallaService {
     }
 
     /**
-     * Camino feliz: validar dueños → resolver movimiento (id, legacy o primer slot con PP) → bloqueos de estado
+     * validar dueños → resolver movimiento (id, legacy o primer slot con PP) → bloqueos de estado
      * → precisión → rama daño o estado → persistir HP/PP y textos. Los efectos residuales de fin de turno
      * se aplican a ambos bandos según el caso.
      */
@@ -322,11 +336,18 @@ public class BatallaService {
             || nvl(movimiento.getPotencia(), 0) <= 0;
 
         if (esEstado) {
-            procesarEfectosFinTurno(defensor);
-            procesarEfectosFinTurno(atacante);
+            String nomAtacante = datosAtacante.getNombre() != null ? datosAtacante.getNombre() : "?";
+            String mensajeEfecto = aplicarEfectoMovimientoEstado(atacante, defensor, movimiento.getNombre(), nomAtacante);
+            String residualDef = procesarEfectosFinTurno(defensor);
+            String residualAtk = procesarEfectosFinTurno(atacante);
             pokemonRepo.save(defensor);
             pokemonRepo.save(atacante);
-            return sinDanio(atacante, defensor, movimiento.getNombre() + " no causó daño directo.");
+            return sinDanio(atacante, defensor, unir(
+                "¡" + nomAtacante + " usó " + movimiento.getNombre() + "!",
+                mensajeEfecto,
+                residualAtk,
+                residualDef
+            ));
         }
 
         // --- Cálculo de daño ---
@@ -389,6 +410,8 @@ public class BatallaService {
             .mensajeEfectividad(msgEfectividad)
             .defensorDerrotado(hpDefFinal == 0)
             .mensajeGeneral(mensajeFinal)
+            .estadoAtacante(estadoDisplay(atacante))
+            .estadoDefensor(estadoDisplay(defensor))
             .build();
     }
 
@@ -796,6 +819,113 @@ public class BatallaService {
     }
 
     // =========================================================================
+    // EFECTOS DE MOVIMIENTOS DE ESTADO
+    // =========================================================================
+
+    /**
+     * Aplica el efecto de un movimiento sin daño directo según su nombre (kebab-case de la BD).
+     * Cubre: estados alterados, bajadas/subidas de stat y utilidades sin efecto en este motor.
+     */
+    private String aplicarEfectoMovimientoEstado(PokemonUsuario atacante, PokemonUsuario defensor,
+                                                  String nombreMov, String nomAtacante) {
+        String nom = String.valueOf(nombreMov).toLowerCase(Locale.ROOT).trim();
+        String nomDef = nombreDisplay(defensor);
+        Estado estadoActualDef = defensor.getEstado();
+
+        return switch (nom) {
+            // ── Sueño ─────────────────────────────────────────────────────────
+            case "hypnosis", "sleep-powder", "spore", "sing", "lovely-kiss", "grasswhistle" -> {
+                if (estadoActualDef != Estado.SALUDABLE)
+                    yield nomDef + " ya tiene un estado alterado.";
+                defensor.setEstado(Estado.DORMIDO);
+                defensor.setTurnosSueno(1 + ThreadLocalRandom.current().nextInt(3));
+                yield "¡" + nomDef + " se quedó dormido!";
+            }
+            // ── Parálisis ──────────────────────────────────────────────────────
+            case "thunder-wave", "stun-spore", "glare" -> {
+                if (estadoActualDef != Estado.SALUDABLE)
+                    yield nomDef + " ya tiene un estado alterado.";
+                defensor.setEstado(Estado.PARALIZADO);
+                yield "¡" + nomDef + " está paralizado!";
+            }
+            // ── Confusión ──────────────────────────────────────────────────────
+            case "supersonic", "confuse-ray", "swagger", "flatter" -> {
+                if (nvl(defensor.getTurnosConfusion(), 0) > 0)
+                    yield nomDef + " ya está confuso.";
+                defensor.setTurnosConfusion(2 + ThreadLocalRandom.current().nextInt(3));
+                yield "¡" + nomDef + " está confundido!";
+            }
+            // ── Veneno ────────────────────────────────────────────────────────
+            case "poison-powder", "poison-gas" -> {
+                if (estadoActualDef != Estado.SALUDABLE)
+                    yield nomDef + " ya tiene un estado alterado.";
+                defensor.setEstado(Estado.ENVENENADO);
+                yield "¡" + nomDef + " está envenenado!";
+            }
+            // ── Veneno grave (tóxico) ──────────────────────────────────────────
+            case "toxic" -> {
+                if (estadoActualDef != Estado.SALUDABLE)
+                    yield nomDef + " ya tiene un estado alterado.";
+                defensor.setEstado(Estado.GRAVE_ENVENENADO);
+                defensor.setContadorToxico(0);
+                yield "¡" + nomDef + " está gravemente envenenado!";
+            }
+            // ── Quemadura ─────────────────────────────────────────────────────
+            case "will-o-wisp" -> {
+                if (estadoActualDef != Estado.SALUDABLE)
+                    yield nomDef + " ya tiene un estado alterado.";
+                defensor.setEstado(Estado.QUEMADO);
+                yield "¡" + nomDef + " está quemado!";
+            }
+            // ── Bajar Ataque del rival ─────────────────────────────────────────
+            case "growl", "baby-doll-eyes" -> {
+                defensor.setAtaqueStat(Math.max(1, (int)(nvl(defensor.getAtaqueStat(), 1) * 0.85)));
+                yield "El Ataque de " + nomDef + " bajó.";
+            }
+            // ── Bajar Defensa del rival ────────────────────────────────────────
+            case "leer", "tail-whip" -> {
+                defensor.setDefensaStat(Math.max(1, (int)(nvl(defensor.getDefensaStat(), 1) * 0.85)));
+                yield "La Defensa de " + nomDef + " bajó.";
+            }
+            case "screech" -> {
+                defensor.setDefensaStat(Math.max(1, (int)(nvl(defensor.getDefensaStat(), 1) * 0.70)));
+                yield "¡La Defensa de " + nomDef + " bajó mucho!";
+            }
+            // ── Bajar Velocidad del rival ──────────────────────────────────────
+            case "string-shot" -> {
+                defensor.setVelocidadStat(Math.max(1, (int)(nvl(defensor.getVelocidadStat(), 1) * 0.75)));
+                yield "¡La Velocidad de " + nomDef + " cayó!";
+            }
+            // ── Subir Ataque propio ────────────────────────────────────────────
+            case "swords-dance" -> {
+                atacante.setAtaqueStat(Math.min(999, (int)(nvl(atacante.getAtaqueStat(), 1) * 1.30)));
+                yield "¡El Ataque de " + nomAtacante + " subió mucho!";
+            }
+            case "sharpen" -> {
+                atacante.setAtaqueStat(Math.min(999, (int)(nvl(atacante.getAtaqueStat(), 1) * 1.15)));
+                yield "El Ataque de " + nomAtacante + " subió.";
+            }
+            // ── Subir Ataque Especial propio ───────────────────────────────────
+            case "growth" -> {
+                atacante.setAtaqueEspecialStat(Math.min(999, (int)(nvl(atacante.getAtaqueEspecialStat(), 1) * 1.15)));
+                yield "¡" + nomAtacante + " creció!";
+            }
+            // ── Subir Defensa propia ───────────────────────────────────────────
+            case "harden", "withdraw", "defense-curl" -> {
+                atacante.setDefensaStat(Math.min(999, (int)(nvl(atacante.getDefensaStat(), 1) * 1.15)));
+                yield "La Defensa de " + nomAtacante + " subió.";
+            }
+            // ── Sin efecto mecánico en este motor ─────────────────────────────
+            case "foresight", "odor-sleuth" ->
+                nomDef + " no podrá esquivar los ataques.";
+            case "roar", "whirlwind" ->
+                "¡" + nomDef + " fue asustado!";
+            default ->
+                nombreMov + " no tuvo efecto.";
+        };
+    }
+
+    // =========================================================================
     // ESTADOS ALTERADOS
     // =========================================================================
 
@@ -1028,7 +1158,19 @@ public class BatallaService {
             .mensajeEfectividad("")
             .defensorDerrotado(nvl(defensor.getHpActual(), 0) == 0)
             .mensajeGeneral(mensaje)
+            .estadoAtacante(estadoDisplay(atacante))
+            .estadoDefensor(estadoDisplay(defensor))
             .build();
+    }
+
+    /** Estado visible del Pokémon: estado persistente, "confuso" si aplica, o "saludable". */
+    private String estadoDisplay(PokemonUsuario pkm) {
+        if (pkm == null) return "saludable";
+        if (pkm.getEstado() != null && pkm.getEstado() != Estado.SALUDABLE) {
+            return pkm.getEstado().name().toLowerCase(Locale.ROOT);
+        }
+        if (nvl(pkm.getTurnosConfusion(), 0) > 0) return "confuso";
+        return "saludable";
     }
 
     /** STAB si el tipo del movimiento coincide (ignorando mayúsculas) con tipo1 o tipo2 del atacante. */

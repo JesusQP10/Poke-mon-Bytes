@@ -16,6 +16,36 @@ function colorHp(hpA, hpM) {
   return "menu-ingame-hp-bad";
 }
 
+const ETIQUETA_ESTADO = {
+  quemado:          { texto: "QEM", color: "#e04000" },
+  envenenado:       { texto: "VEN", color: "#a040c0" },
+  grave_envenenado: { texto: "TOX", color: "#7000a0" },
+  dormido:          { texto: "DOR", color: "#6080c0" },
+  paralizado:       { texto: "PAR", color: "#c0b000" },
+  congelado:        { texto: "HEL", color: "#40b0e0" },
+  confuso:          { texto: "CNF", color: "#c060c0" },
+};
+
+function EstadoBadge({ estado }) {
+  const info = ETIQUETA_ESTADO[String(estado ?? "").toLowerCase()];
+  if (!info) return null;
+  return (
+    <span style={{
+      display: "inline-block",
+      padding: "0 2px",
+      fontSize: "5px",
+      lineHeight: "7px",
+      background: info.color,
+      color: "#fff",
+      borderRadius: 1,
+      verticalAlign: "middle",
+      letterSpacing: 0,
+    }}>
+      {info.texto}
+    </span>
+  );
+}
+
 export default function BattleHud({ jugador, enemigo }) {
   const j = jugador ?? {};
   const e = enemigo ?? {};
@@ -30,6 +60,8 @@ export default function BattleHud({ jugador, enemigo }) {
 
   const nombreE = (e.nombre ?? e.name ?? "???").toString().toUpperCase();
   const nombreJ = (j.nombreApodo ?? j.nombre ?? j.name ?? "???").toString().toUpperCase();
+  const estadoE = e.estado ?? "saludable";
+  const estadoJ = j.estado ?? "saludable";
 
   return (
     <div className="battle-hud-root" aria-hidden>
@@ -41,6 +73,7 @@ export default function BattleHud({ jugador, enemigo }) {
           </div>
           <div className="menu-ingame-team-nv">Nv{e.nivel ?? "?"}</div>
         </div>
+        <div className="battle-hud-estado-row"><EstadoBadge estado={estadoE} /></div>
         <div className="menu-ingame-hp-row">
           <div className="menu-ingame-hpbar">
             <div
@@ -59,6 +92,7 @@ export default function BattleHud({ jugador, enemigo }) {
           </div>
           <div className="menu-ingame-team-nv">Nv{j.nivel ?? "?"}</div>
         </div>
+        <div className="battle-hud-estado-row"><EstadoBadge estado={estadoJ} /></div>
         <div className="menu-ingame-hp-row">
           <div className="menu-ingame-hpbar">
             <div

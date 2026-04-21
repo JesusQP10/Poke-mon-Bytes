@@ -90,7 +90,7 @@ export default class EscenaBatalla extends Phaser.Scene {
    * también usa `nombre` / `nombreApodo`. Sin esto el HUD muestra "???".
    * @param {object} p
    */
-  /** En desarrollo (Vite), lista en consola los movimientos cargados desde la API. */
+  /** lista en consola los movimientos cargados desde la API. */
   static _logMovimientosCargados(etiqueta, movs) {
     try {
       if (typeof import.meta === 'undefined' || !import.meta.env?.DEV) return;
@@ -224,6 +224,7 @@ export default class EscenaBatalla extends Phaser.Scene {
         }
         const pid = this._pokemonJugador?.pokemonUsuarioId;
         if (pid != null) {
+          await PuenteApi.resetearPpPokemon(pid);
           this._movimientosJugador = await PuenteApi.getMovimientos(pid);
           EscenaBatalla._logMovimientosCargados('jugador', this._movimientosJugador);
         }
@@ -485,12 +486,15 @@ export default class EscenaBatalla extends Phaser.Scene {
         nivel: jug.nivel ?? '?',
         hpActual: jug.hpActual ?? jug.hpMax ?? null,
         hpMax: jug.hpMax ?? null,
+        estado: jug.estado ?? 'saludable',
       },
       enemigo: {
         nombre: sal.nombre ?? sal.name ?? '???',
         nivel: sal.nivel ?? '?',
         hpActual: sal.hpActual ?? sal.hpMax ?? null,
         hpMax: sal.hpMax ?? null,
+        pokedexId: sal.pokedexId ?? sal.id ?? null,
+        estado: sal.estado ?? 'saludable',
       },
     };
   }
@@ -956,6 +960,8 @@ export default class EscenaBatalla extends Phaser.Scene {
           resultado.hpRestanteAtacante,
         );
       }
+      if (resultado.estadoAtacante) jugador.estado = resultado.estadoAtacante;
+      if (resultado.estadoDefensor) enemigo.estado = resultado.estadoDefensor;
 
       const nuevoHpEnemigo = resultado.hpRestanteDefensor ?? enemigo.hpActual ?? 0;
       enemigo.hpActual = nuevoHpEnemigo;
@@ -1060,6 +1066,8 @@ export default class EscenaBatalla extends Phaser.Scene {
       if (typeof resultado.hpRestanteAtacante === 'number') {
         enemigo.hpActual = resultado.hpRestanteAtacante;
       }
+      if (resultado.estadoDefensor) jugador.estado = resultado.estadoDefensor;
+      if (resultado.estadoAtacante) enemigo.estado = resultado.estadoAtacante;
 
       const gen = (resultado.mensajeGeneral && String(resultado.mensajeGeneral).trim()) || '';
       const lineas = gen

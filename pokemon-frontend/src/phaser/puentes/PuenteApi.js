@@ -98,6 +98,16 @@ const PuenteApi = {
     return res.data;
   },
 
+  /** Limpia PP persistidos del Pokémon del jugador para que el combate empiece con PP máximos. */
+  async resetearPpPokemon(pokemonUsuarioId) {
+    if (!usarAutenticacionStore.getState().token) return;
+    try {
+      await api.delete(`/api/v1/batalla/pp/${pokemonUsuarioId}`);
+    } catch (e) {
+      console.warn('[PuenteApi] resetearPp', e);
+    }
+  },
+
   async ejecutarTurno(solicitud) {
     const res = await api.post('/api/v1/batalla/turno', solicitud);
     return res.data;

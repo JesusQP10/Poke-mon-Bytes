@@ -205,7 +205,7 @@ const PaginaJuego = () => {
             {battleUi && (
               <>
                 <BattleStatusSprite
-                  spriteEstadoClave={battleUi.spriteEstadoClave ?? "normal"}
+                  pokedexId={battleUi.enemigo?.pokedexId ?? null}
                   esDebugCaptura={Boolean(battleUi.esDebugCaptura)}
                 />
                 <BattlePlayerBackSprite src={battleUi.spriteJugadorCampoUrl} />
