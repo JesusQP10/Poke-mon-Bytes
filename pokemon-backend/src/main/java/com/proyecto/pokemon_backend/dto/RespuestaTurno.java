@@ -25,4 +25,8 @@ public class RespuestaTurno {
     /** Texto concatenado con el resumen del turno (movimiento, PP, residuales). */
     private String mensajeGeneral;
     private boolean defensorDerrotado;
+    /** Estado del atacante tras el turno (nombre enum en minúsculas, p. ej. "quemado"). */
+    private String estadoAtacante;
+    /** Estado del defensor tras el turno. */
+    private String estadoDefensor;
 }

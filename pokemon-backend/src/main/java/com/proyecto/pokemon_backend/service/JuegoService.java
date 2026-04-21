@@ -9,6 +9,8 @@ import com.proyecto.pokemon_backend.model.Item;
 import com.proyecto.pokemon_backend.model.PokedexMaestra;
 import com.proyecto.pokemon_backend.model.PokemonUsuario;
 import com.proyecto.pokemon_backend.model.Usuario;
+import com.proyecto.pokemon_backend.model.enums.Estado;
+import java.util.Locale;
 import com.proyecto.pokemon_backend.repository.RepositorioEstadoMovimientoPokemon;
 import com.proyecto.pokemon_backend.repository.RepositorioInventarioUsuario;
 import com.proyecto.pokemon_backend.repository.RepositorioObjeto;
@@ -262,6 +264,33 @@ public class JuegoService {
             .toList();
     }
 
+    /**
+     * Centro Pokémon: equipo activo (posiciones 0–5) a PS máximos y sin estado alterado.
+     * La caja ({@code posicionEquipo} ≥ 6) no se modifica.
+     */
+    @Transactional
+    public Map<String, Object> curarEquipoEnCentro(String username) {
+        Usuario usuario = cargarUsuario(username);
+        for (PokemonUsuario p : pokemonRepo.findByUsuarioId(usuario.getIdUsuario())) {
+            int pos = nvl(p.getPosicionEquipo(), 99);
+            if (pos < 0 || pos > 5) {
+                continue;
+            }
+            int max = Math.max(1, nvl(p.getHpMax(), 1));
+            p.setHpActual(max);
+            p.setEstado(Estado.SALUDABLE);
+            p.setTurnosConfusion(0);
+            p.setContadorToxico(0);
+            p.setTurnosSueno(0);
+            p.setTieneDrenadoras(false);
+            pokemonRepo.save(p);
+        }
+        Map<String, Object> res = new HashMap<>();
+        res.put("mensaje", "¡Tu equipo ha recuperado la energía!");
+        res.put("team", obtenerEquipo(username));
+        return res;
+    }
+
     // =========================================================================
     // HELPERS — DTOs para el front (nombres en inglés en parte del JSON por compatibilidad con Phaser)
     // =========================================================================
@@ -348,6 +377,178 @@ public class JuegoService {
                 .orElseThrow(() -> new RecursoNoEncontrado("Ítem no encontrado: " + nombreItem));
         }
         throw new ErrorNegocio("Indica itemId o nombreItem.");
+    }
+
+    /**
+     * Descarta {@code cantidad} unidades de un ítem del inventario.
+     * Si la cantidad resultante llega a 0 o menos, elimina la fila completa.
+     *
+     * @throws ErrorNegocio si la cantidad es inválida o el jugador no tiene suficiente stock
+     */
+    @Transactional
+    public List<Map<String, Object>> tirarDelInventario(
+        String username,
+        Integer itemId,
+        String nombreItem,
+        int cantidad
+    ) {
+        if (cantidad <= 0) {
+            throw new ErrorNegocio("La cantidad debe ser mayor que cero.");
+        }
+        Usuario usuario = cargarUsuario(username);
+        Item item = resolverItem(itemId, nombreItem);
+        InventarioUsuario entrada = inventarioRepo.findByUsuarioAndItem(usuario, item)
+            .orElseThrow(() -> new ErrorNegocio("No tienes ese ítem en la mochila."));
+        int restante = entrada.getCantidad() - cantidad;
+        if (restante < 0) {
+            throw new ErrorNegocio("No tienes suficientes unidades de ese ítem.");
+        }
+        if (restante == 0) {
+            inventarioRepo.delete(entrada);
+        } else {
+            entrada.setCantidad(restante);
+            inventarioRepo.save(entrada);
+        }
+        return inventarioADtos(usuario);
+    }
+
+    /**
+     * Aplica un ítem de la mochila a un Pokémon del equipo fuera de combate.
+     * Descuenta 1 unidad del inventario y devuelve equipo + inventario actualizados.
+     *
+     * <p>Efectos soportados: {@code HEAL_N}, {@code HEAL_MAX}, {@code HEAL_MAX_STATUS},
+     * {@code CURE_PSN/BRN/FRZ/SLP/PAR}, {@code CURE_ALL}.
+     * Los ítems {@code CAPTURE_*} y {@code NONE} lanzan {@link ErrorNegocio}.</p>
+     */
+    @Transactional
+    public Map<String, Object> usarItemFueraCombate(
+        String username,
+        Integer itemId,
+        String nombreItem,
+        Long pokemonObjetivoId
+    ) {
+        if (pokemonObjetivoId == null) {
+            throw new ErrorNegocio("pokemonObjetivoId es obligatorio.");
+        }
+        Usuario usuario = cargarUsuario(username);
+        Item item = resolverItem(itemId, nombreItem);
+
+        InventarioUsuario entrada = inventarioRepo.findByUsuarioAndItem(usuario, item)
+            .filter(inv -> nvl(inv.getCantidad(), 0) > 0)
+            .orElseThrow(() -> new ErrorNegocio("No tienes ese ítem en la mochila."));
+
+        PokemonUsuario pokemon = pokemonRepo.findById(pokemonObjetivoId)
+            .orElseThrow(() -> new RecursoNoEncontrado("Pokémon no encontrado."));
+        if (!Objects.equals(pokemon.getUsuarioId(), usuario.getIdUsuario())) {
+            throw new ErrorNegocio("Ese Pokémon no es tuyo.");
+        }
+
+        String mensaje = aplicarEfectoItem(item.getEfecto(), pokemon);
+        pokemonRepo.save(pokemon);
+
+        int restante = entrada.getCantidad() - 1;
+        if (restante == 0) {
+            inventarioRepo.delete(entrada);
+        } else {
+            entrada.setCantidad(restante);
+            inventarioRepo.save(entrada);
+        }
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("mensaje", mensaje);
+        res.put("team", obtenerEquipo(username));
+        res.put("inventario", inventarioADtos(usuario));
+        return res;
+    }
+
+    /**
+     * Lógica de aplicación de efecto: valida estado del Pokémon, modifica sus stats y
+     * devuelve el texto para la UI. No persiste — el caller hace {@code pokemonRepo.save}.
+     */
+    private String aplicarEfectoItem(String efecto, PokemonUsuario pokemon) {
+        if (efecto == null) {
+            throw new ErrorNegocio("Este ítem no se puede usar fuera de combate.");
+        }
+        String ef = efecto.toUpperCase(Locale.ROOT);
+
+        if (ef.startsWith("CAPTURE_") || ef.equals("NONE")) {
+            throw new ErrorNegocio("Este ítem no se puede usar fuera de combate.");
+        }
+
+        int hpActual = nvl(pokemon.getHpActual(), 0);
+        int hpMax    = Math.max(1, nvl(pokemon.getHpMax(), 1));
+        String nom   = nombrePokemon(pokemon);
+
+        if (hpActual <= 0) {
+            throw new ErrorNegocio("No puedes usar este ítem en un Pokémon debilitado.");
+        }
+
+        if (ef.startsWith("HEAL_")) {
+            String sufijo = ef.substring(5);
+            boolean esFullRestore = sufijo.equals("MAX_STATUS");
+            boolean esMaxPotion   = sufijo.equals("MAX") || esFullRestore;
+
+            boolean necesitaCura  = pokemon.getEstado() != Estado.SALUDABLE;
+            boolean necesitaHeal  = hpActual < hpMax;
+
+            if (esFullRestore && !necesitaHeal && !necesitaCura) {
+                throw new ErrorNegocio(nom + " ya está en perfectas condiciones.");
+            }
+            if (!esFullRestore && !necesitaHeal) {
+                throw new ErrorNegocio("Los PS de " + nom + " ya están al máximo.");
+            }
+
+            int recuperado;
+            if (esMaxPotion) {
+                recuperado = hpMax - hpActual;
+                pokemon.setHpActual(hpMax);
+            } else {
+                int cantidad = Integer.parseInt(sufijo);
+                recuperado = Math.min(cantidad, hpMax - hpActual);
+                pokemon.setHpActual(hpActual + recuperado);
+            }
+
+            if (esFullRestore) {
+                pokemon.setEstado(Estado.SALUDABLE);
+                pokemon.setContadorToxico(0);
+                pokemon.setTurnosSueno(0);
+                return nom + " recuperó " + recuperado + " PS y fue curado de cualquier estado.";
+            }
+            return nom + " recuperó " + recuperado + " PS.";
+        }
+
+        // CURE_*
+        Estado estadoActual = pokemon.getEstado();
+        if (estadoActual == Estado.SALUDABLE) {
+            throw new ErrorNegocio(nom + " no tiene ningún estado que curar.");
+        }
+
+        if (!ef.equals("CURE_ALL")) {
+            boolean coincide = switch (ef) {
+                case "CURE_PSN" -> estadoActual == Estado.ENVENENADO || estadoActual == Estado.GRAVE_ENVENENADO;
+                case "CURE_BRN" -> estadoActual == Estado.QUEMADO;
+                case "CURE_FRZ" -> estadoActual == Estado.CONGELADO;
+                case "CURE_SLP" -> estadoActual == Estado.DORMIDO;
+                case "CURE_PAR" -> estadoActual == Estado.PARALIZADO;
+                default         -> false;
+            };
+            if (!coincide) {
+                throw new ErrorNegocio("Ese ítem no cura el estado de " + nom + ".");
+            }
+        }
+
+        pokemon.setEstado(Estado.SALUDABLE);
+        pokemon.setContadorToxico(0);
+        pokemon.setTurnosSueno(0);
+        return nom + " fue curado de su estado alterado.";
+    }
+
+    /** Nombre de especie para mensajes, sin lanzar excepción si falta la fila. */
+    private String nombrePokemon(PokemonUsuario p) {
+        if (p == null || p.getPokedexId() == null) return "?";
+        return pokedexRepo.findById(p.getPokedexId())
+            .map(PokedexMaestra::getNombre)
+            .orElse("?");
     }
 
     /** Usado tras comprar en tienda: devuelve la mochila tal como la vería {@link #obtenerEstado}. */

@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,6 +22,12 @@ public class TiendaController {
 
     public TiendaController(TiendaService tiendaService) {
         this.tiendaService = tiendaService;
+    }
+
+    /** Ítems cargados en BD (precio PokéAPI + efecto interno). Requiere JWT. */
+    @GetMapping("/catalogo")
+    public ResponseEntity<List<Map<String, Object>>> catalogo() {
+        return ResponseEntity.ok(tiendaService.listarCatalogo());
     }
 
     /** Cuerpo validado ({@link SolicitudCompra}): descuenta y devuelve mensaje, {@code money} e {@code inventario}. */

@@ -105,6 +105,20 @@
   flex-shrink: 0;
 }
 
+.battle-bag-icon-wrap {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.battle-bag-icon {
+  display: block;
+  image-rendering: pixelated;
+}
+
 .battle-bag-nombre {
   flex: 1;
   min-width: 0;

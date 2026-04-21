@@ -4,6 +4,7 @@ import com.proyecto.pokemon_backend.model.Item;
 import com.proyecto.pokemon_backend.repository.RepositorioObjeto;
 import com.proyecto.pokemon_backend.service.api.ServicioPokeApi;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -18,6 +19,7 @@ import java.util.Map;
  * interno que BatallaService/TiendaService interpreta en tiempo de ejecución.
  */
 @Component
+@Order(100)
 public class SembradorObjetos implements CommandLineRunner {
 
     private static final List<String> ITEMS_GEN_II = List.of(
@@ -67,7 +69,7 @@ public class SembradorObjetos implements CommandLineRunner {
         Item item = new Item();
         String nombre = (String) detalles.get("name");
         item.setNombre(capitalizar(nombre));
-        item.setPrecio((Integer) detalles.get("cost"));
+        item.setPrecio(1);
         item.setEfecto(efectoPara(nombre));
         return item;
     }

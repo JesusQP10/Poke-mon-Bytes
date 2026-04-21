@@ -42,7 +42,7 @@ export default class EscenaPreload extends Phaser.Scene {
     this.load.spritesheet('jugador', '/assets/game/overworld/sprites/player/overworld_player_walk_sheet.png', { frameWidth: 32, frameHeight: 32 });
 
     // Items
-    this.load.image('pokeball', '/assets/game/overworld/sprites/items/pokeball.png');
+    this.load.image('pokeball', '/assets/game/overworld/sprites/items/poke-ball.png');
 
     // NPCs
     this.load.spritesheet('aldeano', '/assets/game/overworld/sprites/npcs/aldeano.png', { frameWidth: 32, frameHeight: 32 });

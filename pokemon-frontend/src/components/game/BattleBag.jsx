@@ -6,6 +6,8 @@ import {
   esTeclaArriba,
 } from "../../config/controlesJuego";
 import "./BattleBag.css";
+import iconPocion from "../../assets/ui/menu/icon_pocion.png";
+import { urlIconoItemPorNombre } from "../../config/iconosItems";
 
 /**
  * Mochila de combate: CURATIVOS y BALLS (mismo marco que el menú de batalla).
@@ -99,6 +101,20 @@ export default function BattleBag({
                       className={`battle-bag-fila${flatIdx === sel ? " battle-bag-fila--sel" : ""}`}
                     >
                       <span className="battle-bag-cur">{flatIdx === sel ? "▶" : ""}</span>
+                      <span className="battle-bag-icon-wrap" aria-hidden>
+                        <img
+                          className="battle-bag-icon"
+                          src={urlIconoItemPorNombre(linea.nombre) || iconPocion}
+                          alt=""
+                          width={12}
+                          height={12}
+                          draggable={false}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = iconPocion;
+                          }}
+                        />
+                      </span>
                       <span className="battle-bag-nombre">{linea.nombre ?? "?"}</span>
                       <span className="battle-bag-cant">×{linea.cantidad}</span>
                     </div>
@@ -118,6 +134,20 @@ export default function BattleBag({
                       className={`battle-bag-fila${flatIdx === sel ? " battle-bag-fila--sel" : ""}`}
                     >
                       <span className="battle-bag-cur">{flatIdx === sel ? "▶" : ""}</span>
+                      <span className="battle-bag-icon-wrap" aria-hidden>
+                        <img
+                          className="battle-bag-icon"
+                          src={urlIconoItemPorNombre(linea.nombre) || iconPocion}
+                          alt=""
+                          width={12}
+                          height={12}
+                          draggable={false}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = iconPocion;
+                          }}
+                        />
+                      </span>
                       <span className="battle-bag-nombre">{linea.nombre ?? "?"}</span>
                       <span className="battle-bag-cant">×{linea.cantidad}</span>
                     </div>

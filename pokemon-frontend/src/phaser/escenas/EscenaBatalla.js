@@ -90,6 +90,24 @@ export default class EscenaBatalla extends Phaser.Scene {
    * también usa `nombre` / `nombreApodo`. Sin esto el HUD muestra "???".
    * @param {object} p
    */
+  /** En desarrollo (Vite), lista en consola los movimientos cargados desde la API. */
+  static _logMovimientosCargados(etiqueta, movs) {
+    try {
+      if (typeof import.meta === 'undefined' || !import.meta.env?.DEV) return;
+    } catch {
+      return;
+    }
+    const lista = Array.isArray(movs) ? movs : [];
+    const lineas = lista.map((m) => {
+      const id = m.movimientoId ?? m.id ?? '?';
+      const pp = m.ppRestante ?? m.ppActual ?? m.pp;
+      const ppM = m.ppMax ?? m.pp ?? '?';
+      return `${m.nombre ?? '?'} (#${id}, PP ${pp}/${ppM})`;
+    });
+    // eslint-disable-next-line no-console
+    console.info(`[Batalla] Movimientos ${etiqueta}:`, lineas.length ? lineas.join(' · ') : '(ninguno)');
+  }
+
   static _normalizarPokemonEquipoApi(p) {
     if (!p || typeof p !== 'object') return p;
     const species = p.nombre ?? p.name;
@@ -123,6 +141,8 @@ export default class EscenaBatalla extends Phaser.Scene {
   async create() {
     this.game.registry.get('callbacks')?.onCombateActivo?.(true);
     this._enturno = false;
+    /** Intentos de huida en este combate (Gen II: sube la probabilidad). */
+    this._intentosHuir = 0;
     this._pokemonJugador = null;
     this._movimientosJugador = [];
     this._movimientosEnemigo = [];
@@ -151,6 +171,8 @@ export default class EscenaBatalla extends Phaser.Scene {
         const prep = await PuenteApi.prepararSalvajePokemon({
           pokedexId: sal.id,
           nivel: sal.nivel ?? 5,
+          ataqueDemostracionId: sal.ataqueDemostracionId,
+          ataqueDemostracionNombre: sal.ataqueDemostracionNombre,
         });
         this._pokemonSalvaje = {
           ...sal,
@@ -196,12 +218,14 @@ export default class EscenaBatalla extends Phaser.Scene {
           }
         }
         if (equipo?.length) {
-          this._pokemonJugador = EscenaBatalla._normalizarPokemonEquipoApi(equipo[0]);
+          const primerVivo = equipo.find((p) => (p?.hpActual ?? p?.hp ?? 0) > 0) ?? equipo[0];
+          this._pokemonJugador = EscenaBatalla._normalizarPokemonEquipoApi(primerVivo);
           this._alinearHpJugadorConStore();
         }
         const pid = this._pokemonJugador?.pokemonUsuarioId;
         if (pid != null) {
           this._movimientosJugador = await PuenteApi.getMovimientos(pid);
+          EscenaBatalla._logMovimientosCargados('jugador', this._movimientosJugador);
         }
       }
     } catch (e) {
@@ -211,6 +235,7 @@ export default class EscenaBatalla extends Phaser.Scene {
     if (this._pokemonSalvaje?.pokemonUsuarioId != null) {
       try {
         this._movimientosEnemigo = await PuenteApi.getMovimientos(this._pokemonSalvaje.pokemonUsuarioId);
+        EscenaBatalla._logMovimientosCargados('rival', this._movimientosEnemigo);
       } catch (e) {
         console.warn('No se pudieron cargar movimientos del rival:', e);
         this._movimientosEnemigo = [];
@@ -581,18 +606,74 @@ export default class EscenaBatalla extends Phaser.Scene {
       mochilaPicker: {
         curativos,
         balls,
-        onPick: (linea) => {
-          this._mostrarTexto(
-            `${linea.nombre ?? 'Objeto'}\n(próximamente).`,
-            () => this._mostrarMochilaBattleReact(),
-          );
-        },
+        onPick: (linea) => void this._usarItemEnBatalla(linea),
         onCancel: () => this._mostrarMenuAcciones(),
       },
       opciones: this._textosOpcionesMenuBatalla(),
       seleccion: 0,
       onSeleccion: (i) => this._ejecutarAccion(i),
     });
+  }
+
+  async _usarItemEnBatalla(linea) {
+    const nombre = linea?.nombre ?? 'Objeto';
+    const tipo = clasificarLineaInventarioBatalla(linea);
+
+    if (tipo === 'ball') {
+      const defensorId = this._pokemonSalvaje?.pokemonUsuarioId;
+      if (defensorId == null) {
+        this._mostrarTexto('No hay rival\npara capturar.', () => this._mostrarMenuAcciones());
+        return;
+      }
+      try {
+        const res = await PuenteApi.intentarCaptura(defensorId, nombre);
+        const msg = res?.mensaje ?? '¡Falló la captura!';
+        const capturado = typeof msg === 'string' && msg.toLowerCase().includes('fue capturado');
+        this._salvajePokemonUsuarioId = capturado ? null : this._salvajePokemonUsuarioId;
+        this._encolarMensajesBatalla([msg], () => {
+          if (capturado) {
+            void PuenteApi.sincronizarEstadoDesdeServidor();
+            void this._terminarBatalla();
+          } else {
+            void this._turnoEnemigo();
+          }
+        });
+      } catch (e) {
+        console.warn('[EscenaBatalla] captura desde mochila', e);
+        const apiMsg = e?.response?.data?.error ?? e?.response?.data?.mensaje ?? '¡Falló la captura!';
+        this._encolarMensajesBatalla([apiMsg], () => this._turnoEnemigo());
+      }
+      return;
+    }
+
+    // curativo
+    const jugador = this._pokemonJugador;
+    const pokemonObjetivoId = jugador?.pokemonUsuarioId;
+    if (pokemonObjetivoId == null) {
+      this._mostrarTexto('Sin Pokémon\nactivo.', () => this._mostrarMenuAcciones());
+      return;
+    }
+    try {
+      const res = await PuenteApi.usarItemInventario({ nombreItem: nombre, pokemonObjetivoId });
+      const msg = res?.mensaje ?? `¡${nombre} surtió\nefecto!`;
+      if (res?.team) {
+        usarJuegoStore.getState().patchEquipoLocal(res.team);
+        const actualizado = res.team.find((p) => p?.pokemonUsuarioId === pokemonObjetivoId);
+        if (actualizado) {
+          jugador.hpActual = actualizado.hpActual ?? jugador.hpActual;
+          jugador.estado = actualizado.estado ?? jugador.estado;
+        }
+      }
+      if (res?.inventario) {
+        usarJuegoStore.getState().setInventarioYMonto(res.inventario);
+      }
+      if (this._uiReact) this._emitirHudReact();
+      this._encolarMensajesBatalla([msg], () => void this._turnoEnemigo());
+    } catch (e) {
+      console.warn('[EscenaBatalla] usar ítem en batalla', e);
+      const apiMsg = e?.response?.data?.error ?? `No se pudo\nusar ${nombre}.`;
+      this._mostrarTexto(apiMsg, () => this._mostrarMochilaBattleReact());
+    }
   }
 
   // ── Caja de texto ─────────────────────────────────────────────────────
@@ -791,6 +872,47 @@ export default class EscenaBatalla extends Phaser.Scene {
     return c === 'especial' || c === 'special';
   }
 
+  /**
+   * Encadena textos en la caja (no pisa el mensaje anterior antes del delay).
+   * @param {string[]} partes
+   * @param {() => void} [onFin]
+   */
+  _encolarMensajesBatalla(partes, onFin) {
+    const filtradas = (partes ?? []).map((p) => String(p ?? '').trim()).filter(Boolean);
+    if (!filtradas.length) {
+      if (onFin) onFin();
+      return;
+    }
+    const [primero, ...resto] = filtradas;
+    this._mostrarTexto(primero, () => {
+      if (resto.length) this._encolarMensajesBatalla(resto, onFin);
+      else if (onFin) onFin();
+    });
+  }
+
+  async _refrescarMovimientosJugador() {
+    const pid = this._pokemonJugador?.pokemonUsuarioId;
+    if (pid == null) return;
+    try {
+      this._movimientosJugador = await PuenteApi.getMovimientos(pid);
+      EscenaBatalla._logMovimientosCargados('jugador (tras turno)', this._movimientosJugador);
+    } catch (e) {
+      console.warn('[EscenaBatalla] refrescar movimientos', e);
+    }
+  }
+
+  /** Misma lógica aproximada que el servidor si no hay sesión (solo salvajes). */
+  _intentarHuirLocal() {
+    const jug = this._pokemonJugador;
+    const enemigo = this._pokemonSalvaje;
+    const a = Math.max(1, Number(jug?.velocidad ?? 40));
+    const b = Math.max(1, Number(enemigo?.velocidad ?? enemigo?.velocidadStat ?? 45));
+    const c = Math.max(1, this._intentosHuir);
+    let f = Math.floor((a * 32) / b) + 30 * c;
+    if (f > 255) f = 255;
+    return Math.floor(Math.random() * 256) < f;
+  }
+
   async _ejecutarTurno(indiceMov) {
     const mov = this._movimientosJugador[indiceMov];
     const jugador = this._pokemonJugador;
@@ -803,10 +925,6 @@ export default class EscenaBatalla extends Phaser.Scene {
       this._mostrarTexto('Datos de combate\ninválidos.', () => this._mostrarMenuAcciones());
       return;
     }
-
-    this._mostrarTexto(
-      `${jugador.nombreApodo ?? jugador.nombre ?? jugador.name}\nusó ${mov.nombre}!`,
-    );
 
     try {
       const resultado = await PuenteApi.ejecutarTurno({
@@ -822,45 +940,65 @@ export default class EscenaBatalla extends Phaser.Scene {
         esMismoTipo: mov.tipo === jugador.tipo1,
       });
 
-      if (resultado.golpeCritico) {
-        this._mostrarTexto('¡Golpe crítico!');
-      }
-      if (resultado.mensajeEfectividad) {
-        this._mostrarTexto(resultado.mensajeEfectividad);
-      }
+      const gen = (resultado.mensajeGeneral && String(resultado.mensajeGeneral).trim()) || '';
+      const lineas = gen
+        ? [gen]
+        : [
+            `${jugador.nombreApodo ?? jugador.nombre ?? jugador.name} usó ${mov.nombre}!`,
+            ...(resultado.golpeCritico ? ['¡Golpe crítico!'] : []),
+            ...(resultado.mensajeEfectividad ? [resultado.mensajeEfectividad] : []),
+          ].filter(Boolean);
 
       if (typeof resultado.hpRestanteAtacante === 'number' && jugador) {
         jugador.hpActual = resultado.hpRestanteAtacante;
-        usarJuegoStore.getState().setPokemonHpEnEquipo(0, resultado.hpRestanteAtacante);
-        if (this._uiReact) {
-          this._emitirHudReact();
-        } else {
-          this._barraHpJugador.setValores(resultado.hpRestanteAtacante, jugador.hpMax ?? 100);
-          this._textoHpNumerico.setText(`${resultado.hpRestanteAtacante}/${jugador.hpMax ?? '??'}`);
-        }
+        usarJuegoStore.getState().setPokemonHpPorPokemonUsuarioId(
+          jugador.pokemonUsuarioId,
+          resultado.hpRestanteAtacante,
+        );
       }
 
-      const nuevoHpEnemigo = resultado.hpRestanteDefensor ?? 0;
+      const nuevoHpEnemigo = resultado.hpRestanteDefensor ?? enemigo.hpActual ?? 0;
       enemigo.hpActual = nuevoHpEnemigo;
 
-      const trasBarraEnemigo = async () => {
-        if (nuevoHpEnemigo <= 0) {
-          await this._victoria();
-          return;
-        }
-        this.time.delayedCall(500, () => this._turnoEnemigo());
-      };
+      const defensorMuere =
+        resultado.defensorDerrotado === true || nuevoHpEnemigo <= 0;
+      const jugadorDebilitado =
+        typeof resultado.hpRestanteAtacante === 'number' && resultado.hpRestanteAtacante <= 0;
 
       if (this._uiReact) {
         this._emitirHudReact();
-        this.time.delayedCall(650, () => {
-          void trasBarraEnemigo();
-        });
-      } else {
-        this._barraHpEnemigo.animarHacia(nuevoHpEnemigo, async () => {
-          await trasBarraEnemigo();
-        });
       }
+
+      this._encolarMensajesBatalla(lineas, () => {
+        if (!this._uiReact) {
+          const hpJ = jugador.hpActual ?? 0;
+          this._barraHpJugador.setValores(hpJ, jugador.hpMax ?? 100);
+          this._textoHpNumerico.setText(`${hpJ}/${jugador.hpMax ?? '??'}`);
+        }
+
+        const trasAnimacion = async () => {
+          if (jugadorDebilitado) {
+            this._derrota();
+            return;
+          }
+          if (defensorMuere) {
+            await this._victoria();
+            return;
+          }
+          await this._refrescarMovimientosJugador();
+          this.time.delayedCall(400, () => this._turnoEnemigo());
+        };
+
+        if (this._uiReact) {
+          this.time.delayedCall(500, () => {
+            void trasAnimacion();
+          });
+        } else {
+          this._barraHpEnemigo.animarHacia(nuevoHpEnemigo, async () => {
+            await trasAnimacion();
+          });
+        }
+      });
     } catch (e) {
       console.error('Error en turno de batalla:', e);
       this._mostrarTexto('Error en batalla.', () => this._mostrarMenuAcciones());
@@ -892,8 +1030,6 @@ export default class EscenaBatalla extends Phaser.Scene {
       return;
     }
 
-    this._mostrarTexto(`¡${enemigo.nombre} usó\n${movEnemigo.nombre}!`);
-
     try {
       const resultado = await PuenteApi.ejecutarTurno({
         atacanteId,
@@ -916,34 +1052,50 @@ export default class EscenaBatalla extends Phaser.Scene {
               (jugador.hpActual ?? jugador.hpMax ?? 100) - (resultado.danoInfligido ?? 0),
             );
       jugador.hpActual = nuevoHpJugador;
-      usarJuegoStore.getState().setPokemonHpEnEquipo(0, nuevoHpJugador);
+      usarJuegoStore.getState().setPokemonHpPorPokemonUsuarioId(
+        jugador.pokemonUsuarioId,
+        nuevoHpJugador,
+      );
 
       if (typeof resultado.hpRestanteAtacante === 'number') {
         enemigo.hpActual = resultado.hpRestanteAtacante;
-        if (!this._uiReact) {
-          this._barraHpEnemigo.setValores(resultado.hpRestanteAtacante, enemigo.hpMax ?? 100);
-        }
       }
 
-      const finTurnoEnemigo = () => {
-        if (nuevoHpJugador <= 0) {
-          this._derrota();
-        } else {
-          this._mostrarMenuAcciones();
-        }
-      };
+      const gen = (resultado.mensajeGeneral && String(resultado.mensajeGeneral).trim()) || '';
+      const lineas = gen
+        ? [gen]
+        : [`¡${enemigo.nombre} usó ${movEnemigo.nombre}!`,
+            ...(resultado.golpeCritico ? ['¡Golpe crítico!'] : []),
+            ...(resultado.mensajeEfectividad ? [resultado.mensajeEfectividad] : [])];
 
       if (this._uiReact) {
         this._emitirHudReact();
-        this.time.delayedCall(650, () => {
-          finTurnoEnemigo();
-        });
-      } else {
-        this._barraHpJugador.animarHacia(nuevoHpJugador, () => {
-          this._textoHpNumerico.setText(`${nuevoHpJugador}/${jugador.hpMax ?? '??'}`);
-          finTurnoEnemigo();
-        });
       }
+
+      this._encolarMensajesBatalla(lineas, () => {
+        const finTurnoEnemigo = () => {
+          if (nuevoHpJugador <= 0) {
+            this._derrota();
+          } else {
+            void this._refrescarMovimientosJugador();
+            this._mostrarMenuAcciones();
+          }
+        };
+
+        if (this._uiReact) {
+          this.time.delayedCall(450, () => {
+            finTurnoEnemigo();
+          });
+        } else {
+          if (typeof resultado.hpRestanteAtacante === 'number') {
+            this._barraHpEnemigo.setValores(resultado.hpRestanteAtacante, enemigo.hpMax ?? 100);
+          }
+          this._barraHpJugador.animarHacia(nuevoHpJugador, () => {
+            this._textoHpNumerico.setText(`${nuevoHpJugador}/${jugador.hpMax ?? '??'}`);
+            finTurnoEnemigo();
+          });
+        }
+      });
     } catch (e) {
       console.error('Error turno enemigo:', e);
       this._mostrarMenuAcciones();
@@ -952,7 +1104,7 @@ export default class EscenaBatalla extends Phaser.Scene {
 
   // ── Huida ──────────────────────────────────────────────────────────────
 
-  _accionHuir() {
+  async _accionHuir() {
     if (!this._permitirHuir) {
       this._mostrarTexto(
         '¡No puedes huir de\nun combate contra\nun entrenador!',
@@ -960,9 +1112,38 @@ export default class EscenaBatalla extends Phaser.Scene {
       );
       return;
     }
-    this._mostrarTexto('¡Huiste con éxito!', () => {
-      this._terminarBatalla();
-    });
+    const jid = this._pokemonJugador?.pokemonUsuarioId;
+    const sid = this._pokemonSalvaje?.pokemonUsuarioId;
+    this._intentosHuir += 1;
+
+    const token = usarAutenticacionStore.getState().token;
+    if (token && jid != null && sid != null) {
+      try {
+        const r = await PuenteApi.intentarHuir({
+          jugadorPokemonId: jid,
+          salvajePokemonId: sid,
+          intento: this._intentosHuir,
+        });
+        const msg = r?.mensaje ?? (r?.exito ? '¡Escapaste sin problemas!' : '¡No puedes escapar!');
+        this._encolarMensajesBatalla([msg], () => {
+          if (r?.exito) void this._terminarBatalla();
+          else this._mostrarMenuAcciones();
+        });
+      } catch (e) {
+        console.warn('[EscenaBatalla] huir', e);
+        this._mostrarTexto('No se pudo huir.', () => this._mostrarMenuAcciones());
+      }
+      return;
+    }
+
+    const ok = this._intentarHuirLocal();
+    this._encolarMensajesBatalla(
+      [ok ? '¡Escapaste sin problemas!' : '¡No puedes escapar!'],
+      () => {
+        if (ok) void this._terminarBatalla();
+        else this._mostrarMenuAcciones();
+      },
+    );
   }
 
   // ── Victoria / Derrota ────────────────────────────────────────────────
@@ -976,19 +1157,29 @@ export default class EscenaBatalla extends Phaser.Scene {
         ?? this._pokemonJugador?.name
         ?? 'Pokémon'
       } ganó\n${xpGanada} Ptos. Exp.!`,
-      () => this._terminarBatalla()
+      () => void this._terminarBatalla(),
     );
   }
 
   _derrota() {
     this._mostrarTexto('¡Tu Pokémon no\npuede más!', () => {
       this._mostrarTexto('¡Te has quedado\nsin Pokémon!', () => {
-        this._terminarBatalla();
+        void this._terminarBatalla();
       });
     });
   }
 
-  _terminarBatalla() {
+  async _terminarBatalla() {
+    try {
+      if (usarAutenticacionStore.getState().token) {
+        await PuenteApi.guardarJuegoEnServidor(
+          usarJuegoStore.getState().construirPayloadGuardado(),
+        );
+        await PuenteApi.sincronizarEstadoDesdeServidor();
+      }
+    } catch (e) {
+      console.warn('[EscenaBatalla] guardar al salir del combate', e);
+    }
     this._musica?.stop();
     this._uiReact?.(null);
     this.cameras.main.fadeOut(400, 0, 0, 0);

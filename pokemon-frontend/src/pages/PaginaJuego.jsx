@@ -10,7 +10,11 @@ import BattleParty from "../components/game/BattleParty";
 import BattleHud from "../components/game/BattleHud";
 import BattleStatusSprite from "../components/game/BattleStatusSprite";
 import BattlePlayerBackSprite from "../components/game/BattlePlayerBackSprite";
-import { SAVE_STORAGE_KEY, usarJuegoStore } from "../store/usarJuegoStore";
+import {
+  SAVE_STORAGE_KEY,
+  hayGuardadoLocalContinuable,
+  usarJuegoStore,
+} from "../store/usarJuegoStore";
 import { usarAutenticacionStore } from "../store/usarAutenticacionStore";
 import PuenteApi from "../phaser/puentes/PuenteApi";
 import "../components/game/DialogoRetro.css";
@@ -143,24 +147,22 @@ const PaginaJuego = () => {
           <PantallaJuego
             onStart={() => setScene("opening")}
             onContinue={async () => {
+              if (!hayGuardadoLocalContinuable()) return;
+              if (!usarJuegoStore.getState().cargarPartidaLocal()) return;
               if (usarAutenticacionStore.getState().token) {
                 try {
-                  await PuenteApi.restaurarHpCheckpointDesdeBlob();
-                  await PuenteApi.sincronizarEstadoDesdeServidor();
-                  try {
-                    usarJuegoStore.getState().guardarPartidaLocal();
-                  } catch {
-                    /* caché local opcional */
-                  }
-                  setScene("overworld");
-                  return;
-                } catch {
-                  /* cae al guardado local */
+                  await PuenteApi.sincronizarEstadoDesdeServidor({
+                    preservarEstadoJugableLocal: true,
+                  });
+                  await PuenteApi.guardarJuegoEnServidor(
+                    usarJuegoStore.getState().construirPayloadGuardado(),
+                    { skipSincronizarTrasGuardar: true },
+                  );
+                } catch (e) {
+                  console.warn("[continuar] sincronizar o guardar blob", e);
                 }
               }
-              if (usarJuegoStore.getState().cargarPartidaLocal()) {
-                setScene("overworld");
-              }
+              setScene("overworld");
             }}
           />
         )}

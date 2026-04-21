@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proyecto.pokemon_backend.component.CargadorDatos;
 import com.proyecto.pokemon_backend.component.SembradorObjetos;
 import com.proyecto.pokemon_backend.model.Ataques;
+import com.proyecto.pokemon_backend.model.Item;
 import com.proyecto.pokemon_backend.model.PokedexMaestra;
 import com.proyecto.pokemon_backend.repository.RepositorioAtaques;
+import com.proyecto.pokemon_backend.repository.RepositorioObjeto;
 import com.proyecto.pokemon_backend.repository.RepositorioPokedexMaestra;
 import com.proyecto.pokemon_backend.repository.RepositorioPokemonUsuario;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,9 +59,19 @@ class FlujoCableadoBatallaIT {
     @Autowired
     private RepositorioPokemonUsuario pokemonRepo;
 
+    @Autowired
+    private RepositorioObjeto itemRepo;
+
     @SuppressWarnings("null")
 	@BeforeEach
     void sembrarCatalogoMinimo() {
+        if (itemRepo.findByNombreIgnoreCase("Potion").isEmpty()) {
+            Item pocion = new Item();
+            pocion.setNombre("Potion");
+            pocion.setPrecio(1);
+            pocion.setEfecto("HEAL_20");
+            itemRepo.save(pocion);
+        }
         if (!pokedexRepo.existsById(155)) {
             pokedexRepo.save(especie(155, "Cyndaquil", "Fuego", null, 39, 52, 43, 60, 50, 65));
         }
@@ -250,6 +262,78 @@ class FlujoCableadoBatallaIT {
 
         assertThat(pokemonRepo.findById(salvajeId)).isEmpty();
 
+        // --- Inventario: añadir y tirar ---
+        ResponseEntity<String> anadirResp = rest.postForEntity(
+            "/api/v1/juego/inventario/anadir",
+            new HttpEntity<>(Map.of("nombreItem", "Potion", "cantidad", 3), auth),
+            String.class
+        );
+        assertThat(anadirResp.getStatusCode().is2xxSuccessful()).isTrue();
+        JsonNode anadido = objectMapper.readTree(anadirResp.getBody());
+        assertThat(anadido.get("inventario").get(0).get("cantidad").asInt()).isEqualTo(3);
+
+        ResponseEntity<String> tirar2 = rest.postForEntity(
+            "/api/v1/juego/inventario/tirar",
+            new HttpEntity<>(Map.of("nombreItem", "Potion", "cantidad", 2), auth),
+            String.class
+        );
+        assertThat(tirar2.getStatusCode().is2xxSuccessful()).isTrue();
+        JsonNode tras2 = objectMapper.readTree(tirar2.getBody());
+        assertThat(tras2.get("inventario").get(0).get("cantidad").asInt()).isEqualTo(1);
+
+        ResponseEntity<String> tirarUltima = rest.postForEntity(
+            "/api/v1/juego/inventario/tirar",
+            new HttpEntity<>(Map.of("nombreItem", "Potion", "cantidad", 1), auth),
+            String.class
+        );
+        assertThat(tirarUltima.getStatusCode().is2xxSuccessful()).isTrue();
+        JsonNode vacio = objectMapper.readTree(tirarUltima.getBody());
+        assertThat(vacio.get("inventario").isEmpty()).isTrue();
+
+        ResponseEntity<String> tirarDeMas = rest.postForEntity(
+            "/api/v1/juego/inventario/tirar",
+            new HttpEntity<>(Map.of("nombreItem", "Potion", "cantidad", 99), auth),
+            String.class
+        );
+        assertThat(tirarDeMas.getStatusCode().value()).isEqualTo(400);
+
+        // --- Usar ítem ---
+        // El starter recibió daño en turno2, así que la poción puede aplicarse
+        rest.postForEntity(
+            "/api/v1/juego/inventario/anadir",
+            new HttpEntity<>(Map.of("nombreItem", "Potion", "cantidad", 1), auth),
+            String.class
+        );
+        JsonNode equipoActual = objectMapper.readTree(
+            rest.exchange("/api/v1/juego/equipo", HttpMethod.GET, new HttpEntity<>(auth), String.class).getBody()
+        );
+        long starterIdUsar = equipoActual.get(0).get("pokemonUsuarioId").asLong();
+
+        ResponseEntity<String> usarResp = rest.postForEntity(
+            "/api/v1/juego/inventario/usar",
+            new HttpEntity<>(Map.of("nombreItem", "Potion", "pokemonObjetivoId", starterIdUsar), auth),
+            String.class
+        );
+        // El starter tiene HP reducido tras turno2 → la poción aplica (200) o HP máximo (400); nunca 500
+        assertThat(usarResp.getStatusCode().value()).isNotEqualTo(500);
+        if (usarResp.getStatusCode().is2xxSuccessful()) {
+            JsonNode usarJson = objectMapper.readTree(usarResp.getBody());
+            assertThat(usarJson.has("mensaje")).isTrue();
+            assertThat(usarJson.has("team")).isTrue();
+        }
+
+        // Usar ítem con pokemonObjetivoId inexistente → 404
+        rest.postForEntity(
+            "/api/v1/juego/inventario/anadir",
+            new HttpEntity<>(Map.of("nombreItem", "Potion", "cantidad", 1), auth),
+            String.class
+        );
+        ResponseEntity<String> usarNoExiste = rest.postForEntity(
+            "/api/v1/juego/inventario/usar",
+            new HttpEntity<>(Map.of("nombreItem", "Potion", "pokemonObjetivoId", 99999), auth),
+            String.class
+        );
+        assertThat(usarNoExiste.getStatusCode().value()).isEqualTo(404);
         ResponseEntity<String> reinResp = rest.postForEntity(
             "/api/v1/juego/reiniciar",
             new HttpEntity<>(auth),

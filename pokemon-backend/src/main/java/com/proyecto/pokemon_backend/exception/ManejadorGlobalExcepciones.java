@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -82,6 +83,12 @@ public class ManejadorGlobalExcepciones {
             HttpStatus.SERVICE_UNAVAILABLE,
             "No se pudo usar la base de datos. Comprueba que MySQL está en marcha, la URL/usuario/clave en application.properties y que el esquema coincide con las entidades JPA."
         );
+    }
+
+    /** Ruta estática no encontrada (p. ej. Swagger deshabilitado en el perfil activo). */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> manejarRecursoEstatico(NoResourceFoundException ex) {
+        return respuesta(HttpStatus.NOT_FOUND, "Recurso no encontrado: " + ex.getResourcePath());
     }
 
     /** Red 500 genérica: bug no previsto; el mensaje al cliente es fijo para no filtrar stack. */

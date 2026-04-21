@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usarJuegoStore } from "../../store/usarJuegoStore";
 import { usarAutenticacionStore } from "../../store/usarAutenticacionStore";
 import PuenteApi from "../../phaser/puentes/PuenteApi";
@@ -28,6 +28,7 @@ import {
 } from "../../services/pokemonDetallePokeapi";
 import { urlMiniMenuInicialPorPokedexId } from "../../assets/pokemon/starters/portraitUrls";
 import { statCombateMenu } from "../../config/statsCombateMenuFallback";
+import { urlIconoItemPorNombre } from "../../config/iconosItems";
 
 /** @param {number} totalSeg */
 function formatearTiempoJuegoGen3(totalSeg) {
@@ -59,14 +60,6 @@ function agregarInventarioAgrupado(inventario) {
   });
   lineas.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
   return lineas;
-}
-
-/** @param {{ clave: string, nombre: string }} linea */
-function esItemPocion(linea) {
-  const c = String(linea.clave || "").toLowerCase();
-  if (c === "pocion" || c === "poción") return true;
-  const n = String(linea.nombre || "").toLowerCase();
-  return n.includes("poci") || n.includes("potion");
 }
 
 function colorHp(hpActual, hpMax) {
@@ -115,6 +108,13 @@ const MenuIngameReact = ({ onClose }) => {
   const [selEquipo, setSelEquipo] = useState(0);
   const [selMochila, setSelMochila] = useState(0);
   const [selOpciones, setSelOpciones] = useState(0);
+  const [selAccionMochila, setSelAccionMochila] = useState(0);
+  const [selPokemonMochila, setSelPokemonMochila] = useState(0);
+  const [itemAccionActual, setItemAccionActual] = useState(null);
+  const [cantidadTirar, setCantidadTirar] = useState(1);
+  const [confirmCallback, setConfirmCallback] = useState(null);
+  const [cargandoItem, setCargandoItem] = useState(false);
+  const enOperacionRef = useRef(false);
   const [prefs, setPrefs] = useState(() => leerOpcionesCliente());
   const [dialogo, setDialogo] = useState(null);
   const [guardando, setGuardando] = useState(false);
@@ -152,7 +152,7 @@ const MenuIngameReact = ({ onClose }) => {
     ];
   }, [nombreJugador]);
 
-  /** Si RAM y Phaser divergieron del guardado en disco, recupera equipo/mochila sin tocar mapa/posición. */
+  /** Solo si hay snapshot de GUARDAR en menú en disco: rellena equipo/mochila en RAM si venían vacíos. */
   useEffect(() => {
     usarJuegoStore.getState().rellenarEquipoYmochilaDesdeGuardadoLocal();
   }, []);
@@ -304,13 +304,27 @@ const MenuIngameReact = ({ onClose }) => {
     [abrirDialogo, cerrarTodo, equipo.length, ejecutarGuardar, lineasMochila.length, opcionesMenuPrincipal],
   );
 
+  const accionesMochila = ["USAR", "TIRAR", "CANCELAR"];
+
   useEffect(() => {
     const manejar = (e) => {
-      if (guardando) return;
+      if (guardando || cargandoItem || enOperacionRef.current) return;
 
       if (dialogo) {
-        if (esTeclaAceptar(e.code) || esTeclaAtras(e.code)) {
+        if (esTeclaAceptar(e.code)) {
           e.preventDefault();
+          if (confirmCallback) {
+            const fn = confirmCallback;
+            enOperacionRef.current = true;
+            setConfirmCallback(null);
+            setDialogo(null);
+            fn();
+          } else {
+            setDialogo(null);
+          }
+        } else if (esTeclaAtras(e.code)) {
+          e.preventDefault();
+          setConfirmCallback(null);
           setDialogo(null);
         }
         return;
@@ -353,11 +367,117 @@ const MenuIngameReact = ({ onClose }) => {
           e.preventDefault();
           const it = lineasMochila[selMochilaSafe];
           if (it) {
-            abrirDialogo(`${it.nombre}\n\nCantidad: ${it.cantidad}\n\n(Usar en combate\npróximamente.)`);
+            setItemAccionActual(it);
+            setSelAccionMochila(0);
+            setVista("mochila-accion");
           }
         } else if (esTeclaAtras(e.code)) {
           e.preventDefault();
           volverPrincipal();
+        }
+        return;
+      }
+
+      if (vista === "mochila-accion") {
+        if (esTeclaArriba(e.code)) {
+          e.preventDefault();
+          setSelAccionMochila((i) => Math.max(0, i - 1));
+        } else if (esTeclaAbajo(e.code)) {
+          e.preventDefault();
+          setSelAccionMochila((i) => Math.min(accionesMochila.length - 1, i + 1));
+        } else if (esTeclaAceptar(e.code)) {
+          e.preventDefault();
+          const accion = accionesMochila[selAccionMochila];
+          if (accion === "CANCELAR") {
+            setVista("mochila");
+          } else if (accion === "USAR") {
+            if (!equipo.length) {
+              abrirDialogo("No tienes\nPokémon en\nel equipo.");
+              return;
+            }
+            setSelPokemonMochila(0);
+            setVista("mochila-pokemon");
+          } else if (accion === "TIRAR") {
+            setCantidadTirar(1);
+            setVista("mochila-tirar-cantidad");
+          }
+        } else if (esTeclaAtras(e.code)) {
+          e.preventDefault();
+          setVista("mochila");
+        }
+        return;
+      }
+
+      if (vista === "mochila-tirar-cantidad") {
+        const maxCantidad = itemAccionActual?.cantidad ?? 1;
+        if (esTeclaArriba(e.code)) {
+          e.preventDefault();
+          setCantidadTirar((c) => Math.min(c + 1, maxCantidad));
+        } else if (esTeclaAbajo(e.code)) {
+          e.preventDefault();
+          setCantidadTirar((c) => Math.max(1, c - 1));
+        } else if (esTeclaAceptar(e.code)) {
+          e.preventDefault();
+          const nombre = itemAccionActual?.nombre ?? "ítem";
+          const cantidad = cantidadTirar;
+          enOperacionRef.current = true;
+          setCargandoItem(true);
+          PuenteApi.tirarInventario({ nombreItem: nombre, cantidad })
+            .then(() => {
+              const invRestante = usarJuegoStore.getState().inventario;
+              abrirDialogo(`¡Tiraste\n${cantidad}× ${nombre}!`);
+              setVista(invRestante.length > 0 ? "mochila" : "principal");
+            })
+            .catch((err) => {
+              const msg = err?.response?.data?.error ?? "No se pudo\ntirar el ítem.";
+              abrirDialogo(msg);
+              setVista("mochila-accion");
+            })
+            .finally(() => {
+              setCargandoItem(false);
+              enOperacionRef.current = false;
+            });
+        } else if (esTeclaAtras(e.code)) {
+          e.preventDefault();
+          setVista("mochila-accion");
+        }
+        return;
+      }
+
+      if (vista === "mochila-pokemon") {
+        if (esTeclaArriba(e.code)) {
+          e.preventDefault();
+          setSelPokemonMochila((i) => Math.max(0, i - 1));
+        } else if (esTeclaAbajo(e.code)) {
+          e.preventDefault();
+          setSelPokemonMochila((i) => Math.min(equipo.length - 1, i + 1));
+        } else if (esTeclaAceptar(e.code)) {
+          e.preventDefault();
+          const p = equipo[selPokemonMochila];
+          const nombre = itemAccionActual?.nombre ?? "ítem";
+          if (!p) return;
+          enOperacionRef.current = true;
+          setCargandoItem(true);
+          PuenteApi.usarItemInventario({
+            nombreItem: nombre,
+            pokemonObjetivoId: p.pokemonUsuarioId,
+          })
+            .then((res) => {
+              abrirDialogo(res?.mensaje ?? `¡Usaste\n${nombre}!`);
+              setVista("mochila");
+            })
+            .catch((err) => {
+              const msg = err?.response?.data?.error ?? "No se pudo\nusar el ítem.";
+              abrirDialogo(msg);
+              setVista("mochila");
+            })
+            .finally(() => {
+              setCargandoItem(false);
+              enOperacionRef.current = false;
+            });
+        } else if (esTeclaAtras(e.code)) {
+          e.preventDefault();
+          setVista("mochila-accion");
         }
         return;
       }
@@ -465,14 +585,20 @@ const MenuIngameReact = ({ onClose }) => {
   }, [
     accionPrincipal,
     cerrarTodo,
+    cantidadTirar,
+    cargandoItem,
+    confirmCallback,
     dialogo,
     equipo,
     guardando,
+    itemAccionActual,
     lineasMochila,
     prefs,
+    selAccionMochila,
     selEquipo,
     selMochilaSafe,
     selOpciones,
+    selPokemonMochila,
     selPrincipal,
     vista,
     volverPrincipal,
@@ -484,14 +610,18 @@ const MenuIngameReact = ({ onClose }) => {
   ]);
 
   const hint = (() => {
-    if (dialogo || guardando) return "Z / Enter / X · continuar";
+    if (guardando || cargandoItem) return "…";
+    if (dialogo) return confirmCallback ? "Z · sí · X · cancelar" : "Z / X · continuar";
     if (vista === "principal") return "↑↓ · Z aceptar · X cerrar";
     if (vista === "ficha-entrenador") return "X · volver al menú";
     if (vista === "equipo") return "↑↓ · Z datos · X menú";
     if (vista === "equipo-detalle") {
       return fichaMuestraMovimientos ? "X · volver a la ficha" : "Z · movimientos · X · equipo";
     }
-    if (vista === "mochila") return "↑↓ · Z detalle · X menú";
+    if (vista === "mochila") return "↑↓ · Z acción · X menú";
+    if (vista === "mochila-accion") return "↑↓ · Z elegir · X volver";
+    if (vista === "mochila-tirar-cantidad") return "↑↓ · cantidad · Z confirmar · X cancelar";
+    if (vista === "mochila-pokemon") return "↑↓ · Z usar · X cancelar";
     if (vista === "opciones") return tOpc.hintOpcionesIngame;
     return "";
   })();
@@ -630,21 +760,157 @@ const MenuIngameReact = ({ onClose }) => {
               >
                 <span className="menu-ingame-cursor">{i === selMochilaSafe ? "▶" : ""}</span>
                 <span className="menu-ingame-mochila-icon-wrap" aria-hidden>
-                  {esItemPocion(l) ? (
-                    <img
-                      className="menu-ingame-mochila-icon"
-                      src={iconPocion}
-                      alt=""
-                      width={14}
-                      height={14}
-                      draggable={false}
-                    />
-                  ) : null}
+                  <img
+                    className="menu-ingame-mochila-icon"
+                    src={urlIconoItemPorNombre(l.nombre) || iconPocion}
+                    alt=""
+                    width={14}
+                    height={14}
+                    draggable={false}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = iconPocion;
+                    }}
+                  />
                 </span>
                 <span className="menu-ingame-mochila-nombre">{l.nombre}</span>
                 <span className="menu-ingame-mochila-cant">×{l.cantidad}</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {vista === "mochila-accion" && (
+        <div className="menu-ingame-full menu-ingame-full--bag">
+          <div className="menu-ingame-full-title">MOCHILA</div>
+          <div className="menu-ingame-scroll menu-ingame-scroll--bag">
+            {lineasMochila.map((l, i) => (
+              <div
+                key={l.clave}
+                className={`menu-ingame-mochila-row${i === selMochilaSafe ? " menu-ingame-mochila-row--active" : ""}`}
+              >
+                <span className="menu-ingame-cursor">{i === selMochilaSafe ? "▶" : ""}</span>
+                <span className="menu-ingame-mochila-icon-wrap" aria-hidden>
+                  <img
+                    className="menu-ingame-mochila-icon"
+                    src={urlIconoItemPorNombre(l.nombre) || iconPocion}
+                    alt=""
+                    width={14}
+                    height={14}
+                    draggable={false}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = iconPocion;
+                    }}
+                  />
+                </span>
+                <span className="menu-ingame-mochila-nombre">{l.nombre}</span>
+                <span className="menu-ingame-mochila-cant">×{l.cantidad}</span>
+              </div>
+            ))}
+          </div>
+          <div className="menu-ingame-accion-popup">
+            <div className="menu-ingame-accion-nombre">{itemAccionActual?.nombre ?? "?"}</div>
+            {accionesMochila.map((ac, i) => (
+              <div
+                key={ac}
+                className={`menu-ingame-accion-fila${i === selAccionMochila ? " menu-ingame-accion-fila--active" : ""}`}
+              >
+                <span className="menu-ingame-cursor">{i === selAccionMochila ? "▶" : ""}</span>
+                {ac}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {vista === "mochila-tirar-cantidad" && (() => {
+        const nombre = itemAccionActual?.nombre ?? "ítem";
+        const maxCantidad = itemAccionActual?.cantidad ?? 1;
+        return (
+          <div className="menu-ingame-full menu-ingame-full--bag">
+            <div className="menu-ingame-full-title">TIRAR</div>
+            <div className="menu-ingame-tirar-item-info">
+              <span className="menu-ingame-mochila-icon-wrap" aria-hidden>
+                <img
+                  className="menu-ingame-mochila-icon"
+                  src={urlIconoItemPorNombre(nombre) || iconPocion}
+                  alt=""
+                  width={14}
+                  height={14}
+                  draggable={false}
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = iconPocion; }}
+                />
+              </span>
+              <span className="menu-ingame-mochila-nombre">{nombre}</span>
+              <span className="menu-ingame-tirar-stock">Tienes: ×{maxCantidad}</span>
+            </div>
+            <div className="menu-ingame-tirar-selector">
+              <button
+                className="menu-ingame-tirar-btn"
+                aria-label="Aumentar cantidad"
+                tabIndex={-1}
+              >▲</button>
+              <span className="menu-ingame-tirar-cant">×{cantidadTirar}</span>
+              <button
+                className="menu-ingame-tirar-btn"
+                aria-label="Reducir cantidad"
+                tabIndex={-1}
+              >▼</button>
+            </div>
+            <div className="menu-ingame-tirar-aviso">
+              ¿Tirar {cantidadTirar}× {nombre}?
+            </div>
+          </div>
+        );
+      })()}
+
+      {vista === "mochila-pokemon" && (
+        <div className="menu-ingame-full menu-ingame-full--bag">
+          <div className="menu-ingame-full-title">¿A quién?</div>
+          <div className="menu-ingame-mochila-item-sel">
+            <span className="menu-ingame-mochila-icon-wrap" aria-hidden>
+              <img
+                className="menu-ingame-mochila-icon"
+                src={urlIconoItemPorNombre(itemAccionActual?.nombre) || iconPocion}
+                alt=""
+                width={14}
+                height={14}
+                draggable={false}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = iconPocion;
+                }}
+              />
+            </span>
+            <span className="menu-ingame-mochila-nombre">{itemAccionActual?.nombre ?? "?"}</span>
+          </div>
+          <div className="menu-ingame-team-list">
+            {equipo.map((p, i) => {
+              const nombreEspecie = p.nombre || "???";
+              const apodo = p.nombreApodo && p.nombreApodo !== nombreEspecie ? p.nombreApodo : null;
+              const etiqueta = apodo || nombreEspecie;
+              const hpA = p.hpActual ?? p.hpMax ?? 20;
+              const hpM = p.hpMax ?? 20;
+              return (
+                <div
+                  key={`mp-${i}`}
+                  className={`menu-ingame-team-slot${i === selPokemonMochila ? " menu-ingame-team-slot--active" : ""}`}
+                >
+                  <div className="menu-ingame-team-slot-head">
+                    <span className="menu-ingame-cursor">{i === selPokemonMochila ? "▶" : ""}</span>
+                    <span className="menu-ingame-team-slot-num">{i + 1}</span>
+                    <div className="menu-ingame-team-slot-names">
+                      <div className="menu-ingame-team-etiqueta">{etiqueta}</div>
+                    </div>
+                    <span className="menu-ingame-team-nv">
+                      {hpA}/{hpM} PS
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

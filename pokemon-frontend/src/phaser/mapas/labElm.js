@@ -105,11 +105,6 @@ export function ejecutarSecuenciaElm(scene) {
     ],
     () => {
       usarJuegoStore.getState().setElmCharlaEleccionStarter();
-      try {
-        usarJuegoStore.getState().guardarPartidaLocal();
-      } catch {
-        /* caché opcional */
-      }
     },
   );
 }

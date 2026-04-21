@@ -9,8 +9,6 @@ import menuTextsEn from "../../assets/game/title/texts/menu_texts.en.json";
 import { textosPanelOpciones } from "../../config/textosOpcionesUi";
 import logoPokemonSvg from "../../assets/game/title/pokemon_logo.svg";
 import { hayGuardadoLocalContinuable } from "../../store/usarJuegoStore";
-import { usarAutenticacionStore } from "../../store/usarAutenticacionStore";
-import PuenteApi from "../../phaser/puentes/PuenteApi";
 import {
   esTeclaAceptar,
   esTeclaAtras,
@@ -27,22 +25,6 @@ import {
 } from "../../config/opcionesCliente";
 import "./PantallaJuego.css";
 
-/** @param {unknown} data Respuesta de GET /juego/estado */
-function estadoServidorTieneProgreso(data) {
-  if (!data || typeof data !== "object") return false;
-  const team = Array.isArray(data.team) ? data.team : [];
-  if (team.length > 0) return true;
-  const ec = data.estadoCliente;
-  if (ec && typeof ec === "object") {
-    if (ec.starterElegido) return true;
-    if (ec.hasStarter) return true;
-    if (ec.partidaRecienteTitulo === true) return true;
-    const tc = ec.teamCliente;
-    if (Array.isArray(tc) && tc.length > 0) return true;
-  }
-  return false;
-}
-
 // Manejar PantallaJuego.
 const PantallaJuego = ({ onStart, onContinue }) => {
   // Referencias para controlar la música del título.
@@ -57,9 +39,6 @@ const PantallaJuego = ({ onStart, onContinue }) => {
   const [prefsTitulo, setPrefsTitulo] = useState(() => leerOpcionesCliente());
   const [selOpcionesTitulo, setSelOpcionesTitulo] = useState(0);
 
-  const token = usarAutenticacionStore((s) => s.token);
-  /** undefined = aún no comprobado (solo con sesión); true/false = resultado del GET */
-  const [servidorTieneProgreso, setServidorTieneProgreso] = useState(undefined);
   const [epochGuardadoLocal, setEpochGuardadoLocal] = useState(0);
 
   useEffect(() => {
@@ -68,27 +47,11 @@ const PantallaJuego = ({ onStart, onContinue }) => {
     return () => window.removeEventListener("bytes-guardado-local", alGuardarLocal);
   }, []);
 
-  useEffect(() => {
-    if (!token) return;
-    let cancelled = false;
-    void PuenteApi.getEstadoJugador()
-      .then((data) => {
-        if (!cancelled) setServidorTieneProgreso(estadoServidorTieneProgreso(data));
-      })
-      .catch(() => {
-        if (!cancelled) setServidorTieneProgreso(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
-
+  /** «Continuar» solo si hay GUARDAR explícito en menú (JSON local marcado). */
   const puedeContinuar = useMemo(() => {
     void epochGuardadoLocal;
-    return (
-      hayGuardadoLocalContinuable() || (Boolean(token) && servidorTieneProgreso === true)
-    );
-  }, [token, servidorTieneProgreso, epochGuardadoLocal]);
+    return hayGuardadoLocalContinuable();
+  }, [epochGuardadoLocal]);
 
   const menuTexts = prefsTitulo.locale === "en" ? menuTextsEn : menuTextsEs;
   const menuOptions = puedeContinuar ? menuTexts.with_save : menuTexts.no_save;

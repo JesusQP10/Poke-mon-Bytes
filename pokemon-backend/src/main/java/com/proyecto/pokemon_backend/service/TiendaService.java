@@ -13,6 +13,9 @@ import com.proyecto.pokemon_backend.repository.RepositorioUsuario;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,6 +26,9 @@ import java.util.Map;
  */
 @Service
 public class TiendaService {
+
+    /** Precio de cada ítem en la tienda (fijo; no se usa el valor persistido en BD para cobrar/mostrar). */
+    private static final int PRECIO_UNITARIO = 1;
 
     private final RepositorioUsuario userRepository;
     private final RepositorioObjeto itemRepository;
@@ -47,6 +53,22 @@ public class TiendaService {
         this.juegoService = juegoService;
     }
 
+    /** Catálogo PokéMart: filas de la tabla {@code ITEMS} (sembradas al arranque desde PokéAPI). */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listarCatalogo() {
+        return itemRepository.findAll().stream()
+            .sorted(Comparator.comparing(Item::getNombre, String.CASE_INSENSITIVE_ORDER))
+            .map(item -> {
+                Map<String, Object> m = new HashMap<>();
+                m.put("itemId", item.getIdItem());
+                m.put("nombre", item.getNombre());
+                m.put("precio", PRECIO_UNITARIO);
+                m.put("efecto", item.getEfecto());
+                return m;
+            })
+            .toList();
+    }
+
     /**
      * Descuenta dinero y suma cantidad al par (usuario, ítem). Todo en una transacción: si el {@code save}
      * del inventario fallara, el update de dinero hace rollback.
@@ -60,7 +82,7 @@ public class TiendaService {
         Item item = itemRepository.findById(request.getItemId())
             .orElseThrow(() -> new RecursoNoEncontrado("Ítem no existe en el catálogo."));
 
-        int costoTotal = item.getPrecio().intValue() * request.getCantidad().intValue();
+        int costoTotal = PRECIO_UNITARIO * request.getCantidad().intValue();
         if (usuario.getDinero() < costoTotal) {
             throw new ErrorNegocio(String.format(
                 "Saldo insuficiente. Tienes %d₽, necesitas %d₽.", usuario.getDinero(), costoTotal

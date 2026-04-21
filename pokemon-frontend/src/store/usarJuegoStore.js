@@ -205,9 +205,94 @@ export const usarJuegoStore = create((set, get) => ({
    * Hidrata desde GET /juego/estado: equipo en BD + inventario/dinero en BD + `estadoCliente` (JSON).
    * Si no hay Pokémon en BD pero sí `teamCliente` en el JSON, usa ese equipo (modo solo-cliente).
    * Inventario y dinero del JSON del cliente no sustituyen a los del servidor.
+   *
+   * @param {{ preservarEstadoJugableLocal?: boolean }} [opts] Tras «Continuar» con guardado de menú:
+   *   no pisar equipo, mochila, dinero ni mapa/posición en RAM con el servidor.
    */
-  setPlayerState: (data) => {
+  setPlayerState: (data, opts = {}) => {
     set((state) => {
+      if (
+        opts.preservarEstadoJugableLocal === true
+        && data
+        && Array.isArray(state.team)
+        && state.team.length > 0
+      ) {
+        const ec = data.estadoCliente && typeof data.estadoCliente === 'object'
+          ? data.estadoCliente
+          : {};
+        let team = state.team.map((p) => ({
+          ...p,
+          nombre: p.nombre ?? p.name ?? p.nombreApodo ?? '???',
+          nombreApodo: p.nombreApodo ?? p.nombre ?? p.name,
+          id: p.id ?? p.pokedexId,
+          pokemonUsuarioId: p.pokemonUsuarioId,
+          nivel: p.nivel ?? p.level ?? 5,
+          hpActual: p.hpActual ?? p.hp ?? 20,
+          hpMax: p.hpMax ?? 20,
+          ataque: p.ataque ?? p.attack ?? p.ataqueStat,
+          defensa: p.defensa ?? p.defense ?? p.defensaStat,
+          ataqueEspecial: p.ataqueEspecial ?? p.ataqueEspecialStat,
+          defensaEspecial: p.defensaEspecial ?? p.defensaEspecialStat,
+          velocidad: p.velocidad ?? p.velocidadStat,
+          tipo1: p.tipo1 ?? p.type,
+          tipo2: p.tipo2 ?? null,
+        }));
+        if (team.length > 0 && !team.some((p) => p.esStarter) && team[0].pokemonUsuarioId != null) {
+          team = team.map((p, i) => (i === 0 ? { ...p, esStarter: true } : p));
+        }
+        const starter = team[0]
+          ? {
+              ...team[0],
+              nombre: team[0].nombre ?? team[0].name ?? '???',
+              id: team[0].id ?? team[0].pokedexId,
+              pokemonUsuarioId: team[0].pokemonUsuarioId,
+              esStarter: team[0].esStarter ?? true,
+            }
+          : null;
+        const inventario = Array.isArray(data?.inventario)
+          ? normalizarListaInventario(data.inventario)
+          : normalizarListaInventario(state.inventario);
+        const money = Number.isFinite(data?.money) ? Number(data.money)
+          : Number.isFinite(state.money) ? state.money : 3000;
+        const tieneEquipo = team.length > 0;
+        const pokedexRegistrados = fusionarPokedexRegistrados(state.pokedexRegistrados, team);
+        return {
+          playerState: data,
+          starter,
+          team,
+          badges: Array.isArray(state.badges) ? state.badges : [],
+          money,
+          pokedexRegistrados,
+          idEntrenadorPublico: normalizarIdEntrenador5(state.idEntrenadorPublico),
+          tiempoJuegoSegundos: Number.isFinite(state.tiempoJuegoSegundos) && state.tiempoJuegoSegundos >= 0
+            ? Math.floor(state.tiempoJuegoSegundos)
+            : 0,
+          mapaActual: normalizarMapaActualParaPreload(state.mapaActual),
+          posX: state.posX,
+          posY: state.posY,
+          loading: false,
+          gameStep: 'gameStep' in ec ? ec.gameStep : state.gameStep,
+          hasStarter: tieneEquipo || Boolean(ec.hasStarter),
+          pcPocionRetirada: state.pcPocionRetirada,
+          nombreJugador: state.nombreJugador ?? '',
+          inventario,
+          pokegearEntregado: state.pokegearEntregado,
+          starterElegido: tieneEquipo || Boolean(state.starterElegido),
+          elmCharlaEleccionStarter:
+            tieneEquipo || Boolean(state.elmCharlaEleccionStarter),
+          pocionEntregada: state.pocionEntregada,
+          esNuevaPartida: state.esNuevaPartida === true,
+          reloj:
+            state.reloj && typeof state.reloj === 'object'
+              ? {
+                  hora: state.reloj.hora ?? 12,
+                  minutos: state.reloj.minutos ?? 0,
+                  diaSemana: state.reloj.diaSemana ?? 0,
+                }
+              : { hora: 12, minutos: 0, diaSemana: 0 },
+        };
+      }
+
       const ec = data?.estadoCliente && typeof data.estadoCliente === 'object'
         ? data.estadoCliente
         : {};
@@ -353,6 +438,7 @@ export const usarJuegoStore = create((set, get) => ({
         return {};
       }
       if (!disk || disk.v !== SAVE_VERSION) return {};
+      if (disk.partidaRecienteTitulo !== true) return {};
       const teamDisk = Array.isArray(disk.team) ? disk.team : [];
       const next = {};
       if (!tieneTeam && teamDisk.length) {
@@ -449,6 +535,46 @@ export const usarJuegoStore = create((set, get) => ({
     return { team };
   }),
 
+  /**
+   * Actualiza PS del Pokémon por `pokemonUsuarioId` (p. ej. combate con varios en equipo).
+   * Mantiene `starter` alineado si coincide el id.
+   */
+  /** Actualiza equipo e inventario tras usar un ítem fuera de combate (respuesta de /inventario/usar). */
+  patchEquipoLocal: (teamRaw) => set((state) => {
+    if (!Array.isArray(teamRaw) || teamRaw.length === 0) return {};
+    const team = teamRaw.map((p) => ({
+      ...p,
+      nombre: p.nombre ?? p.name ?? '???',
+      nombreApodo: p.nombreApodo ?? p.nombre ?? p.name,
+      id: p.id ?? p.pokedexId,
+      pokemonUsuarioId: p.pokemonUsuarioId,
+      nivel: p.nivel ?? 5,
+      hpActual: p.hpActual ?? 0,
+      hpMax: p.hpMax ?? 20,
+    }));
+    const prevStarter = state.starter;
+    const starter = prevStarter
+      ? { ...prevStarter, ...(team.find((p) => p.pokemonUsuarioId === prevStarter?.pokemonUsuarioId) ?? {}) }
+      : (team[0] ?? null);
+    return { team, starter };
+  }),
+
+  setPokemonHpPorPokemonUsuarioId: (pokemonUsuarioId, hpActual) => set((state) => {
+    const id = Number(pokemonUsuarioId);
+    if (!Number.isFinite(id)) return {};
+    const h = Math.max(0, Math.floor(Number(hpActual)));
+    const team = state.team.map((p) =>
+      p && p.pokemonUsuarioId === id ? { ...p, hpActual: h } : p
+    );
+    const cambio = team.some((p, i) => p !== state.team[i]);
+    if (!cambio) return {};
+    let starter = state.starter;
+    if (starter && starter.pokemonUsuarioId === id) {
+      starter = { ...starter, hpActual: h };
+    }
+    return { team, starter };
+  }),
+
   // Actualizar posición (llamado desde Phaser al moverse o guardar)
   setPosition: (posX, posY, mapaActual) =>
     set({
@@ -531,21 +657,16 @@ export const usarJuegoStore = create((set, get) => ({
 
   /**
    * Serializa estado jugable en localStorage (sin JWT ni playerState del backend).
-   * @param {{ desdeGuardadoMenu?: boolean }} [opts] Si `desdeGuardadoMenu`, marca el guardado como válido para «Continuar» en el título.
+   * Solo persiste si se llama desde GUARDAR en el menú; el resto de llamadas se ignoran
+   * (no «checkpoint» automático: la partida en disco es únicamente un guardado explícito).
+   * @param {{ desdeGuardadoMenu?: boolean }} [opts]
    */
   guardarPartidaLocal: (opts) => {
-    const s = get();
-    let prevTitulo = false;
-    try {
-      const raw = typeof window !== 'undefined' ? window.localStorage.getItem(SAVE_STORAGE_KEY) : null;
-      if (raw?.trim()) {
-        const d = JSON.parse(raw);
-        if (d && d.partidaRecienteTitulo === true) prevTitulo = true;
-      }
-    } catch {
-      /* ignorar JSON corrupto */
+    if (opts?.desdeGuardadoMenu !== true) {
+      return;
     }
-    const partidaRecienteTitulo = opts?.desdeGuardadoMenu === true ? true : prevTitulo;
+    const s = get();
+    const partidaRecienteTitulo = true;
     const payload = {
       v: SAVE_VERSION,
       nombreJugador: s.nombreJugador,
@@ -584,7 +705,7 @@ export const usarJuegoStore = create((set, get) => ({
 
   /**
    * Restaura desde localStorage. Devuelve false si no hay datos válidos.
-   * No sustituye playerState del backend; deja loading en false para modo offline.
+   * Solo carga si el JSON proviene de un GUARDAR explícito en menú (`partidaRecienteTitulo`).
    */
   cargarPartidaLocal: () => {
     let raw;
@@ -601,6 +722,7 @@ export const usarJuegoStore = create((set, get) => ({
       return false;
     }
     if (!data || data.v !== SAVE_VERSION) return false;
+    if (data.partidaRecienteTitulo !== true) return false;
 
     const teamDisk = Array.isArray(data.team) ? data.team : [];
     const tieneEquipoDisk = teamDisk.length > 0;
@@ -647,42 +769,23 @@ export const usarJuegoStore = create((set, get) => ({
   },
 }));
 
-/** ¿Hay partida en localStorage? (para el menú del título). */
+/** ¿Hay partida en localStorage? (solo cuenta guardados explícitos desde menú). */
 export function existePartidaGuardadaLocal() {
   if (typeof window === 'undefined') return false;
   try {
-    const v = window.localStorage.getItem(SAVE_STORAGE_KEY);
-    return Boolean(v && v.trim().length > 0);
+    const raw = window.localStorage.getItem(SAVE_STORAGE_KEY);
+    if (!raw?.trim()) return false;
+    const data = JSON.parse(raw);
+    return data?.v === SAVE_VERSION && data?.partidaRecienteTitulo === true;
   } catch {
     return false;
   }
 }
 
 /**
- * ¿El JSON local tiene progreso para ofrecer «Continuar»?
- * Ignora guardados solo con nombre / charla con Elm (sin Pokémon en equipo ni starter).
+ * ¿Hay un guardado válido para «Continuar»? Solo si se usó GUARDAR en el menú al menos una vez.
  */
 export function hayGuardadoLocalContinuable() {
-  if (typeof window === 'undefined') return false;
-  let raw;
-  try {
-    raw = window.localStorage.getItem(SAVE_STORAGE_KEY);
-  } catch {
-    return false;
-  }
-  if (!raw || !raw.trim()) return false;
-  let data;
-  try {
-    data = JSON.parse(raw);
-  } catch {
-    return false;
-  }
-  if (!data || data.v !== SAVE_VERSION) return false;
-  if (data.partidaRecienteTitulo === true) return true;
-  const team = Array.isArray(data.team) ? data.team : [];
-  if (team.length > 0) return true;
-  if (data.starterElegido) return true;
-  if (data.hasStarter) return true;
-  return false;
+  return existePartidaGuardadaLocal();
 }
 

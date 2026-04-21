@@ -26,10 +26,15 @@ export default class WarpSystem {
     this._sincronizadoPrimerPaso = false;
   }
 
-  /** Lee propiedad Tiled tolerando espacios accidentales en `name`. */
+  /** Lee propiedad Tiled tolerando espacios accidentales en `name`. Acepta array Tiled o objeto plano. */
   static prop(props, nombre) {
     const clave = String(nombre);
-    const p = props.find((x) => String(x.name ?? '').trim() === clave);
+    let lista = props;
+    if (props != null && !Array.isArray(props) && typeof props === 'object') {
+      lista = Object.keys(props).map((k) => ({ name: k, value: props[k] }));
+    }
+    if (!Array.isArray(lista)) return undefined;
+    const p = lista.find((x) => String(x.name ?? '').trim() === clave);
     return p?.value;
   }
 

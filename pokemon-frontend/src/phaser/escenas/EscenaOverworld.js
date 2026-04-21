@@ -22,6 +22,7 @@ import {
 import { lineasProfElmTrasStarter, lineasMadreTrasStarter } from '../mapas/dialogosPostStarter';
 import { STATS_MENU_FALLBACK_POR_POKEDEX } from '../../config/statsCombateMenuFallback';
 import { volumenBgmParaPhaser, sfxPermitido } from '../../config/opcionesCliente';
+import { CONFIG_NPC_BATALLA_DEBUG, nombreAtaqueDemostracionPorEstadoDebug } from '../../config/batallaDebugDemostracion';
 import PuenteApi from '../puentes/PuenteApi';
 import { usarAutenticacionStore } from '../../store/usarAutenticacionStore';
 
@@ -621,6 +622,23 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   // ── NPCs ──────────────────────────────────────────────────────────────
 
+  /**
+   * Comportamiento post-diálogo (tienda, centro, entregas). Tiled 1.9+ pone la clase en `class`;
+   * el parser de Phaser solo copia `type`, así que el valor suele perderse. Se compensa con prop
+   * personalizada `tipo` y nombres de objeto conocidos del mapa debugger.
+   */
+  _tipoComportamientoNpcTiled(obj, props) {
+    const desdeProp = String(WarpSystem.prop(props, 'tipo') ?? '').trim().toLowerCase();
+    if (desdeProp) return desdeProp;
+    const t = String(obj?.type ?? obj?.class ?? '').trim().toLowerCase();
+    if (t) return t;
+    const n = String(obj?.name ?? '').toLowerCase();
+    if (n === 'dependiente') return 'tienda';
+    if (n === 'enfermera') return 'cura';
+    if (n === 'npc_regala_pokeballs' || n === 'npc_entrega_curacion_estados') return 'entregas';
+    return '';
+  }
+
   _crearNpc(obj) {
     const props = obj.properties ?? [];
     // Tiled: (x,y) + width/height del rectángulo; los pies van al borde inferior centrado (como pokeball obj.x+8, obj.y+8).
@@ -672,7 +690,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     const nombreJugador = usarJuegoStore.getState().nombreJugador || 'Tú';
     const lineasBase = String(dialogo).replaceAll('[JUGADOR]', nombreJugador).split('|');
     const esRival = obj.name === 'rival';
-    const hablanteNpcProp = obj.properties?.find((p) => p.name === 'dialogo_hablante')?.value;
+    const hablanteNpcProp = WarpSystem.prop(props, 'dialogo_hablante');
     const etiquetaNpc =
       hablanteNpcProp != null && String(hablanteNpcProp).trim() !== ''
         ? String(hablanteNpcProp).trim()
@@ -727,11 +745,6 @@ export default class EscenaOverworld extends Phaser.Scene {
             esProfElm && enLabElm && sinStarter
               ? () => {
                   usarJuegoStore.getState().setElmCharlaEleccionStarter();
-                  try {
-                    usarJuegoStore.getState().guardarPartidaLocal();
-                  } catch {
-                    /* caché opcional */
-                  }
                 }
               : null;
 
@@ -750,10 +763,182 @@ export default class EscenaOverworld extends Phaser.Scene {
               this._iniciarBatalla(payload);
             };
           }
+
+          const tipoObjeto = this._tipoComportamientoNpcTiled(obj, props);
+          if (tipoObjeto === 'cura') {
+            const prevOnFin = onFinDialogo;
+            onFinDialogo = () => {
+              if (typeof prevOnFin === 'function') prevOnFin();
+              void this._flujoCurarCentroAsync();
+            };
+          } else if (tipoObjeto === 'tienda') {
+            const prevOnFin = onFinDialogo;
+            onFinDialogo = () => {
+              if (typeof prevOnFin === 'function') prevOnFin();
+              void this._flujoTiendaDebuggerAsync();
+            };
+          } else if (tipoObjeto === 'entregas') {
+            const prevOnFin = onFinDialogo;
+            onFinDialogo = () => {
+              if (typeof prevOnFin === 'function') prevOnFin();
+              void this._flujoEntregaDebugNpcAsync(String(obj.name ?? ''));
+            };
+          }
+
           this._dialogo.mostrar(lineas, onFinDialogo, cajaNpcOpts);
         }
       }
     });
+  }
+
+  async _flujoCurarCentroAsync() {
+    this._jugador?.setInputBloqueado(true);
+    const token = usarAutenticacionStore.getState().token;
+    if (!token) {
+      this._dialogo.mostrar(
+        ['Inicia sesión para curar', 'a tu equipo en el centro.'],
+        () => this._jugador?.setInputBloqueado(false),
+      );
+      return;
+    }
+    try {
+      await PuenteApi.curarEquipoCentro();
+      this._dialogo.mostrar(
+        ['¡Listo! Tus Pokémon están', 'completamente curados.'],
+        () => this._jugador?.setInputBloqueado(false),
+        { hablante: 'ENFERMERA' },
+      );
+    } catch (e) {
+      console.error('[centro]', e);
+      this._dialogo.mostrar(
+        ['No se pudo completar', 'la curación.'],
+        () => this._jugador?.setInputBloqueado(false),
+        { hablante: 'ENFERMERA' },
+      );
+    }
+  }
+
+  async _flujoTiendaDebuggerAsync() {
+    this._jugador?.setInputBloqueado(true);
+    const token = usarAutenticacionStore.getState().token;
+    if (!token) {
+      this._dialogo.mostrar(
+        ['Inicia sesión para comprar', 'en el PokéMart.'],
+        () => this._jugador?.setInputBloqueado(false),
+      );
+      return;
+    }
+    let catalogo;
+    try {
+      catalogo = await PuenteApi.getCatalogoTienda();
+    } catch (e) {
+      console.error('[tienda]', e);
+      this._dialogo.mostrar(
+        ['No se pudo cargar', 'el catálogo.'],
+        () => this._jugador?.setInputBloqueado(false),
+      );
+      return;
+    }
+    if (!Array.isArray(catalogo) || catalogo.length === 0) {
+      this._dialogo.mostrar(['No hay artículos en stock.'], () => this._jugador?.setInputBloqueado(false));
+      return;
+    }
+    if (!this._uiMenuLista) this._uiMenuLista = new UIMenuLista(this);
+    const labels = catalogo.map((it) => {
+      const precio = Number(it.precio);
+      const p = Number.isFinite(precio) ? precio : '?';
+      const nom = String(it.nombre ?? '?').slice(0, 11);
+      return `${nom} ${p}₽`;
+    });
+    labels.push('Salir');
+    this._uiMenuLista.mostrar('COMPRAR', labels, {
+      maxVisible: 7,
+      onPick: (idx) => {
+        if (idx === labels.length - 1) {
+          this._cerrarMenuTienda();
+          return;
+        }
+        const item = catalogo[idx];
+        if (!item) {
+          this._cerrarMenuTienda();
+          return;
+        }
+        void this._intentarComprarItemTienda(item);
+      },
+      onCancel: () => this._cerrarMenuTienda(),
+    });
+  }
+
+  _cerrarMenuTienda() {
+    this._uiMenuLista?.ocultar();
+    this._jugador?.setInputBloqueado(false);
+  }
+
+  async _intentarComprarItemTienda(item) {
+    this._uiMenuLista?.ocultar();
+    this._jugador?.setInputBloqueado(true);
+    const id = item.itemId ?? item.id;
+    try {
+      const res = await PuenteApi.comprarItem(id, 1);
+      const texto = res?.mensaje != null ? String(res.mensaje) : 'Gracias por tu compra.';
+      this._dialogo.mostrar(
+        [texto],
+        () => void this._flujoTiendaDebuggerAsync(),
+        { hablante: 'DEPENDIENTE' },
+      );
+    } catch (e) {
+      const apiMsg = e?.response?.data?.error;
+      const linea = apiMsg != null ? String(apiMsg) : 'No se pudo comprar.';
+      console.error('[tienda] compra', e);
+      this._dialogo.mostrar(
+        [linea.length > 48 ? `${linea.slice(0, 44)}…` : linea],
+        () => void this._flujoTiendaDebuggerAsync(),
+        { hablante: 'DEPENDIENTE' },
+      );
+    }
+  }
+
+  async _flujoEntregaDebugNpcAsync(npcName) {
+    this._jugador?.setInputBloqueado(true);
+    const token = usarAutenticacionStore.getState().token;
+    if (!token) {
+      this._dialogo.mostrar(
+        ['Inicia sesión para recibir', 'objetos en la mochila.'],
+        () => this._jugador?.setInputBloqueado(false),
+      );
+      return;
+    }
+    try {
+      if (npcName === 'npc_regala_pokeballs') {
+        await PuenteApi.anadirInventarioServidor({ nombreItem: 'Poke-ball', cantidad: 10 });
+        this._dialogo.mostrar(
+          ['¡Recibiste 10 POKé BALLS!', 'Ya están en tu mochila.'],
+          () => this._jugador?.setInputBloqueado(false),
+          { hablante: 'REPARTO' },
+        );
+      } else if (npcName === 'npc_entrega_curacion_estados') {
+        await PuenteApi.anadirInventarioServidor({ nombreItem: 'Full-restore', cantidad: 2 });
+        await PuenteApi.anadirInventarioServidor({ nombreItem: 'Antidote', cantidad: 3 });
+        await PuenteApi.anadirInventarioServidor({ nombreItem: 'Full-heal', cantidad: 2 });
+        this._dialogo.mostrar(
+          [
+            '¡Toma estos objetos!',
+            'FULL RESTORE x2, ANTIDOTE x3,',
+            'FULL HEAL x2 — en tu mochila.',
+          ],
+          () => this._jugador?.setInputBloqueado(false),
+          { hablante: 'REPARTO' },
+        );
+      } else {
+        this._jugador?.setInputBloqueado(false);
+      }
+    } catch (e) {
+      console.error('[entrega]', e);
+      this._dialogo.mostrar(
+        ['No se pudo entregar', 'los objetos.'],
+        () => this._jugador?.setInputBloqueado(false),
+      );
+    }
   }
 
   _calcularDireccionOpuesta(a, b) {
@@ -813,17 +998,20 @@ export default class EscenaOverworld extends Phaser.Scene {
    * - Prop `estadoAfectaA` = `rival` | `jugador` fuerza quién lleva el estado de prueba.
    */
   _payloadBatallaDebugDesdePar(obj, props, esTestCaptura) {
+    const npcNombre = String(obj.name ?? '').trim().toLowerCase();
+    const cfg = CONFIG_NPC_BATALLA_DEBUG[npcNombre];
+
     const rawId = WarpSystem.prop(props, 'pokedexId');
     const rawNv = WarpSystem.prop(props, 'nivel');
     const pokedexId = Number.isFinite(Number(rawId))
       ? Number(rawId)
-      : (esTestCaptura ? 137 : 19);
-    const nivel = Number.isFinite(Number(rawNv)) ? Number(rawNv) : 5;
+      : (cfg?.pokedexId ?? (esTestCaptura ? 137 : 19));
+    const nivel = Number.isFinite(Number(rawNv)) ? Number(rawNv) : (cfg?.nivel ?? 5);
     const nombreHint = String(WarpSystem.prop(props, 'nombre') ?? '').trim();
-    const nombrePorDefecto = esTestCaptura ? 'Porygon' : '???';
+    const nombrePorDefecto = cfg?.nombre ?? (esTestCaptura ? 'Porygon' : '???');
     const claveEstado = esTestCaptura ? null : this._estadoBatallaDebugDesdeObjeto(obj, props);
     const afecta = String(WarpSystem.prop(props, 'estadoAfectaA') ?? '').trim().toLowerCase();
-    const esNpcBattleNombre = /^npc_battle_/i.test(String(obj.name ?? ''));
+    const esNpcBattleNombre = /^npc_battle_/i.test(npcNombre);
     let estadoEnRival;
     if (afecta === 'rival') estadoEnRival = true;
     else if (afecta === 'jugador') estadoEnRival = false;
@@ -839,6 +1027,21 @@ export default class EscenaOverworld extends Phaser.Scene {
       if (estadoEnRival) pokemon.estadoSalvajeDebug = claveEstado;
       else pokemon.estadoJugadorDebug = claveEstado;
     }
+
+    if (cfg?.ataquesMoveset?.length) {
+      pokemon.ataquesMoveset = cfg.ataquesMoveset;
+    } else {
+      const ataqueProp = String(WarpSystem.prop(props, 'ataqueDemostracion') ?? '').trim();
+      const rawDemoId = WarpSystem.prop(props, 'ataqueDemostracionId');
+      const demoIdNum = Number.isFinite(Number(rawDemoId)) ? Number(rawDemoId) : null;
+      if (demoIdNum != null && demoIdNum > 0) pokemon.ataqueDemostracionId = demoIdNum;
+      let ataqueNombre = ataqueProp || null;
+      if (!ataqueNombre && claveEstado && !esTestCaptura) {
+        ataqueNombre = nombreAtaqueDemostracionPorEstadoDebug(claveEstado);
+      }
+      if (ataqueNombre) pokemon.ataqueDemostracionNombre = ataqueNombre;
+    }
+
     return pokemon;
   }
 
@@ -1067,11 +1270,6 @@ export default class EscenaOverworld extends Phaser.Scene {
                 } else {
                   store.setPcPocionRetirada();
                   store.addInventario({ id: 'pocion', nombre: 'Poción', cantidad: 1 });
-                  try {
-                    usarJuegoStore.getState().guardarPartidaLocal();
-                  } catch {
-                    /* opcional */
-                  }
                 }
                 this._dialogo.mostrar(['Has retirado la POCION.'], () => this._mostrarMenuPcPrincipal(), {
                   hablante: 'PC',
@@ -1120,6 +1318,19 @@ export default class EscenaOverworld extends Phaser.Scene {
       return;
     }
 
+    const team = usarJuegoStore.getState().team ?? [];
+    const hayPokemonVivo = team.some((p) => {
+      const hp = p?.hpActual ?? p?.hp;
+      return Number(hp) > 0;
+    });
+    if (team.length > 0 && !hayPokemonVivo) {
+      this._dialogo.mostrar(
+        ['¡Todos tus Pokémon', 'están debilitados!', 'Visita el Centro Pokémon.'],
+        () => this._jugador?.setInputBloqueado(false),
+      );
+      return;
+    }
+
     const debugEstadoRival = pokemon?.estadoSalvajeDebug;
     const debugEstadoJugador = pokemon?.estadoJugadorDebug;
     const debugCaptura = Boolean(pokemon?.esDebugCaptura);
@@ -1130,6 +1341,9 @@ export default class EscenaOverworld extends Phaser.Scene {
         const prep = await PuenteApi.prepararSalvajePokemon({
           pokedexId: salvaje.id,
           nivel: salvaje.nivel ?? 5,
+          ataquesMoveset: salvaje.ataquesMoveset,
+          ataqueDemostracionId: salvaje.ataqueDemostracionId,
+          ataqueDemostracionNombre: salvaje.ataqueDemostracionNombre,
         });
         salvaje = {
           ...salvaje,

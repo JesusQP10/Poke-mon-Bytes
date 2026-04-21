@@ -2,6 +2,7 @@ package com.proyecto.pokemon_backend.controller;
 
 import com.proyecto.pokemon_backend.dto.RespuestaTurno;
 import com.proyecto.pokemon_backend.dto.SolicitudCaptura;
+import com.proyecto.pokemon_backend.dto.SolicitudHuir;
 import com.proyecto.pokemon_backend.dto.SolicitudTurno;
 import com.proyecto.pokemon_backend.service.BatallaService;
 import jakarta.validation.Valid;
@@ -54,6 +55,17 @@ public class BatallaController {
     }
 
     /**
+     * Intento de huir (combate salvaje). Probabilidad según velocidades e n.º de intento (aprox. Gen II).
+     */
+    @PostMapping("/huir")
+    public ResponseEntity<Map<String, Object>> huir(
+        @Valid @RequestBody SolicitudHuir request,
+        Authentication auth
+    ) {
+        return ResponseEntity.ok(batallaService.intentarHuir(auth.getName(), request));
+    }
+
+    /**
      * Gasta 1 Ball del inventario, tira la probabilidad Gen II y, si toca, reasigna el salvaje al jugador
      * con hueco en el equipo.
      */
@@ -82,7 +94,15 @@ public class BatallaController {
         }
         Integer pokedexId = enteroOpcional(body.get("pokedexId"));
         Integer nivel = enteroOpcional(body.get("nivel"));
-        return ResponseEntity.ok(batallaService.prepararInstanciaSalvaje(pokedexId, nivel));
+        @SuppressWarnings("unchecked")
+        List<String> ataquesMoveset = body.get("ataquesMoveset") instanceof List<?>
+            ? (List<String>) body.get("ataquesMoveset")
+            : null;
+        Long ataqueDemoId = idLargoOpcional(body.get("ataqueDemostracionId"));
+        String ataqueDemoNombre = stringOpcional(body.get("ataqueDemostracionNombre"));
+        return ResponseEntity.ok(
+            batallaService.prepararInstanciaSalvaje(pokedexId, nivel, ataquesMoveset, ataqueDemoId, ataqueDemoNombre)
+        );
     }
 
     /** Elimina la instancia salvaje y sus PP persistidos; no acepta Pokémon del jugador real. */
@@ -127,5 +147,13 @@ public class BatallaController {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private static String stringOpcional(Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        String s = String.valueOf(raw).trim();
+        return s.isEmpty() ? null : s;
     }
 }

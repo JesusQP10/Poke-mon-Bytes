@@ -122,4 +122,80 @@ public class JuegoController {
         res.put("inventario", inventario);
         return ResponseEntity.ok(res);
     }
+
+    /**
+     * Usa un ítem de la mochila sobre un Pokémon del equipo fuera de combate.
+     * Cuerpo: {@code itemId} o {@code nombreItem} + {@code pokemonObjetivoId} (obligatorio).
+     * Devuelve {@code mensaje}, {@code team} e {@code inventario} actualizados.
+     */
+    @PostMapping("/inventario/usar")
+    public ResponseEntity<Map<String, Object>> usarInventario(
+        @RequestBody Map<String, Object> body,
+        Authentication auth
+    ) {
+        if (body == null) {
+            body = Map.of();
+        }
+        Integer itemId = null;
+        Object rawId = body.get("itemId");
+        if (rawId instanceof Number) {
+            itemId = ((Number) rawId).intValue();
+        }
+        String nombreItem = body.get("nombreItem") != null ? String.valueOf(body.get("nombreItem")).trim() : null;
+        if (nombreItem != null && nombreItem.isEmpty()) {
+            nombreItem = null;
+        }
+        Long pokemonObjetivoId = null;
+        Object rawPokId = body.get("pokemonObjetivoId");
+        if (rawPokId instanceof Number) {
+            pokemonObjetivoId = ((Number) rawPokId).longValue();
+        }
+        return ResponseEntity.ok(juegoService.usarItemFueraCombate(
+            auth.getName(), itemId, nombreItem, pokemonObjetivoId
+        ));
+    }
+
+    /**
+     * Descarta ítems de la mochila. Cuerpo igual que {@code /inventario/anadir}: {@code itemId} o
+     * {@code nombreItem}, y opcionalmente {@code cantidad} (por defecto 1).
+     * Elimina la fila si la cantidad resultante llega a 0.
+     */
+    @PostMapping("/inventario/tirar")
+    public ResponseEntity<Map<String, Object>> tirarInventario(
+        @RequestBody Map<String, Object> body,
+        Authentication auth
+    ) {
+        if (body == null) {
+            body = Map.of();
+        }
+        Integer itemId = null;
+        Object rawId = body.get("itemId");
+        if (rawId instanceof Number) {
+            itemId = ((Number) rawId).intValue();
+        }
+        String nombreItem = body.get("nombreItem") != null ? String.valueOf(body.get("nombreItem")).trim() : null;
+        if (nombreItem != null && nombreItem.isEmpty()) {
+            nombreItem = null;
+        }
+        int cantidad = 1;
+        Object rawCant = body.get("cantidad");
+        if (rawCant instanceof Number) {
+            cantidad = ((Number) rawCant).intValue();
+        }
+        List<Map<String, Object>> inventario = juegoService.tirarDelInventario(
+            auth.getName(),
+            itemId,
+            nombreItem,
+            cantidad
+        );
+        Map<String, Object> res = new HashMap<>();
+        res.put("inventario", inventario);
+        return ResponseEntity.ok(res);
+    }
+
+    /** Centro Pokémon: cura PS y estados del equipo activo (0–5). */
+    @PostMapping("/centro/curar")
+    public ResponseEntity<Map<String, Object>> curarCentroPokemon(Authentication auth) {
+        return ResponseEntity.ok(juegoService.curarEquipoEnCentro(auth.getName()));
+    }
 }

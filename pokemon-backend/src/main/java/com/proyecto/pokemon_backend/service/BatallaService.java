@@ -2,6 +2,7 @@ package com.proyecto.pokemon_backend.service;
 
 import com.proyecto.pokemon_backend.dto.RespuestaTurno;
 import com.proyecto.pokemon_backend.dto.SolicitudCaptura;
+import com.proyecto.pokemon_backend.dto.SolicitudHuir;
 import com.proyecto.pokemon_backend.dto.SolicitudTurno;
 import com.proyecto.pokemon_backend.exception.ErrorNegocio;
 import com.proyecto.pokemon_backend.exception.RecursoNoEncontrado;
@@ -22,6 +23,8 @@ import com.proyecto.pokemon_backend.repository.RepositorioUsuario;
 import com.proyecto.pokemon_backend.service.api.ServicioPokeApi;
 import com.proyecto.pokemon_backend.service.logica.CalculoService;
 import com.proyecto.pokemon_backend.support.CuentaSalvajes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +33,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -37,6 +41,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 /**
@@ -46,6 +51,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class BatallaService {
+
+    private static final Logger log = LoggerFactory.getLogger(BatallaService.class);
 
     private static final int LIMITE_EQUIPO = 6;
     private static final int MAX_MOVIMIENTOS_ACTIVOS = 4;
@@ -64,6 +71,13 @@ public class BatallaService {
 
     /** Cache de learnsets para no consultar PokeAPI en cada turno. */
     private final ConcurrentHashMap<Integer, List<EntradaLearnset>> learnsetCache = new ConcurrentHashMap<>();
+
+    /**
+     * Moveset personalizado para salvajes debug (sala NPC): id instancia → lista de ids de {@code ATAQUES}.
+     * 1 entrada → comportamiento antiguo (3 learnset + 1 demo). 2-4 → moveset completo fijo.
+     * Se elimina al liberar/capturar para no afectar al mismo id como Pokémon del jugador.
+     */
+    private final ConcurrentHashMap<Long, List<Integer>> movesetPersonalizadoPorPokemonId = new ConcurrentHashMap<>();
 
     private volatile Long cachedSalvajesUserId;
 
@@ -119,6 +133,22 @@ public class BatallaService {
      */
     @Transactional
     public Map<String, Object> prepararInstanciaSalvaje(Integer pokedexId, Integer nivel) {
+        return prepararInstanciaSalvaje(pokedexId, nivel, null, null, null);
+    }
+
+    /**
+     * Como {@link #prepararInstanciaSalvaje(Integer, Integer)} pero permite fijar el moveset completo.
+     * Si {@code ataquesMoveset} tiene entradas se usan directamente (hasta 4). Si tiene 1 entrada se aplica
+     * como demo (3 learnset + 1 fijo). Sin moveset: {@code ataqueDemostracionId/Nombre} como antes.
+     */
+    @Transactional
+    public Map<String, Object> prepararInstanciaSalvaje(
+        Integer pokedexId,
+        Integer nivel,
+        List<String> ataquesMoveset,
+        Long ataqueDemostracionId,
+        String ataqueDemostracionNombre
+    ) {
         if (pokedexId == null || pokedexId <= 0) {
             throw new ErrorNegocio("pokedexId es obligatorio.");
         }
@@ -150,6 +180,17 @@ public class BatallaService {
 
         PokemonUsuario guardado = pokemonRepo.save(p);
 
+        if (ataquesMoveset != null && !ataquesMoveset.isEmpty()) {
+            List<Integer> ids = new ArrayList<>();
+            for (String nombre : ataquesMoveset) {
+                resolverAtaqueDemostracion(null, nombre).ifPresent(a -> ids.add(a.getIdAtaque()));
+            }
+            if (!ids.isEmpty()) movesetPersonalizadoPorPokemonId.put(guardado.getId(), ids);
+        } else {
+            resolverAtaqueDemostracion(ataqueDemostracionId, ataqueDemostracionNombre)
+                .ifPresent(a -> movesetPersonalizadoPorPokemonId.put(guardado.getId(), List.of(a.getIdAtaque())));
+        }
+
         Map<String, Object> dto = new LinkedHashMap<>();
         dto.put("pokemonUsuarioId", guardado.getId());
         dto.put("pokedexId", pokedexId);
@@ -172,6 +213,7 @@ public class BatallaService {
         if (!Objects.equals(p.getUsuarioId(), idUsuarioCuentaSalvajes())) {
             throw new ErrorNegocio("No se puede liberar un Pokémon que no es una instancia salvaje.");
         }
+        movesetPersonalizadoPorPokemonId.remove(pokemonUsuarioId);
         moveStateRepo.eliminarPorPokemonId(pokemonUsuarioId);
         pokemonRepo.delete(p);
     }
@@ -190,7 +232,10 @@ public class BatallaService {
             throw new ErrorNegocio("No puedes consultar movimientos de un Pokémon que no es tuyo.");
         }
 
-        return construirSlots(pokemon).stream()
+        List<HuecoMovimiento> slots = construirSlots(pokemon);
+        logMovesetResuelto(pokemon, slots);
+
+        return slots.stream()
             .map(slot -> {
                 Map<String, Object> dto = new LinkedHashMap<>();
                 dto.put("movimientoId",  slot.ataque().getIdAtaque());
@@ -204,6 +249,36 @@ public class BatallaService {
                 return dto;
             })
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Traza el moveset ya materializado (learnset y/o 3+1 demo). Ver en consola del servidor con
+     * {@code logging.level.com.proyecto.pokemon_backend.service.BatallaService=DEBUG}
+     * (p. ej. en {@code application-dev.properties}).
+     */
+    private void logMovesetResuelto(PokemonUsuario pokemon, List<HuecoMovimiento> slots) {
+        if (!log.isDebugEnabled()) {
+            return;
+        }
+        boolean modoDemo = movesetPersonalizadoPorPokemonId.containsKey(pokemon.getId());
+        String resumen = slots.stream()
+            .map(s -> String.format(
+                Locale.ROOT,
+                "%s#%d (%d/%d PP)",
+                str(s.ataque().getNombre()),
+                nvl(s.ataque().getIdAtaque(), -1),
+                s.ppActual(),
+                s.ppMax()
+            ))
+            .collect(Collectors.joining(", "));
+        log.debug(
+            "Moveset resuelto: pokemonUsuarioId={} pokedexId={} nivel={} modo3mas1Demo={} → [{}]",
+            pokemon.getId(),
+            pokemon.getPokedexId(),
+            pokemon.getNivel(),
+            modoDemo,
+            resumen
+        );
     }
 
     /**
@@ -292,8 +367,9 @@ public class BatallaService {
             ? "PP: " + movResuelto.ppRestante() + "/" + movResuelto.ppMax()
             : "";
 
+        String nombreAtacante = datosAtacante.getNombre() != null ? datosAtacante.getNombre() : "?";
         String mensajeFinal = unir(
-            "¡" + atacante.getPokedexId() + " usó " + movimiento.getNombre() + "!",
+            "¡" + nombreAtacante + " usó " + movimiento.getNombre() + "!",
             critico ? "¡Golpe crítico!" : "",
             msgEfectividad,
             ppInfo,
@@ -301,16 +377,54 @@ public class BatallaService {
             residualDef
         );
 
+        int hpDefFinal = nvl(defensor.getHpActual(), 0);
+        int hpAtkFinal = nvl(atacante.getHpActual(), 0);
+
         return RespuestaTurno.builder()
             .danoInfligido(danio)
-            .hpRestanteAtacante(nvl(atacante.getHpActual(), 0))
-            .hpRestanteDefensor(hpRestante)
+            .hpRestanteAtacante(hpAtkFinal)
+            .hpRestanteDefensor(hpDefFinal)
             .multiplicadorFinal(multiplicadorFinal)
             .golpeCritico(critico)
             .mensajeEfectividad(msgEfectividad)
-            .defensorDerrotado(hpRestante == 0)
+            .defensorDerrotado(hpDefFinal == 0)
             .mensajeGeneral(mensajeFinal)
             .build();
+    }
+
+    /**
+     * Huir de un combate salvaje: valida participantes y aplica probabilidad tipo Gen II.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> intentarHuir(String username, SolicitudHuir request) {
+        Usuario usuario = cargarUsuario(username);
+        PokemonUsuario jugador = cargarPokemon(request.getJugadorPokemonId());
+        PokemonUsuario salvaje = cargarPokemon(request.getSalvajePokemonId());
+
+        if (!Objects.equals(jugador.getUsuarioId(), usuario.getIdUsuario())) {
+            throw new ErrorNegocio("Ese Pokémon no es tuyo.");
+        }
+        if (!Objects.equals(salvaje.getUsuarioId(), idUsuarioCuentaSalvajes())) {
+            throw new ErrorNegocio("Solo puedes huir de combates contra Pokémon salvajes.");
+        }
+        if (nvl(jugador.getHpActual(), 0) <= 0 || nvl(salvaje.getHpActual(), 0) <= 0) {
+            throw new ErrorNegocio("No puedes huir en este momento.");
+        }
+
+        int a = Math.max(1, nvl(jugador.getVelocidadStat(), 1));
+        int b = Math.max(1, nvl(salvaje.getVelocidadStat(), 1));
+        int c = Math.max(1, nvl(request.getIntento(), 1));
+        // Gen II (aprox.): F = min(255, (A*32)/B + 30*c); éxito si RNG ∈ [0,255) < F
+        int f = (a * 32) / b + 30 * c;
+        if (f > 255) {
+            f = 255;
+        }
+        boolean ok = ThreadLocalRandom.current().nextInt(256) < f;
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("exito", ok);
+        out.put("mensaje", ok ? "¡Escapaste sin problemas!" : "¡No puedes escapar!");
+        return out;
     }
 
     /**
@@ -348,6 +462,7 @@ public class BatallaService {
         );
 
         if (capturado) {
+            movesetPersonalizadoPorPokemonId.remove(salvaje.getId());
             salvaje.setUsuarioId(usuario.getIdUsuario());
             salvaje.setPosicionEquipo(siguientePosicionEquipo(usuario.getIdUsuario()));
             pokemonRepo.save(salvaje);
@@ -441,9 +556,30 @@ public class BatallaService {
     }
 
     /**
-     * Deriva el moveset activo desde learnset + nivel; si no hay coincidencias usa {@link #movimientosFallback}.
+     * Deriva el moveset:
+     * - Lista con 2+ entradas → moveset completo fijo (sin learnset).
+     * - Lista con 1 entrada → 3 learnset + 1 demo (comportamiento antiguo).
+     * - Sin lista → hasta 4 learnset.
      */
     private List<Ataques> resolverMovimientosParaPokemon(PokemonUsuario pokemon) {
+        List<Integer> customIds = movesetPersonalizadoPorPokemonId.get(pokemon.getId());
+        if (customIds != null && !customIds.isEmpty()) {
+            if (customIds.size() == 1) {
+                return ataquesRepo.findById(customIds.get(0))
+                    .map(demo -> combinarTresLearnsetMasDemo(pokemon, demo))
+                    .orElseGet(() -> resolverCuatroMovimientosSoloLearnset(pokemon));
+            }
+            List<Ataques> resultado = new ArrayList<>();
+            for (Integer id : customIds) {
+                ataquesRepo.findById(id).ifPresent(resultado::add);
+            }
+            if (!resultado.isEmpty()) return resultado;
+        }
+        return resolverCuatroMovimientosSoloLearnset(pokemon);
+    }
+
+    /** Sin movimiento extra: hasta 4 movimientos por nivel (misma lógica histórica). */
+    private List<Ataques> resolverCuatroMovimientosSoloLearnset(PokemonUsuario pokemon) {
         List<EntradaLearnset> learnset = obtenerLearnset(nvl(pokemon.getPokedexId(), 0));
         int nivel = nvl(pokemon.getNivel(), 1);
 
@@ -467,6 +603,83 @@ public class BatallaService {
         }
 
         return movimientos.isEmpty() ? movimientosFallback(nvl(pokemon.getPokedexId(), 0)) : movimientos;
+    }
+
+    /** Resuelve el ataque de demostración enviado al preparar instancia (id numérico o nombre kebab-case en BD). */
+    private Optional<Ataques> resolverAtaqueDemostracion(Long id, String nombre) {
+        if (id != null && id > 0) {
+            return ataquesRepo.findById(id.intValue());
+        }
+        if (nombre != null && !nombre.isBlank()) {
+            String n = nombre.trim();
+            Optional<Ataques> a = ataquesRepo.findByNombreIgnoreCase(n);
+            if (a.isPresent()) {
+                return a;
+            }
+            return ataquesRepo.findByNombreIgnoreCase(n.replace(' ', '-'));
+        }
+        return Optional.empty();
+    }
+
+    /** Los últimos 3 movimientos que el nivel permite según learnset (PokéAPI → filas {@code ATAQUES}). */
+    private List<Ataques> tresUltimosLearnset(PokemonUsuario pokemon) {
+        List<EntradaLearnset> learnset = obtenerLearnset(nvl(pokemon.getPokedexId(), 0));
+        int nivel = nvl(pokemon.getNivel(), 1);
+        List<EntradaLearnset> aprendibles = learnset.stream()
+            .filter(e -> e.nivel() <= nivel)
+            .sorted(Comparator.comparingInt(EntradaLearnset::nivel).thenComparing(EntradaLearnset::moveId))
+            .toList();
+        if (aprendibles.isEmpty() && !learnset.isEmpty()) {
+            aprendibles = List.of(learnset.get(0));
+        }
+        final int limite = 3;
+        if (aprendibles.size() > limite) {
+            aprendibles = aprendibles.subList(aprendibles.size() - limite, aprendibles.size());
+        }
+        List<Ataques> movimientos = new ArrayList<>();
+        for (EntradaLearnset entrada : aprendibles) {
+            Integer moveId = entrada.moveId();
+            if (moveId != null) ataquesRepo.findById(moveId).ifPresent(movimientos::add);
+        }
+        return movimientos;
+    }
+
+    /** Tres movimientos por nivel/API + relleno BD; el cuarto es {@code demo} (no duplicado). */
+    private List<Ataques> combinarTresLearnsetMasDemo(PokemonUsuario pokemon, Ataques demo) {
+        List<Ataques> base = new ArrayList<>();
+        LinkedHashSet<Integer> visto = new LinkedHashSet<>();
+        for (Ataques m : tresUltimosLearnset(pokemon)) {
+            if (m == null || m.getIdAtaque() == null) continue;
+            if (Objects.equals(m.getIdAtaque(), demo.getIdAtaque())) continue;
+            if (visto.add(m.getIdAtaque())) base.add(m);
+        }
+        while (base.size() < 3) {
+            boolean any = false;
+            for (Ataques m : movimientosFallback(nvl(pokemon.getPokedexId(), 0))) {
+                if (base.size() >= 3) break;
+                if (m == null || m.getIdAtaque() == null) continue;
+                if (Objects.equals(m.getIdAtaque(), demo.getIdAtaque())) continue;
+                if (visto.add(m.getIdAtaque())) {
+                    base.add(m);
+                    any = true;
+                }
+            }
+            if (!any) break;
+        }
+        for (int aid : List.of(33, 45, 98, 52, 55, 84)) {
+            if (base.size() >= 3) break;
+            Optional<Ataques> opt = ataquesRepo.findById(aid);
+            if (opt.isEmpty()) continue;
+            Ataques m = opt.get();
+            if (Objects.equals(m.getIdAtaque(), demo.getIdAtaque())) continue;
+            if (visto.add(m.getIdAtaque())) base.add(m);
+        }
+        while (base.size() > 3) {
+            base.remove(base.size() - 1);
+        }
+        List<Ataques> out = new ArrayList<>(base);
+        out.add(demo);
+        return out;
     }
 
     /** Learnset en caché por especie; delega en PokéAPI solo en miss. */
@@ -591,27 +804,28 @@ public class BatallaService {
      * Devuelve un mensaje si el turno queda bloqueado, null si puede atacar.
      */
     private String procesarEstadoPreTurno(PokemonUsuario pkm) {
+        String nom = nombreDisplay(pkm);
         switch (pkm.getEstado()) {
             case CONGELADO -> {
                 // 10% de probabilidad de descongelarse cada turno
                 if (Math.random() < 0.10) {
                     pkm.setEstado(Estado.SALUDABLE);
-                    return "¡" + pkm.getPokedexId() + " se descongeló!";
+                    return "¡" + nom + " se descongeló!";
                 }
-                return pkm.getPokedexId() + " está congelado y no puede moverse.";
+                return nom + " está congelado y no puede moverse.";
             }
             case DORMIDO -> {
                 if (nvl(pkm.getTurnosSueno(), 0) > 0) {
                     pkm.setTurnosSueno(pkm.getTurnosSueno() - 1);
-                    return pkm.getPokedexId() + " está durmiendo...";
+                    return nom + " está durmiendo...";
                 }
                 pkm.setEstado(Estado.SALUDABLE);
-                return "¡" + pkm.getPokedexId() + " se despertó!";
+                return "¡" + nom + " se despertó!";
             }
             case PARALIZADO -> {
                 // 25% de probabilidad de no poder moverse
                 if (Math.random() < 0.25) {
-                    return pkm.getPokedexId() + " está paralizado y no puede moverse.";
+                    return nom + " está paralizado y no puede moverse.";
                 }
             }
             default -> { /* SALUDABLE, QUEMADO, ENVENENADO, GRAVE_ENVENENADO: no bloquean el turno */ }
@@ -640,6 +854,11 @@ public class BatallaService {
      * Devuelve el mensaje para mostrar al jugador, o cadena vacía si no hay efecto.
      */
     private String procesarEfectosFinTurno(PokemonUsuario pkm) {
+        // Daño residual (veneno, quemadura, drenadoras) no aplica a Pokémon ya debilitados ese turno.
+        if (nvl(pkm.getHpActual(), 0) <= 0) {
+            return "";
+        }
+
         int hpMax = nvl(pkm.getHpMax(), 1);
         int danio = 0;
         String msg = "";
@@ -782,6 +1001,16 @@ public class BatallaService {
         if (id == null) throw new ErrorNegocio("ID de Pokédex no puede ser null.");
         return pokedexRepo.findById(id)
             .orElseThrow(() -> new RecursoNoEncontrado("Especie no encontrada en Pokédex: " + id));
+    }
+
+    /** Nombre de especie para mensajes de combate (sin lanzar si falta fila). */
+    private String nombreDisplay(PokemonUsuario pkm) {
+        if (pkm == null || pkm.getPokedexId() == null) {
+            return "?";
+        }
+        return pokedexRepo.findById(pkm.getPokedexId())
+            .map(PokedexMaestra::getNombre)
+            .orElse("?");
     }
 
     // =========================================================================

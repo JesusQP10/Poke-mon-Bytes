@@ -40,11 +40,6 @@ export function comprobarNarrativaInicio(scene, mapaKey) {
     store.starterElegido || (Array.isArray(store.team) && store.team.length > 0);
   if (tienePokemon && !store.pokegearEntregado) {
     store.setPokegearEntregado();
-    try {
-      store.guardarPartidaLocal();
-    } catch {
-      /* caché opcional */
-    }
     return;
   }
   if (!store.pokegearEntregado) {
