@@ -963,8 +963,8 @@ const MenuIngameReact = ({ onClose }) => {
                         className="menu-ingame-team-slot-mini"
                         src={miniStarter}
                         alt=""
-                        width={14}
-                        height={14}
+                        width={10}
+                        height={10}
                         draggable={false}
                       />
                     ) : spriteUrls ? (
@@ -972,8 +972,8 @@ const MenuIngameReact = ({ onClose }) => {
                         className="menu-ingame-team-slot-mini"
                         src={spriteUrls.principal}
                         alt=""
-                        width={14}
-                        height={14}
+                        width={10}
+                        height={10}
                         draggable={false}
                         onError={(e) => {
                           e.currentTarget.onerror = (e2) => { e2.currentTarget.onerror = null; e2.currentTarget.src = iconSlotParty; };
@@ -985,8 +985,8 @@ const MenuIngameReact = ({ onClose }) => {
                         className="menu-ingame-team-slot-icon"
                         src={iconSlotParty}
                         alt=""
-                        width={14}
-                        height={14}
+                        width={10}
+                        height={10}
                         draggable={false}
                       />
                     )}

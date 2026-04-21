@@ -581,7 +581,7 @@ public class BatallaService {
     /**
      * Deriva el moveset:
      * - Lista con 2+ entradas → moveset completo fijo (sin learnset).
-     * - Lista con 1 entrada → 3 learnset + 1 demo (comportamiento antiguo).
+     * - Lista con 1 entrada → 3 learnset + 1 demo .
      * - Sin lista → hasta 4 learnset.
      */
     private List<Ataques> resolverMovimientosParaPokemon(PokemonUsuario pokemon) {

@@ -10,7 +10,7 @@ import {
   battleCampoSpriteUrl,
   battleStatusClaveParaIlustracion,
 } from '../../config/battleStatusArt';
-import { urlEspaldaJugadorCampo } from '../../config/battlePlayerBackArt';
+import { urlsEspaldaJugadorCampo } from '../../config/battlePlayerBackArt';
 /**
  * EscenaBatalla — pantalla de combate fiel a Pokémon GBC.
  *
@@ -377,7 +377,7 @@ export default class EscenaBatalla extends Phaser.Scene {
 
   /** Espalda del Pokémon activo (starters); solo sin HUD React. Tras cargar equipo. */
   _crearEspaldaJugadorCampoPhaser() {
-    const url = urlEspaldaJugadorCampo(this._pokemonJugador);
+    const url = urlsEspaldaJugadorCampo(this._pokemonJugador).principal;
     const dex = Number(this._pokemonJugador?.id ?? this._pokemonJugador?.pokedexId) || 158;
     const texKey = `battle-player-back-${dex}`;
     const colocar = () => {
@@ -480,7 +480,7 @@ export default class EscenaBatalla extends Phaser.Scene {
     return {
       spriteEstadoClave,
       esDebugCaptura: this._esDebugCaptura,
-      spriteJugadorCampoUrl: urlEspaldaJugadorCampo(jug),
+      spriteJugadorCampo: urlsEspaldaJugadorCampo(jug),
       jugador: {
         nombre: jug.nombreApodo ?? jug.nombre ?? jug.name ?? '???',
         nivel: jug.nivel ?? '?',

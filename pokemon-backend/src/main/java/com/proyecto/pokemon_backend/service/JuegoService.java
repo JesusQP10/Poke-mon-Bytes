@@ -356,10 +356,12 @@ public class JuegoService {
         };
     }
 
-    /** Pokémon del usuario ordenados por {@link PokemonUsuario#getPosicionEquipo()}. */
+    /** Pokémon del usuario en posiciones 0–5 (equipo activo), ordenados por posición. */
     private List<PokemonUsuario> equipoOrdenado(Long userId) {
-        List<PokemonUsuario> equipo = new ArrayList<>(pokemonRepo.findByUsuarioId(userId));
-        equipo.sort(Comparator.comparingInt(p -> nvl(p.getPosicionEquipo(), Integer.MAX_VALUE)));
+        List<PokemonUsuario> equipo = pokemonRepo.findByUsuarioId(userId).stream()
+            .filter(p -> nvl(p.getPosicionEquipo(), 100) < 6)
+            .sorted(Comparator.comparingInt(p -> nvl(p.getPosicionEquipo(), 5)))
+            .collect(java.util.stream.Collectors.toList());
         return equipo;
     }
 
@@ -573,7 +575,7 @@ public class JuegoService {
             .collect(Collectors.toList());
     }
 
-    /** Una línea de mochila: ids duplicados por compatibilidad con distintas versiones del cliente. */
+    /** ids duplicados por compatibilidad con distintas versiones del cliente. */
     private Map<String, Object> inventarioLineaDto(InventarioUsuario e) {
         Item it = e.getItem();
         Map<String, Object> m = new HashMap<>();

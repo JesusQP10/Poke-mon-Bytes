@@ -206,9 +206,11 @@ const PaginaJuego = () => {
               <>
                 <BattleStatusSprite
                   pokedexId={battleUi.enemigo?.pokedexId ?? null}
-                  esDebugCaptura={Boolean(battleUi.esDebugCaptura)}
                 />
-                <BattlePlayerBackSprite src={battleUi.spriteJugadorCampoUrl} />
+                <BattlePlayerBackSprite
+                  principal={battleUi.spriteJugadorCampo?.principal}
+                  fallback={battleUi.spriteJugadorCampo?.fallback}
+                />
                 <BattleHud jugador={battleUi.jugador} enemigo={battleUi.enemigo} />
                 {battleUi.equipoPicker ? (
                   <BattleParty

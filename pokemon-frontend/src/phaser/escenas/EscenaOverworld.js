@@ -8,6 +8,7 @@ import { STARTERS } from '../ui/UISeleccionStarter';
 import UIOpcionSiNo from '../ui/UIOpcionSiNo';
 import UIConfirmacionStarter from '../ui/UIConfirmacionStarter';
 import UIMenuLista from '../ui/UIMenuLista';
+import { crearMarcoDialogoRetro, estiloTextoDialogoRetro } from '../utils/marcoDialogoRetro';
 import WarpSystem from '../sistemas/WarpSystem';
 import {
   TAM_TILE,
@@ -863,7 +864,7 @@ export default class EscenaOverworld extends Phaser.Scene {
           this._cerrarMenuTienda();
           return;
         }
-        void this._intentarComprarItemTienda(item);
+        this._mostrarSelectorCantidadTienda(item);
       },
       onCancel: () => this._cerrarMenuTienda(),
     });
@@ -871,15 +872,96 @@ export default class EscenaOverworld extends Phaser.Scene {
 
   _cerrarMenuTienda() {
     this._uiMenuLista?.ocultar();
+    this._cerrarSelectorCantidadTienda();
     this._jugador?.setInputBloqueado(false);
   }
 
-  async _intentarComprarItemTienda(item) {
+  _cerrarSelectorCantidadTienda() {
+    if (this._selectorCantidadContainer) {
+      this._selectorCantidadContainer.destroy(true);
+      this._selectorCantidadContainer = null;
+    }
+    if (this._selectorCantidadHandler) {
+      this.input.keyboard.off('keydown', this._selectorCantidadHandler);
+      this._selectorCantidadHandler = null;
+    }
+  }
+
+  _mostrarSelectorCantidadTienda(item) {
     this._uiMenuLista?.ocultar();
+    this._cerrarSelectorCantidadTienda();
+
+    const precio = Number(item.precio) || 1;
+    const dinero = usarJuegoStore.getState().money ?? 0;
+    const maxAffordable = Math.max(1, Math.floor(dinero / precio));
+    const maxCant = Math.min(99, maxAffordable);
+    let cantidad = 1;
+
+    const W = 120;
+    const H = 60;
+    const X = Math.floor((160 - W) / 2);
+    const Y = 44;
+
+    const container = this.add.container(0, 0).setDepth(115).setScrollFactor(0);
+    this._selectorCantidadContainer = container;
+
+    const marco = crearMarcoDialogoRetro(this, X, Y, W, H);
+    container.add(marco);
+
+    const estilo = estiloTextoDialogoRetro(W - 12);
+    const nombre = String(item.nombre ?? '?').slice(0, 12);
+
+    const txtNombre = this.add.text(X + 6, Y + 6, nombre, { ...estilo }).setOrigin(0);
+    container.add(txtNombre);
+
+    const txtCant = this.add.text(X + 6, Y + 20, `×${cantidad}`, { ...estilo, fontSize: '10px' }).setOrigin(0);
+    container.add(txtCant);
+
+    const txtTotal = this.add.text(X + 6, Y + 36, `Total: ${cantidad * precio}₽`, { ...estilo }).setOrigin(0);
+    container.add(txtTotal);
+
+    const txtHint = this.add.text(X + W - 6, Y + H - 8, '↑↓ · Z ok · X cancel', {
+      fontFamily: '"Press Start 2P", monospace',
+      fontSize: '4px',
+      fill: '#506070',
+    }).setOrigin(1, 0);
+    container.add(txtHint);
+
+    const actualizar = () => {
+      txtCant.setText(`×${cantidad}`);
+      txtTotal.setText(`Total: ${cantidad * precio}₽`);
+    };
+
+    this._selectorCantidadHandler = (e) => {
+      switch (e.code) {
+        case 'ArrowUp': case 'KeyW':
+          cantidad = Math.min(maxCant, cantidad + 1);
+          actualizar();
+          break;
+        case 'ArrowDown': case 'KeyS':
+          cantidad = Math.max(1, cantidad - 1);
+          actualizar();
+          break;
+        case 'KeyZ': case 'Enter': case 'NumpadEnter':
+          this._cerrarSelectorCantidadTienda();
+          void this._ejecutarCompra(item, cantidad);
+          break;
+        case 'KeyX': case 'Escape':
+          this._cerrarSelectorCantidadTienda();
+          void this._flujoTiendaDebuggerAsync();
+          break;
+        default:
+          break;
+      }
+    };
+    this.input.keyboard.on('keydown', this._selectorCantidadHandler);
+  }
+
+  async _ejecutarCompra(item, cantidad) {
     this._jugador?.setInputBloqueado(true);
     const id = item.itemId ?? item.id;
     try {
-      const res = await PuenteApi.comprarItem(id, 1);
+      const res = await PuenteApi.comprarItem(id, cantidad);
       const texto = res?.mensaje != null ? String(res.mensaje) : 'Gracias por tu compra.';
       this._dialogo.mostrar(
         [texto],

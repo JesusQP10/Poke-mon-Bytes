@@ -7,6 +7,7 @@ import {
 } from "../../config/controlesJuego";
 import iconSlotParty from "../../assets/ui/menu/icon_slot_party.png";
 import { urlMiniMenuInicialPorPokedexId } from "../../assets/pokemon/starters/portraitUrls";
+import { urlSpriteDirectoPorId } from "../../services/pokemonDetallePokeapi";
 import "./MenuIngameReact.css";
 
 function colorHp(hpActual, hpMax) {
@@ -89,9 +90,11 @@ export default function BattleParty({ equipo = [], starter = null, onPick, onCan
             const hpA = p.hpActual ?? p.hpMax ?? 20;
             const hpM = p.hpMax ?? 20;
             const ratio = hpRatio(hpA, hpM);
+            const dexId = p.id ?? p.pokedexId ?? null;
             const miniStarter =
               esMismoPokemonQueStarter(p, starter) &&
-              urlMiniMenuInicialPorPokedexId(p.id ?? starter?.id ?? starter?.pokedexId);
+              urlMiniMenuInicialPorPokedexId(dexId ?? starter?.id ?? starter?.pokedexId);
+            const spriteUrls = !miniStarter && dexId ? urlSpriteDirectoPorId(dexId) : null;
             return (
               <div
                 key={`battle-slot-${i}`}
@@ -104,21 +107,32 @@ export default function BattleParty({ equipo = [], starter = null, onPick, onCan
                       className="menu-ingame-team-slot-mini"
                       src={miniStarter}
                       alt=""
-                      width={14}
-                      height={14}
+                      width={10}
+                      height={10}
                       draggable={false}
                     />
-                  ) : i === 0 ? (
+                  ) : spriteUrls ? (
+                    <img
+                      className="menu-ingame-team-slot-mini"
+                      src={spriteUrls.principal}
+                      alt=""
+                      width={10}
+                      height={10}
+                      draggable={false}
+                      onError={(e) => {
+                        e.currentTarget.onerror = (e2) => { e2.currentTarget.onerror = null; e2.currentTarget.src = iconSlotParty; };
+                        e.currentTarget.src = spriteUrls.fallback;
+                      }}
+                    />
+                  ) : (
                     <img
                       className="menu-ingame-team-slot-icon"
                       src={iconSlotParty}
                       alt=""
-                      width={14}
-                      height={14}
+                      width={10}
+                      height={10}
                       draggable={false}
                     />
-                  ) : (
-                    <span className="menu-ingame-team-slot-num">{i + 1}</span>
                   )}
                   <div className="menu-ingame-team-slot-names">
                     <div className="menu-ingame-team-etiqueta">{etiqueta}</div>

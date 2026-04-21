@@ -167,46 +167,48 @@ Opcional: copia `pokemon-frontend/.env.example` → `.env` y ajusta **`VITE_API_
 
 ## Estado actual del proyecto
 
-> **Última revisión de este resumen: 2026-04-12.** El detalle día a día está en [docs/desarrollo/NOTAS.md](docs/desarrollo/NOTAS.md). Estado general: **frontend en evolución**, **backend operativo**.
+> **Última revisión: 2026-04-21.** Estado general: **proyecto completo y funcional**. El detalle día a día está en [docs/desarrollo/NOTAS.md](docs/desarrollo/NOTAS.md).
 
-### Frontend
+### Módulos completados
 
-#### Listo o usable hoy
+| Módulo | Estado |
+|--------|--------|
+| Autenticación / JWT | ✅ BCrypt + JWT 24 h, Spring Security stateless |
+| Motor de batalla Gen II | ✅ Daño, STAB, crítico, efectividad, estados alterados, PP persistido, captura, huida, **cambio de Pokémon con coste de turno**, KO forzado |
+| Gestión de partida | ✅ Guardar, cargar, reiniciar, starter, sync HP |
+| Tienda | ✅ Catálogo, compra, precio unitario — backend + NPC en overworld |
+| Inventario | ✅ Añadir, tirar, usar dentro y fuera de combate |
+| Centro Pokémon | ✅ Endpoint curar + NPC enfermera en overworld |
+| Overworld (Phaser) | ✅ Mapas Tiled, NPCs, warps, encuentros, diálogos con hablante |
+| Escena batalla | ✅ HUD React, sprites, estados en UI, sync post-batalla, PP reset, cambio de Pokémon |
+| Menú in-game React | ✅ Ficha entrenador, equipo (sprites B/W), mochila (tirar/usar), opciones, guardado |
+| Pantalla de título | ✅ Ho-Oh animado, música, Continuar / Nueva partida |
+| Tests backend | ✅ 32 tests, 0 fallos (`FlujoCableadoBatallaIT`, `JuegoServiceTest`, `CalculoServiceTest`) |
 
-- **Overworld**: mapas Tiled (JSON), capas, colisiones (tilemap + tiles de NPC), movimiento a grid, cámara sigue al jugador.
-- **Mapas en juego**: habitación, casa, Pueblo Origen (`new-bark-town`), laboratorio Elm, **Ruta 29** (`ruta-29` + `encuentros-ruta-29` en preload; warps desde el pueblo). La ruta puede crecer en narrativa y balance, pero **ya está integrada** en `johtoOverworld.js` y `EscenaPreload`.
-- **Sala debugger** (`debugger-room`, `phaser/mapas/debuggerRoom.js`): combates de prueba (estados, captura debug), warps y utilidades para validar el motor sin recorrer Johto entero.
-- **`WarpSystem`**: capa `eventos` (`destino`, `posX`/`posY`, `spawnAt`, offsets); sincronización de presencia al crear la escena y en `worldstep`.
-- **`SistemaEncuentros`**: hierba + JSON por mapa exterior configurado.
-- **Módulos por mapa** en `pokemon-frontend/src/phaser/mapas/` (`casaJugador`, `labElm`, `johtoOverworld`, `debuggerRoom`, `dialogosPostStarter`, …).
-- **Diálogo overworld**: `SistemaDialogo` + marco GBC (`marcoDialogoRetro.js`) y nombre de hablante.
-- **Texto estático React** (`PanelTextoEstaticoReact` en `PaginaJuego.jsx`): lectura con Z/Enter fuera del canvas cuando toca.
-- **Bienvenidas al paso**: objetos `bienvenida_*` o prop `dispararAlPaso` en Tiled.
-- **Menú in-game** (`MenuIngameReact.jsx`): equipo (retratos, PokéAPI auxiliar, stats del DTO), mochila, opciones (`opcionesCliente.js`), guardado local + servidor con JWT. Tecla **X**: si hay callback registrado, menú React; si no, **`EscenaMenu`** en Phaser.
-- **Starter**: `UIConfirmacionStarter.js` + `dialogosPostStarter.js`.
-- **`EscenaBatalla`**: `prepararSalvajePokemon` / `liberarSalvajePokemon`, equipo y movimientos por API, turnos con `PuenteApi.ejecutarTurno`.
-- **`usarJuegoStore`**: hidrata desde `GET /api/v1/juego/estado`, normaliza equipo/inventario, payload de `POST .../guardar`, caché local, tiempo de juego en overworld.
-- **`services/api.js`**: JWT en requests; **401** → logout (excepto ruta de login).
+### Alcance definitivo (descartado por tiempo)
 
-#### En marcha
-
-- **Post-batalla**: HP y estado en store/servidor en todos los casos; pantalla de fin de combate.
-- **Tienda en overworld**: backend de compra listo; falta UI enlazada a NPC.
-- **Centro Pokémon**, **Pokédex** ampliada, **tirar/usar ítems** vía API según fases del plan.
-- **Más mundo**; pulido de colisiones y eventos ([NOTAS](docs/desarrollo/NOTAS.md)).
-
-#### Problemas conocidos
-
-Los bugs concretos viven en [NOTAS.md](docs/desarrollo/NOTAS.md). Ejemplos: ajustes de colisión; placeholder visual en un momento del diálogo de la madre (PokeGear).
+- Ruta 29 (código presente, no forma parte del alcance entregado)
+- XP / nivelación visual
+- Evolución
+- Pokédex expandida
 
 ### Backend
 
-- **Auth**: JWT, BCrypt, Spring Security stateless (`ConfiguracionSeguridad`, filtro JWT); Swagger y auth públicos en dev.
-- **Batalla Gen II**: daño (STAB, crítico, efectividad), estados, PP persistido, learnsets PokéAPI (`gold-silver`); salvajes en usuario técnico (`preparar` / `liberar`).
-- **Economía e inventario**, **captura** con consumo de Ball, **seeding** PokéAPI (`WebClient`).
-- **API juego** (`/api/v1/juego`): `estado`, `equipo`, `starter`, `guardar` (posición, mapa, `estadoCliente`; **no** pisa dinero ni filas de inventario en ese endpoint), `reiniciar`, `inventario/anadir`.
-- DTO de equipo con **`tipo1` / `tipo2`** y **stats de combate** para el cliente.
+- **Auth**: JWT, BCrypt, Spring Security stateless; Swagger público en perfil `dev`.
+- **Batalla Gen II**: daño (STAB, crítico, efectividad ×4 a ×0), estados persistentes, PP por movimiento, learnsets PokéAPI (`gold-silver`); Pokémon salvajes en usuario técnico (`preparar` / `liberar`).
+- **Economía**: tienda (`GET /catalogo`, `POST /comprar`), inventario (`/anadir`, `/tirar`, `/usar`), Centro Pokémon (`POST /centro/curar`), captura con consumo de Ball.
+- **API juego** (`/api/v1/juego`): `estado`, `equipo`, `starter`, `guardar`, `reiniciar`.
+- DTO de equipo con `tipo1` / `tipo2` y stats de combate.
 - **OpenAPI / Swagger**: [docs/referencia/backend/README.md](docs/referencia/backend/README.md).
+
+### Frontend
+
+- **Overworld**: mapas Tiled (JSON), colisiones, movimiento a grid, cámara, `WarpSystem`, `SistemaEncuentros`.
+- **Sala debugger**: NPCs de combate por estado, NPC captura (10 Pokémon Johto aleatorios), tienda y centro.
+- **`EscenaBatalla`**: HUD en React, picker de movimientos, mochila en combate, equipo con cambio voluntario y forzado por KO, sync al salir.
+- **Menú in-game** (`MenuIngameReact`): ficha entrenador, equipo con sprites animados B/W, mochila con scroll virtual (USAR / TIRAR), opciones de audio y texto, guardado local + servidor.
+- **`usarJuegoStore`**: hidrata desde servidor, caché local, tiempo de juego, `patchEquipoLocal`.
+- **`services/api.js`**: JWT en cada request, 401 → logout automático.
 
 ---
 

@@ -709,14 +709,15 @@
 }
 
 .menu-ingame-team-list {
-  flex: 0 0 auto;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
   padding-right: 2px;
 }
 
 .menu-ingame-team-slot {
-  margin-bottom: 4px;
-  padding: 3px 4px 4px;
+  margin-bottom: 2px;
+  padding: 1px 3px 2px;
   border: 1px solid rgba(24, 40, 80, 0.2);
   border-radius: 2px;
   background: rgba(255, 255, 255, 0.35);
@@ -745,8 +746,8 @@
 
 /* Icono menú party (Gen 1/2) en el primer hueco en lugar del "1" */
 .menu-ingame-team-slot-icon {
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
   flex-shrink: 0;
   object-fit: contain;
   image-rendering: pixelated;
@@ -755,8 +756,8 @@
 }
 
 .menu-ingame-team-slot-mini {
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
   flex-shrink: 0;
   object-fit: contain;
   object-position: center bottom;
@@ -791,12 +792,12 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: 3px;
+  margin-top: 1px;
 }
 
 .menu-ingame-hpbar {
   flex: 1;
-  height: 5px;
+  height: 3px;
   background: #203040;
   border: 1px solid #0a1018;
   border-radius: 1px;
