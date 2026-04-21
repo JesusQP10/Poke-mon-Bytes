@@ -22,7 +22,7 @@ import {
 import { lineasProfElmTrasStarter, lineasMadreTrasStarter } from '../mapas/dialogosPostStarter';
 import { STATS_MENU_FALLBACK_POR_POKEDEX } from '../../config/statsCombateMenuFallback';
 import { volumenBgmParaPhaser, sfxPermitido } from '../../config/opcionesCliente';
-import { CONFIG_NPC_BATALLA_DEBUG, nombreAtaqueDemostracionPorEstadoDebug } from '../../config/batallaDebugDemostracion';
+import { CONFIG_NPC_BATALLA_DEBUG, generarPokemonAleatorioCaptura, nombreAtaqueDemostracionPorEstadoDebug } from '../../config/batallaDebugDemostracion';
 import PuenteApi from '../puentes/PuenteApi';
 import { usarAutenticacionStore } from '../../store/usarAutenticacionStore';
 
@@ -999,7 +999,9 @@ export default class EscenaOverworld extends Phaser.Scene {
    */
   _payloadBatallaDebugDesdePar(obj, props, esTestCaptura) {
     const npcNombre = String(obj.name ?? '').trim().toLowerCase();
-    const cfg = CONFIG_NPC_BATALLA_DEBUG[npcNombre];
+    const cfg = npcNombre === 'npc_captura'
+      ? generarPokemonAleatorioCaptura()
+      : CONFIG_NPC_BATALLA_DEBUG[npcNombre];
 
     const rawId = WarpSystem.prop(props, 'pokedexId');
     const rawNv = WarpSystem.prop(props, 'nivel');

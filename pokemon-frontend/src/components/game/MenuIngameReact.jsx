@@ -24,6 +24,7 @@ import retratoEntrenadorFicha from "../../assets/game/overworld/sprites/player/p
 import {
   fetchResumenPokemonPokeapi,
   urlGifCrystalStarter,
+  urlSpriteDirectoPorId,
   etiquetaTipoEspanol,
 } from "../../services/pokemonDetallePokeapi";
 import { urlMiniMenuInicialPorPokedexId } from "../../assets/pokemon/starters/portraitUrls";
@@ -172,6 +173,12 @@ const MenuIngameReact = ({ onClose }) => {
 
   const pokemonSeleccionado = useMemo(() => equipo[selEquipo] ?? null, [equipo, selEquipo]);
 
+  const EQUIPO_VIS = 4;
+  const equipoWinStart = useMemo(() => {
+    if (equipo.length <= EQUIPO_VIS) return 0;
+    return Math.max(0, Math.min(selEquipo - EQUIPO_VIS + 1, equipo.length - EQUIPO_VIS));
+  }, [selEquipo, equipo.length]);
+
   const detallePokedexId = pokemonSeleccionado?.id;
   const nivelPokemonFicha = (() => {
     const n = Number(pokemonSeleccionado?.nivel);
@@ -218,6 +225,12 @@ const MenuIngameReact = ({ onClose }) => {
       lineasMochila.length ? Math.min(Math.max(0, selMochila), lineasMochila.length - 1) : 0,
     [selMochila, lineasMochila],
   );
+
+  const MOCHILA_VIS = 5;
+  const mochaWinStart = useMemo(() => {
+    if (lineasMochila.length <= MOCHILA_VIS) return 0;
+    return Math.max(0, Math.min(selMochilaSafe - MOCHILA_VIS + 1, lineasMochila.length - MOCHILA_VIS));
+  }, [selMochilaSafe, lineasMochila.length]);
 
   const cerrarTodo = useCallback(() => {
     onClose();
@@ -753,7 +766,9 @@ const MenuIngameReact = ({ onClose }) => {
         <div className="menu-ingame-full menu-ingame-full--bag">
           <div className="menu-ingame-full-title">MOCHILA</div>
           <div className="menu-ingame-scroll menu-ingame-scroll--bag">
-            {lineasMochila.map((l, i) => (
+            {lineasMochila.slice(mochaWinStart, mochaWinStart + MOCHILA_VIS).map((l, sliceIdx) => {
+              const i = mochaWinStart + sliceIdx;
+              return (
               <div
                 key={l.clave}
                 className={`menu-ingame-mochila-row${i === selMochilaSafe ? " menu-ingame-mochila-row--active" : ""}`}
@@ -776,7 +791,8 @@ const MenuIngameReact = ({ onClose }) => {
                 <span className="menu-ingame-mochila-nombre">{l.nombre}</span>
                 <span className="menu-ingame-mochila-cant">×{l.cantidad}</span>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -785,7 +801,9 @@ const MenuIngameReact = ({ onClose }) => {
         <div className="menu-ingame-full menu-ingame-full--bag">
           <div className="menu-ingame-full-title">MOCHILA</div>
           <div className="menu-ingame-scroll menu-ingame-scroll--bag">
-            {lineasMochila.map((l, i) => (
+            {lineasMochila.slice(mochaWinStart, mochaWinStart + MOCHILA_VIS).map((l, sliceIdx) => {
+              const i = mochaWinStart + sliceIdx;
+              return (
               <div
                 key={l.clave}
                 className={`menu-ingame-mochila-row${i === selMochilaSafe ? " menu-ingame-mochila-row--active" : ""}`}
@@ -808,7 +826,8 @@ const MenuIngameReact = ({ onClose }) => {
                 <span className="menu-ingame-mochila-nombre">{l.nombre}</span>
                 <span className="menu-ingame-mochila-cant">×{l.cantidad}</span>
               </div>
-            ))}
+              );
+            })}
           </div>
           <div className="menu-ingame-accion-popup">
             <div className="menu-ingame-accion-nombre">{itemAccionActual?.nombre ?? "?"}</div>
@@ -919,7 +938,8 @@ const MenuIngameReact = ({ onClose }) => {
         <div className="menu-ingame-full menu-ingame-full--team">
           <div className="menu-ingame-full-title">POKÉMON</div>
           <div className="menu-ingame-team-list">
-            {equipo.map((p, i) => {
+            {equipo.slice(equipoWinStart, equipoWinStart + EQUIPO_VIS).map((p, sliceIdx) => {
+              const i = equipoWinStart + sliceIdx;
               const nombreEspecie = p.nombre || "???";
               const apodo = p.nombreApodo && p.nombreApodo !== nombreEspecie ? p.nombreApodo : null;
               const etiqueta = apodo || nombreEspecie;
@@ -930,6 +950,7 @@ const MenuIngameReact = ({ onClose }) => {
               const miniStarter =
                 esMismoPokemonQueStarter(p, starter) &&
                 urlMiniMenuInicialPorPokedexId(p.id ?? starter?.id ?? starter?.pokedexId);
+              const spriteUrls = p.id ? urlSpriteDirectoPorId(p.id) : null;
               return (
                 <div
                   key={`slot-${i}`}
@@ -946,7 +967,20 @@ const MenuIngameReact = ({ onClose }) => {
                         height={14}
                         draggable={false}
                       />
-                    ) : i === 0 ? (
+                    ) : spriteUrls ? (
+                      <img
+                        className="menu-ingame-team-slot-mini"
+                        src={spriteUrls.principal}
+                        alt=""
+                        width={14}
+                        height={14}
+                        draggable={false}
+                        onError={(e) => {
+                          e.currentTarget.onerror = (e2) => { e2.currentTarget.onerror = null; e2.currentTarget.src = iconSlotParty; };
+                          e.currentTarget.src = spriteUrls.fallback;
+                        }}
+                      />
+                    ) : (
                       <img
                         className="menu-ingame-team-slot-icon"
                         src={iconSlotParty}
@@ -955,8 +989,6 @@ const MenuIngameReact = ({ onClose }) => {
                         height={14}
                         draggable={false}
                       />
-                    ) : (
-                      <span className="menu-ingame-team-slot-num">{i + 1}</span>
                     )}
                     <div className="menu-ingame-team-slot-names">
                       <div className="menu-ingame-team-etiqueta">{etiqueta}</div>

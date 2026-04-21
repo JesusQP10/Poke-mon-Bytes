@@ -578,16 +578,74 @@ export default class EscenaBatalla extends Phaser.Scene {
             this._mostrarTexto('¡Ese Pokémon\nno puede combatir!', () => this._mostrarEquipoBattleReact());
             return;
           }
-          this._mostrarTexto(
-            `${p?.nombreApodo ?? p?.nombre ?? p?.name ?? 'Pokémon'}\n(próximamente).`,
-            () => this._mostrarMenuAcciones(),
-          );
+          void this._cambiarPokemonEnBatalla(p, true);
         },
         onCancel: () => this._mostrarMenuAcciones(),
       },
       opciones: this._textosOpcionesMenuBatalla(),
       seleccion: 0,
       onSeleccion: (i) => this._ejecutarAccion(i),
+    });
+  }
+
+  _mostrarEquipoBattleReactForzado() {
+    if (!this._uiReact) return;
+    const team = usarJuegoStore.getState().team ?? [];
+    const activoId = this._pokemonJugador?.pokemonUsuarioId;
+    const starter = usarJuegoStore.getState().starter ?? null;
+    this._uiReact({
+      ...this._datosHudReact(),
+      mensaje: '¿Cuál Pokémon\nenviarás?',
+      menuVisible: false,
+      movimientosPicker: null,
+      mochilaPicker: null,
+      equipoPicker: {
+        equipo: team,
+        starter,
+        onPick: (p) => {
+          const idPick = p?.pokemonUsuarioId ?? p?.id;
+          const hp = p?.hpActual ?? 0;
+          if (hp <= 0 || idPick === activoId) {
+            this._mostrarTexto('¡Ese Pokémon\nno puede combatir!', () => this._mostrarEquipoBattleReactForzado());
+            return;
+          }
+          void this._cambiarPokemonEnBatalla(p, false);
+        },
+        onCancel: null,
+      },
+      opciones: this._textosOpcionesMenuBatalla(),
+      seleccion: 0,
+      onSeleccion: (i) => this._ejecutarAccion(i),
+    });
+  }
+
+  async _cambiarPokemonEnBatalla(nuevoPokemon, conCosteDeTurno) {
+    const nombreActivo = this._pokemonJugador?.nombreApodo ?? this._pokemonJugador?.nombre ?? 'Pokémon';
+    const nombreNuevo = nuevoPokemon?.nombreApodo ?? nuevoPokemon?.nombre ?? nuevoPokemon?.name ?? 'Pokémon';
+
+    this._pokemonJugador = EscenaBatalla._normalizarPokemonEquipoApi(nuevoPokemon);
+    this._alinearHpJugadorConStore();
+
+    const pid = this._pokemonJugador?.pokemonUsuarioId;
+    if (pid != null) {
+      try {
+        this._movimientosJugador = await PuenteApi.getMovimientos(pid);
+        EscenaBatalla._logMovimientosCargados('cambio jugador', this._movimientosJugador);
+      } catch (e) {
+        console.warn('[EscenaBatalla] movimientos tras cambio', e);
+        this._movimientosJugador = [];
+      }
+    }
+
+    if (this._uiReact) this._emitirHudReact();
+
+    const mensajes = conCosteDeTurno
+      ? [`¡Vuelve,\n${nombreActivo}!`, `¡Adelante,\n${nombreNuevo}!`]
+      : [`¡Adelante,\n${nombreNuevo}!`];
+
+    this._encolarMensajesBatalla(mensajes, () => {
+      if (conCosteDeTurno) void this._turnoEnemigo();
+      else this._mostrarMenuAcciones();
     });
   }
 
@@ -1170,10 +1228,22 @@ export default class EscenaBatalla extends Phaser.Scene {
   }
 
   _derrota() {
-    this._mostrarTexto('¡Tu Pokémon no\npuede más!', () => {
-      this._mostrarTexto('¡Te has quedado\nsin Pokémon!', () => {
-        void this._terminarBatalla();
-      });
+    const nombreCaido = this._pokemonJugador?.nombreApodo ?? this._pokemonJugador?.nombre ?? 'Pokémon';
+    const activoId = this._pokemonJugador?.pokemonUsuarioId;
+    const team = usarJuegoStore.getState().team ?? [];
+    const sustituto = team.find((p) => {
+      const hp = p?.hpActual ?? 0;
+      return hp > 0 && p?.pokemonUsuarioId !== activoId;
+    });
+
+    this._mostrarTexto(`¡${nombreCaido} no\npuede más!`, () => {
+      if (sustituto) {
+        this._mostrarEquipoBattleReactForzado();
+      } else {
+        this._mostrarTexto('¡Te has quedado\nsin Pokémon!', () => {
+          void this._terminarBatalla();
+        });
+      }
     });
   }
 

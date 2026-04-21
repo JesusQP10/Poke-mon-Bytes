@@ -167,7 +167,7 @@
 .menu-ingame-poke-panel--stats .menu-ingame-poke-detalle-cuerpo {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 /* —— Pantalla movimientos (inspiración EpEc, estilo pixel del menú) —— */
@@ -267,8 +267,7 @@
   flex-direction: column;
   gap: 2px;
   justify-content: center;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   padding-right: 1px;
 }
 
@@ -406,7 +405,7 @@
     #dce6f4 2px
   );
   padding: 5px 5px 6px;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .menu-ingame-trainer-head {
@@ -703,17 +702,15 @@
 
 .menu-ingame-scroll {
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
   font-size: 5px;
   line-height: 1.55;
   color: #222a34;
-  max-height: 86px;
 }
 
 .menu-ingame-team-list {
   flex: 0 0 auto;
-  max-height: 64px;
-  overflow-y: auto;
+  overflow: hidden;
   padding-right: 2px;
 }
 
@@ -863,7 +860,7 @@
 }
 
 .menu-ingame-scroll--bag {
-  max-height: 88px;
+  /* sin max-height: la ventana deslizante JS controla los ítems visibles */
 }
 
 .menu-ingame-mochila-row {

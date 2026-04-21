@@ -3,13 +3,27 @@
  * `ataquesMoveset`: 1–4 nombres en kebab-case tal como están en la BD (`ATAQUES`).
  * El servidor los usa directamente; si no caben 4 entradas el learnset no rellena.
  */
+const POOL_CAPTURA_JOHTO = [
+  { pokedexId: 161, nombre: 'Sentret',   ataquesMoveset: ['tackle', 'defense-curl'] },
+  { pokedexId: 165, nombre: 'Ledyba',    ataquesMoveset: ['tackle', 'supersonic'] },
+  { pokedexId: 167, nombre: 'Spinarak',  ataquesMoveset: ['poison-sting', 'string-shot'] },
+  { pokedexId: 170, nombre: 'Chinchou',  ataquesMoveset: ['bubble', 'thunder-wave'] },
+  { pokedexId: 179, nombre: 'Mareep',    ataquesMoveset: ['tackle', 'thundershock'] },
+  { pokedexId: 183, nombre: 'Marill',    ataquesMoveset: ['tackle', 'bubble'] },
+  { pokedexId: 187, nombre: 'Hoppip',    ataquesMoveset: ['tackle', 'synthesis'] },
+  { pokedexId: 194, nombre: 'Wooper',    ataquesMoveset: ['water-gun', 'mud-sport'] },
+  { pokedexId: 204, nombre: 'Pineco',    ataquesMoveset: ['tackle', 'protect'] },
+  { pokedexId: 206, nombre: 'Dunsparce', ataquesMoveset: ['rage', 'defense-curl'] },
+];
+
+export function generarPokemonAleatorioCaptura() {
+  const base = POOL_CAPTURA_JOHTO[Math.floor(Math.random() * POOL_CAPTURA_JOHTO.length)];
+  const nivel = 2 + Math.floor(Math.random() * 4);
+  return { ...base, nivel };
+}
+
 export const CONFIG_NPC_BATALLA_DEBUG = {
-  npc_captura: {
-    pokedexId: 10,
-    nivel: 3,
-    nombre: 'Caterpie',
-    ataquesMoveset: ['tackle', 'string-shot'],
-  },
+  npc_captura: null,
   npc_battle_normal: {
     pokedexId: 163,
     nivel: 6,

@@ -49,6 +49,20 @@ export function urlGifCrystalStarter(pokedexId) {
 }
 
 /**
+ * URL directa del sprite B/W animado sin necesidad de fetch a PokéAPI.
+ * Mismo orden de preferencia que `spriteAnimadoPreferido` pero construido estáticamente.
+ * @param {number | string | null | undefined} pokedexId
+ * @returns {{ principal: string, fallback: string }}
+ */
+export function urlSpriteDirectoPorId(pokedexId) {
+  const n = Number(pokedexId);
+  return {
+    principal: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${n}.gif`,
+    fallback:  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ii/crystal/${n}.png`,
+  };
+}
+
+/**
  * Sprite animado de PokéAPI (Gen V B/W) o alternativas.
  * @param {Record<string, unknown> | null | undefined} sprites
  * @returns {string | null}

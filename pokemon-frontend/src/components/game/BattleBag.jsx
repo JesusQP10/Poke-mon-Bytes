@@ -80,6 +80,28 @@ export default function BattleBag({
 
   const vacio = entradas.length === 0;
 
+  const renderFila = (linea, flatIdx, key) => (
+    <div
+      key={key}
+      className={`battle-bag-fila${flatIdx === sel ? " battle-bag-fila--sel" : ""}`}
+    >
+      <span className="battle-bag-cur">{flatIdx === sel ? "▶" : ""}</span>
+      <span className="battle-bag-icon-wrap" aria-hidden>
+        <img
+          className="battle-bag-icon"
+          src={urlIconoItemPorNombre(linea.nombre) || iconPocion}
+          alt=""
+          width={12}
+          height={12}
+          draggable={false}
+          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = iconPocion; }}
+        />
+      </span>
+      <span className="battle-bag-nombre">{linea.nombre ?? "?"}</span>
+      <span className="battle-bag-cant">×{linea.cantidad}</span>
+    </div>
+  );
+
   return (
     <div className="battle-bag-root" role="presentation">
       <div className="battle-bag-frame">
@@ -90,71 +112,15 @@ export default function BattleBag({
           <div className="battle-bag-right">
             <div className="battle-bag-scroll">
               <div className="battle-bag-seccion-tit">CURATIVOS</div>
-              {curas.length === 0 ? (
-                <div className="battle-bag-vacio">—</div>
-              ) : (
-                curas.map((linea, idx) => {
-                  const flatIdx = idx;
-                  return (
-                    <div
-                      key={`c-${idx}`}
-                      className={`battle-bag-fila${flatIdx === sel ? " battle-bag-fila--sel" : ""}`}
-                    >
-                      <span className="battle-bag-cur">{flatIdx === sel ? "▶" : ""}</span>
-                      <span className="battle-bag-icon-wrap" aria-hidden>
-                        <img
-                          className="battle-bag-icon"
-                          src={urlIconoItemPorNombre(linea.nombre) || iconPocion}
-                          alt=""
-                          width={12}
-                          height={12}
-                          draggable={false}
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = iconPocion;
-                          }}
-                        />
-                      </span>
-                      <span className="battle-bag-nombre">{linea.nombre ?? "?"}</span>
-                      <span className="battle-bag-cant">×{linea.cantidad}</span>
-                    </div>
-                  );
-                })
-              )}
-
+              {curas.length === 0
+                ? <div className="battle-bag-vacio">—</div>
+                : curas.map((linea, idx) => renderFila(linea, idx, `c-${idx}`))
+              }
               <div className="battle-bag-seccion-tit battle-bag-seccion-tit--2">BALLS</div>
-              {bals.length === 0 ? (
-                <div className="battle-bag-vacio">—</div>
-              ) : (
-                bals.map((linea, idx) => {
-                  const flatIdx = curas.length + idx;
-                  return (
-                    <div
-                      key={`b-${idx}`}
-                      className={`battle-bag-fila${flatIdx === sel ? " battle-bag-fila--sel" : ""}`}
-                    >
-                      <span className="battle-bag-cur">{flatIdx === sel ? "▶" : ""}</span>
-                      <span className="battle-bag-icon-wrap" aria-hidden>
-                        <img
-                          className="battle-bag-icon"
-                          src={urlIconoItemPorNombre(linea.nombre) || iconPocion}
-                          alt=""
-                          width={12}
-                          height={12}
-                          draggable={false}
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = iconPocion;
-                          }}
-                        />
-                      </span>
-                      <span className="battle-bag-nombre">{linea.nombre ?? "?"}</span>
-                      <span className="battle-bag-cant">×{linea.cantidad}</span>
-                    </div>
-                  );
-                })
-              )}
-
+              {bals.length === 0
+                ? <div className="battle-bag-vacio">—</div>
+                : bals.map((linea, idx) => renderFila(linea, curas.length + idx, `b-${idx}`))
+              }
               {vacio && <div className="battle-bag-vacio-todo">Nada útil en combate.</div>}
             </div>
           </div>
