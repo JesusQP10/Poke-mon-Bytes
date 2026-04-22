@@ -5,7 +5,7 @@ import { create } from 'zustand';
  * Evita cantidades infladas si hubo filas duplicadas o mezcla JSON antiguo + servidor.
  * @param {unknown[]} lineas
  */
-function normalizarListaInventario(lineas) {
+export function normalizarListaInventario(lineas) {
   if (!Array.isArray(lineas) || lineas.length === 0) return [];
   const map = new Map();
   for (const it of lineas) {
@@ -48,7 +48,7 @@ function idsPokedexDesdeEquipo(team) {
 }
 
 /** Une lista guardada + especies del equipo, orden numérico. */
-function fusionarPokedexRegistrados(prev, team) {
+export function fusionarPokedexRegistrados(prev, team) {
   const s = new Set();
   if (Array.isArray(prev)) {
     for (const x of prev) {
@@ -66,7 +66,7 @@ function generarIdEntrenadorCincoDigitos() {
 }
 
 /** ID estable para guardados antiguos sin `idEntrenadorPublico`. */
-function idEntrenadorDesdeSemilla(semilla) {
+export function idEntrenadorDesdeSemilla(semilla) {
   let h = 2166136261;
   const str = String(semilla ?? '');
   for (let i = 0; i < str.length; i++) {
@@ -76,7 +76,7 @@ function idEntrenadorDesdeSemilla(semilla) {
   return String(Math.abs(h) % 100000).padStart(5, '0');
 }
 
-function normalizarIdEntrenador5(raw) {
+export function normalizarIdEntrenador5(raw) {
   if (raw == null) return '';
   const digits = String(raw).replace(/\D/g, '');
   if (!digits) return '';
@@ -87,7 +87,7 @@ function normalizarIdEntrenador5(raw) {
  * Claves = las de `EscenaPreload` (`tilemapTiledJSON`). Tiled a veces exporta `_` o espacios.
  * @param {string | null | undefined} mapaKey
  */
-function normalizarMapaActualParaPreload(mapaKey) {
+export function normalizarMapaActualParaPreload(mapaKey) {
   const k = String(mapaKey ?? '').trim();
   if (!k) return 'player-room';
   const slug = k.toLowerCase().replace(/[\s-]+/g, '_');
@@ -98,7 +98,6 @@ function normalizarMapaActualParaPreload(mapaKey) {
     new_bark_town: 'new-bark-town',
     player_house: 'player-house',
     player_room: 'player-room',
-    ruta_29: 'ruta-29',
   };
   if (Object.prototype.hasOwnProperty.call(canon, slug)) return canon[slug];
   return k;

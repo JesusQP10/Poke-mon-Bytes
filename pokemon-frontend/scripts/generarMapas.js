@@ -14,7 +14,6 @@ const mapas = [
   ['player_house.json',  GeneradorTilemap.generarPlayerHouse()],
   ['new_bark_town.json', GeneradorTilemap.generarNewBarkTown()],
   ['elm_lab.json',       GeneradorTilemap.generarElmLab()],
-  ['ruta_29.json',       GeneradorTilemap.generarRuta29()],
 ];
 
 for (const [nombre, datos] of mapas) {

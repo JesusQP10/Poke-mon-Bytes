@@ -22,7 +22,7 @@
 
 <br />
 
-[**Demo visual**](#galería-del-proyecto) · [**Arranque local**](#inicio-rápido) · [**Qué hay hecho**](#estado-actual-del-proyecto) · [**Arquitectura**](#arquitectura) · [**Docs**](#documentación) · [**Notas**](./docs/desarrollo/NOTAS.md) · [**Swagger**](./docs/referencia/backend/README.md) · [**Plan FP**](./PLAN_TRABAJO_FP.md)
+[**Demo visual**](#galería-del-proyecto) · [**Arranque local**](#inicio-rápido) · [**Qué hay hecho**](#estado-actual-del-proyecto) · [**Arquitectura**](#arquitectura) · [**Docs**](#documentación) · [**Notas**](./docs/desarrollo/NOTAS.md) · [**Swagger**](./docs/referencia/backend/README.md)
 
 </div>
 
@@ -99,11 +99,12 @@
 
 | | |
 |:---|:---|
-| **Mundo** | Varios mapas **Tiled** (habitación, casa, Pueblo Origen, laboratorio Elm, **Ruta 29** con encuentros, **sala debugger** para pruebas de combate y flujos). |
+| **Mundo** | Varios mapas **Tiled** (habitación, casa, New Bark Town, laboratorio Elm, **sala debugger** con NPCs de tienda, centro y combate). |
 | **Navegación** | **`WarpSystem`**: puertas y rutas con `destino`, spawn y offsets; sincronización de zonas para no activar warps al aparecer encima de una salida. |
-| **Combate** | Turnos resueltos en **Spring Boot** (daño Gen II, STAB, crítico, estados, PP, captura); Phaser como **vista** y cliente del contrato REST. |
-| **Estado** | **Zustand**: hidrata desde `GET /api/v1/juego/estado`, guarda en servidor y en **localStorage**; Axios con **JWT** y manejo de **401**. |
-| **UI** | **React**: menú in-game (equipo, mochila, opciones, guardado), texto estático (`PanelTextoEstaticoReact`); **Phaser**: overworld, batalla, diálogo retro con hablante. |
+| **Combate** | Turnos en **Spring Boot** (daño Gen II, STAB, crítico, estados alterados, PP, captura); **cambio de Pokémon** voluntario con coste de turno y forzado por KO; sprites dinámicos por `pokedexId`. |
+| **Economía** | **Tienda** con NPC + selector de cantidad; **inventario** completo (tirar / usar fuera de combate); **Centro Pokémon** con NPC enfermera — todo conectado a la API. |
+| **Estado** | **Zustand**: hidrata desde `GET /estado`, guarda en servidor y en **localStorage**; sync completo post-batalla; Axios con **JWT** y manejo de **401**. |
+| **UI** | **React**: menú in-game (equipo, mochila USAR/TIRAR, opciones, guardado); **`BattleBag`** y **`BattleParty`** en combate; HUD con etiqueta de estado alterado. |
 
 ---
 
@@ -167,7 +168,7 @@ Opcional: copia `pokemon-frontend/.env.example` → `.env` y ajusta **`VITE_API_
 
 ## Estado actual del proyecto
 
-> **Última revisión: 2026-04-21.** Estado general: **proyecto completo y funcional**. El detalle día a día está en [docs/desarrollo/NOTAS.md](docs/desarrollo/NOTAS.md).
+> **Última revisión: 2026-04-22.** Estado general: **proyecto completo y funcional**. El detalle día a día está en [docs/desarrollo/NOTAS.md](docs/desarrollo/NOTAS.md).
 
 ### Módulos completados
 
@@ -187,7 +188,6 @@ Opcional: copia `pokemon-frontend/.env.example` → `.env` y ajusta **`VITE_API_
 
 ### Alcance definitivo (descartado por tiempo)
 
-- Ruta 29 (código presente, no forma parte del alcance entregado)
 - XP / nivelación visual
 - Evolución
 - Pokédex expandida
@@ -195,20 +195,21 @@ Opcional: copia `pokemon-frontend/.env.example` → `.env` y ajusta **`VITE_API_
 ### Backend
 
 - **Auth**: JWT, BCrypt, Spring Security stateless; Swagger público en perfil `dev`.
-- **Batalla Gen II**: daño (STAB, crítico, efectividad ×4 a ×0), estados persistentes, PP por movimiento, learnsets PokéAPI (`gold-silver`); Pokémon salvajes en usuario técnico (`preparar` / `liberar`).
-- **Economía**: tienda (`GET /catalogo`, `POST /comprar`), inventario (`/anadir`, `/tirar`, `/usar`), Centro Pokémon (`POST /centro/curar`), captura con consumo de Ball.
-- **API juego** (`/api/v1/juego`): `estado`, `equipo`, `starter`, `guardar`, `reiniciar`.
-- DTO de equipo con `tipo1` / `tipo2` y stats de combate.
+- **Batalla Gen II**: daño (STAB, crítico, efectividad ×4 a ×0), estados persistentes, PP por movimiento, learnsets PokéAPI (`gold-silver`); Pokémon salvajes en usuario técnico (`preparar` / `liberar`); reset de PP (`DELETE /pp/{id}`).
+- **Economía**: tienda (`POST /comprar`), inventario (`/anadir`, `/tirar`, `/usar`), Centro Pokémon (`POST /centro/curar`), captura con consumo de Ball.
+- **API juego** (`/api/v1/juego`): `estado`, `equipo`, `starter`, `guardar`, `reiniciar`, `inventario/anadir`, `inventario/tirar`, `inventario/usar`, `centro/curar`.
+- DTO de equipo con `tipo1` / `tipo2` y stats de combate. Flyway para migraciones de esquema.
 - **OpenAPI / Swagger**: [docs/referencia/backend/README.md](docs/referencia/backend/README.md).
 
 ### Frontend
 
-- **Overworld**: mapas Tiled (JSON), colisiones, movimiento a grid, cámara, `WarpSystem`, `SistemaEncuentros`.
-- **Sala debugger**: NPCs de combate por estado, NPC captura (10 Pokémon Johto aleatorios), tienda y centro.
-- **`EscenaBatalla`**: HUD en React, picker de movimientos, mochila en combate, equipo con cambio voluntario y forzado por KO, sync al salir.
-- **Menú in-game** (`MenuIngameReact`): ficha entrenador, equipo con sprites animados B/W, mochila con scroll virtual (USAR / TIRAR), opciones de audio y texto, guardado local + servidor.
+- **Overworld**: mapas Tiled (JSON), colisiones, movimiento a grid, cámara, `WarpSystem`, `SistemaEncuentros`; flujos NPC de tienda (selector de cantidad) y Centro Pokémon.
+- **Sala debugger**: NPCs de combate por estado alterado, NPC captura (10 Pokémon Johto aleatorios), tienda y centro.
+- **`EscenaBatalla`**: HUD con etiqueta de estado (PAR/VEN/DOR…), sprites dinámicos por `pokedexId` (Gen V + fallback Crystal), `BattleBag` (mochila en combate), `BattleParty` (cambio voluntario y forzado por KO), sync al salir.
+- **Menú in-game** (`MenuIngameReact`): ficha entrenador, equipo con sprites animados B/W, mochila (USAR / TIRAR con picker de Pokémon), opciones de audio y texto, guardado local + servidor.
 - **`usarJuegoStore`**: hidrata desde servidor, caché local, tiempo de juego, `patchEquipoLocal`.
 - **`services/api.js`**: JWT en cada request, 401 → logout automático.
+- **Tests**: Vitest + `happy-dom`; tests en `src/__tests__/` (config, phaser, services, store).
 
 ---
 
@@ -254,8 +255,8 @@ Más diagramas (seguridad, dominio, captura, daño): [docs/referencia/diagramas/
 
 | Capa | Tecnologías |
 |------|-------------|
-| **Backend** | Java 21, Spring Boot 3.5.x, MySQL 8, Spring Security 6 + JJWT, Maven, Lombok |
-| **Frontend** | React 19, Vite 7, Phaser 3.90, Tailwind CSS 3.4, Zustand 5, Axios, Framer Motion 12, Tiled (export JSON) |
+| **Backend** | Java 21, Spring Boot 3.5.x, MySQL 8, Spring Security 6 + JJWT, Flyway, Maven, Lombok |
+| **Frontend** | React 19, Vite 7, Phaser 3.90, Tailwind CSS 3.4, Zustand 5, Axios, Framer Motion 12, Vitest 4, Tiled (export JSON) |
 
 ---
 
@@ -268,8 +269,7 @@ root/
 ├── docs/                    # Documentación y assets
 │   ├── referencia/          # Backend + diagramas Mermaid
 │   ├── desarrollo/          # NOTAS, defensa FP, mejoras
-│   ├── proyecto/            # Memoria / documentación integral
-│   ├── planning/
+│   ├── proyecto/            # Memoria / PROYECTO.md
 │   ├── screenshots/
 │   ├── tiled/               # Fuente .tmx (Tiled Editor)
 │   └── api-tests.http
@@ -286,9 +286,11 @@ root/
     │   ├── pages/
     │   ├── phaser/
     │   ├── services/
-    │   └── store/
+    │   ├── store/
+    │   └── __tests__/       # Vitest (config, phaser, services, store)
     ├── package.json
-    └── vite.config.js
+    ├── vite.config.js
+    └── vitest.config.js
 ```
 
 ---

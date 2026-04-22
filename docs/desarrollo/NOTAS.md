@@ -49,7 +49,6 @@
 
 ### Descartado por tiempo
 
-- Ruta 29 (código base presente, no es parte del alcance entregado)
 - XP / nivelación visual
 - Evolución
 - Pokédex expandida

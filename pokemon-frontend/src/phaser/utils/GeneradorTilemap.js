@@ -300,9 +300,6 @@ const GeneradorTilemap = {
       this._crearCapaTiles(5, 'decoracion_alto',  ANCHO, ALTO, decAlto),
       this._crearCapaObjetos(6, 'npcs', [npcRival]),
       this._crearCapaObjetos(7, 'eventos', [
-        // Geometría alineada con exports/new_bark_town.json (Tiled)
-        // Ruta 30×9: posY máximo 8 (9 queda fuera del mapa y desalinea al jugador)
-        this._crearWarpPixels(5, 'warp_ruta_29', 0, 112, 16, 32, 'ruta-29', 19, 8),
         this._crearWarpPixels(11, 'warp_elm_lab', 96, 48, 32, 32, 'elm-lab', 6, 11, 'warp_salida', 0, -1),
         this._crearWarpPixels(12, 'warp_player_house', 192, 80, 32, 32, 'player-house', 6, 7),
       ]),
@@ -356,61 +353,6 @@ const GeneradorTilemap = {
     return mapa;
   },
 
-  /**
-   * ruta_29 — 30×9 tiles, tilesets: johto + johto_modern
-   */
-  generarRuta29() {
-    const ANCHO = 30, ALTO = 9;
-    const TILE_SUELO = 1, TILE_COLISION = 2, TILE_HIERBA = 3;
-
-    const tilesets = [
-      this._tileset(1,  'johto'),
-      this._tileset(97, 'johto_modern'),
-    ];
-
-    const suelo = new Array(ANCHO * ALTO).fill(TILE_SUELO);
-    const decBajo = this._datosVacios(ANCHO, ALTO);
-
-    // Hierba alta: filas 3-6, columnas 5-20
-    const hierba = this._datosVacios(ANCHO, ALTO);
-    for (let y = 3; y <= 6; y++) {
-      for (let x = 5; x <= 20; x++) {
-        hierba[y * ANCHO + x] = TILE_HIERBA;
-      }
-    }
-
-    // Colisiones: borde completo excepto borde este (columna 29)
-    const colisiones = this._datosVacios(ANCHO, ALTO);
-    // Norte y sur
-    for (let x = 0; x < ANCHO; x++) {
-      colisiones[0 * ANCHO + x]           = TILE_COLISION;
-      colisiones[(ALTO - 1) * ANCHO + x]  = TILE_COLISION;
-    }
-    // Oeste
-    for (let y = 0; y < ALTO; y++) {
-      colisiones[y * ANCHO + 0] = TILE_COLISION;
-    }
-    // Este (columna 29) sin colisión — es la salida hacia new_bark_town
-
-    const decAlto = this._datosVacios(ANCHO, ALTO);
-
-    const capas = [
-      this._crearCapaTiles(1, 'suelo',           ANCHO, ALTO, suelo),
-      this._crearCapaTiles(2, 'decoracion_bajo',  ANCHO, ALTO, decBajo),
-      this._crearCapaTiles(3, 'hierba_alta',      ANCHO, ALTO, hierba),
-      this._crearCapaTiles(4, 'colisiones',       ANCHO, ALTO, colisiones),
-      this._crearCapaTiles(5, 'decoracion_alto',  ANCHO, ALTO, decAlto),
-      this._crearCapaObjetos(6, 'npcs', []),
-      this._crearCapaObjetos(7, 'eventos', [
-        this._crearWarp(1, 'warp_new_bark_1', 29, 4, 'new-bark-town', 1, 8),
-        this._crearWarp(2, 'warp_new_bark_2', 29, 5, 'new-bark-town', 1, 8),
-      ]),
-    ];
-
-    const mapa = this._crearCabecera(ANCHO, ALTO, tilesets, 7, 2);
-    mapa.layers = capas;
-    return mapa;
-  },
 };
 
 export default GeneradorTilemap;

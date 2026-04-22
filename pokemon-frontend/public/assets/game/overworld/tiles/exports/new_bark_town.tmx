@@ -116,13 +116,6 @@
   </object>
  </objectgroup>
  <objectgroup id="8" name="eventos">
-  <object id="5" name="warp_ruta_29" x="0" y="112" width="16" height="32">
-   <properties>
-    <property name="destino" value="ruta-29"/>
-    <property name="posX" type="int" value="19"/>
-    <property name="posY" type="int" value="7"/>
-   </properties>
-  </object>
   <object id="11" name="warp_elm_lab" x="96" y="48" width="32" height="32">
    <properties>
     <property name="destino" value="elm_lab"/>

@@ -36,7 +36,6 @@ export default class EscenaPreload extends Phaser.Scene {
     // ── Tilesets (solo los que existen) ──────────────────────────────────
     this.load.image('new_bark_town', '/assets/game/overworld/tiles/sheets/new_bark_town.png');
     this.load.image('debugger_room', '/assets/game/overworld/tiles/sheets/debugger_room.png');
-    this.load.image('ruta_29_bg', '/assets/game/overworld/tiles/sheets/ruta_29_bg.png');
 
     // Spritesheet del jugador (32x32 respetando el padding de tus assets)
     this.load.spritesheet('jugador', '/assets/game/overworld/sprites/player/overworld_player_walk_sheet.png', { frameWidth: 32, frameHeight: 32 });
@@ -72,12 +71,10 @@ export default class EscenaPreload extends Phaser.Scene {
     this.load.tilemapTiledJSON('player-house', '/assets/game/overworld/tiles/exports/player_house.json');
     this.load.tilemapTiledJSON('new-bark-town', '/assets/game/overworld/tiles/exports/new_bark_town.json');
     this.load.tilemapTiledJSON('elm-lab', '/assets/game/overworld/tiles/exports/elm_lab.json');
-    this.load.tilemapTiledJSON('ruta-29', '/assets/game/overworld/tiles/exports/ruta_29.json');
     this.load.tilemapTiledJSON('debugger-room', '/assets/game/overworld/tiles/exports/debugger_room.json');
 
     // ── Tabla de encuentros (clave = `encuentros-${mapaKey}` en EscenaOverworld) ──
     this.load.json('encuentros-new-bark-town', '/assets/game/overworld/tiles/events/encuentros_new_bark_town.json');
-    this.load.json('encuentros-ruta-29', '/assets/game/overworld/tiles/events/encuentros_ruta_29.json');
 
     // ── Batalla ──────────────────────────────────────────────────────────
     this.load.image('batalla-fondo-hierba', fondoBatallaHierba);

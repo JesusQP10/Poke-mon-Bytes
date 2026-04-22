@@ -4,7 +4,7 @@ import Phaser from 'phaser';
  * Sistema genérico de warps (Tiled → capa `eventos`).
  *
  * Convención:
- * - Objetos con custom property `destino` (clave del tilemap en caché, p. ej. `new-bark-town`, `ruta-29`).
+ * - Objetos con custom property `destino` (clave del tilemap en caché, p. ej. `new-bark-town`, `elm-lab`).
  * - `posX` / `posY` en **tiles** (0-based); equivalen a casilla × `tileheight`/`tilewidth` del mapa (16px por defecto).
  * - Opcional: `spawnAt` (string) = nombre de un objeto en la capa `eventos` del **mapa destino**; si existe, el spawn usa el centro de ese rectángulo y sustituye a posX/posY.
  * - Opcional: `spawnOffsetX` / `spawnOffsetY` (int, tiles) sumados al tile final; útil para no reaparecer *dentro* del rectángulo del warp de vuelta (p. ej. +1 en Y al salir de casa).
