@@ -588,9 +588,9 @@ export default class EscenaOverworld extends Phaser.Scene {
       this._restaurarPokeballsTrasFalloStarter();
       this._dialogo.mostrar(
         [
-          'No se pudo registrar',
-          'al Pokémon en el servidor.',
-          'Revisa la conexión.',
+          '¡Vaya! Hubo un problema',
+          'al registrar al POKéMON.',
+          'Revisa tu conexión.',
         ],
         () => {
           this._jugador?.setInputBloqueado(false);
@@ -797,7 +797,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     const token = usarAutenticacionStore.getState().token;
     if (!token) {
       this._dialogo.mostrar(
-        ['Inicia sesión para curar', 'a tu equipo en el centro.'],
+        ['¡Hola! Para usar el CENTRO', 'necesitas registrarte', 'como entrenador.'],
         () => this._jugador?.setInputBloqueado(false),
       );
       return;
@@ -805,14 +805,14 @@ export default class EscenaOverworld extends Phaser.Scene {
     try {
       await PuenteApi.curarEquipoCentro();
       this._dialogo.mostrar(
-        ['¡Listo! Tus Pokémon están', 'completamente curados.'],
+        ['¡Tus POKéMON están', 'completamente curados!', '¡Esperamos verte pronto!'],
         () => this._jugador?.setInputBloqueado(false),
         { hablante: 'ENFERMERA' },
       );
     } catch (e) {
       console.error('[centro]', e);
       this._dialogo.mostrar(
-        ['No se pudo completar', 'la curación.'],
+        ['¡Oh, vaya! Algo fue mal.', 'Inténtalo de nuevo.'],
         () => this._jugador?.setInputBloqueado(false),
         { hablante: 'ENFERMERA' },
       );
@@ -824,7 +824,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     const token = usarAutenticacionStore.getState().token;
     if (!token) {
       this._dialogo.mostrar(
-        ['Inicia sesión para comprar', 'en el PokéMart.'],
+        ['¡Bienvenido! Solo los', 'entrenadores registrados', 'pueden comprar aquí.'],
         () => this._jugador?.setInputBloqueado(false),
       );
       return;
@@ -835,13 +835,13 @@ export default class EscenaOverworld extends Phaser.Scene {
     } catch (e) {
       console.error('[tienda]', e);
       this._dialogo.mostrar(
-        ['No se pudo cargar', 'el catálogo.'],
+        ['Lo sentimos, hoy no', 'tenemos artículos en stock.'],
         () => this._jugador?.setInputBloqueado(false),
       );
       return;
     }
     if (!Array.isArray(catalogo) || catalogo.length === 0) {
-      this._dialogo.mostrar(['No hay artículos en stock.'], () => this._jugador?.setInputBloqueado(false));
+      this._dialogo.mostrar(['Lo sentimos, hoy no', 'tenemos artículos en stock.'], () => this._jugador?.setInputBloqueado(false));
       return;
     }
     if (!this._uiMenuLista) this._uiMenuLista = new UIMenuLista(this);
@@ -962,7 +962,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     const id = item.itemId ?? item.id;
     try {
       const res = await PuenteApi.comprarItem(id, cantidad);
-      const texto = res?.mensaje != null ? String(res.mensaje) : 'Gracias por tu compra.';
+      const texto = res?.mensaje != null ? String(res.mensaje) : '¡Gracias! ¡Vuelve pronto!';
       this._dialogo.mostrar(
         [texto],
         () => void this._flujoTiendaDebuggerAsync(),
@@ -970,7 +970,7 @@ export default class EscenaOverworld extends Phaser.Scene {
       );
     } catch (e) {
       const apiMsg = e?.response?.data?.error;
-      const linea = apiMsg != null ? String(apiMsg) : 'No se pudo comprar.';
+      const linea = apiMsg != null ? String(apiMsg) : 'Lo siento, no hay stock suficiente.';
       console.error('[tienda] compra', e);
       this._dialogo.mostrar(
         [linea.length > 48 ? `${linea.slice(0, 44)}…` : linea],
@@ -985,7 +985,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     const token = usarAutenticacionStore.getState().token;
     if (!token) {
       this._dialogo.mostrar(
-        ['Inicia sesión para recibir', 'objetos en la mochila.'],
+        ['Los obsequios son solo', 'para entrenadores', 'registrados.'],
         () => this._jugador?.setInputBloqueado(false),
       );
       return;
@@ -994,7 +994,7 @@ export default class EscenaOverworld extends Phaser.Scene {
       if (npcName === 'npc_regala_pokeballs') {
         await PuenteApi.anadirInventarioServidor({ nombreItem: 'Poke-ball', cantidad: 10 });
         this._dialogo.mostrar(
-          ['¡Recibiste 10 POKé BALLS!', 'Ya están en tu mochila.'],
+          ['¡Espera! ¡Toma estas', '10 POKé BALLs! A un', 'joven entrenador le', 'harán falta.'],
           () => this._jugador?.setInputBloqueado(false),
           { hablante: 'REPARTO' },
         );
@@ -1004,9 +1004,10 @@ export default class EscenaOverworld extends Phaser.Scene {
         await PuenteApi.anadirInventarioServidor({ nombreItem: 'Full-heal', cantidad: 2 });
         this._dialogo.mostrar(
           [
-            '¡Toma estos objetos!',
-            'FULL RESTORE x2, ANTIDOTE x3,',
-            'FULL HEAL x2 — en tu mochila.',
+            '¡Toma esto para tu viaje!',
+            'FULL RESTORE x2,',
+            'ANTIDOTE x3, FULL HEAL x2.',
+            'Cuida bien a tus POKéMON.',
           ],
           () => this._jugador?.setInputBloqueado(false),
           { hablante: 'REPARTO' },
@@ -1017,7 +1018,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     } catch (e) {
       console.error('[entrega]', e);
       this._dialogo.mostrar(
-        ['No se pudo entregar', 'los objetos.'],
+        ['¡Vaya! Algo salió mal.', 'No pude entregarte', 'los objetos.'],
         () => this._jugador?.setInputBloqueado(false),
       );
     }
@@ -1322,16 +1323,16 @@ export default class EscenaOverworld extends Phaser.Scene {
   _flujoBuzonPc() {
     const store = usarJuegoStore.getState();
     if (store.pcPocionRetirada) {
-      this._dialogo.mostrar(['No hay objetos en el buzón.'], () => this._mostrarMenuPcPrincipal(), {
+      this._dialogo.mostrar(['El buzón está vacío.'], () => this._mostrarMenuPcPrincipal(), {
         hablante: 'PC',
       });
       return;
     }
     this._dialogo.mostrar(
-      ['Hay una POCION en el buzón.'],
+      ['¡Hay una POCIÓN en el buzón!'],
       () => {
         if (!this._uiSiNo) this._uiSiNo = new UIOpcionSiNo(this);
-        this._uiSiNo.mostrar('¿Retirar la POCION?', (si) => {
+        this._uiSiNo.mostrar('¿Retirar la POCIÓN?', (si) => {
           if (si) {
             void (async () => {
               const token = usarAutenticacionStore.getState().token;
@@ -1355,12 +1356,12 @@ export default class EscenaOverworld extends Phaser.Scene {
                   store.setPcPocionRetirada();
                   store.addInventario({ id: 'pocion', nombre: 'Poción', cantidad: 1 });
                 }
-                this._dialogo.mostrar(['Has retirado la POCION.'], () => this._mostrarMenuPcPrincipal(), {
+                this._dialogo.mostrar(['¡Has recibido una POCIÓN!'], () => this._mostrarMenuPcPrincipal(), {
                   hablante: 'PC',
                 });
               } catch (e) {
                 console.error('[PC] inventario servidor', e);
-                this._dialogo.mostrar(['No se pudo retirar', 'el objeto.'], () => this._mostrarMenuPcPrincipal(), {
+                this._dialogo.mostrar(['¡Vaya! No se pudo', 'retirar el objeto.'], () => this._mostrarMenuPcPrincipal(), {
                   hablante: 'PC',
                 });
               }
@@ -1396,7 +1397,7 @@ export default class EscenaOverworld extends Phaser.Scene {
     const token = usarAutenticacionStore.getState().token;
     if (!token) {
       this._dialogo.mostrar(
-        ['Inicia sesión', 'para poder combatir.'],
+        ['Los entrenadores', 'registrados pueden', 'participar en batallas.'],
         () => {},
       );
       return;

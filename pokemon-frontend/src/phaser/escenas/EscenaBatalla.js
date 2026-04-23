@@ -397,6 +397,97 @@ export default class EscenaBatalla extends Phaser.Scene {
     this.load.start();
   }
 
+  // ── Animación de captura ─────────────────────────────────────────────
+
+  _animacionCaptura(capturado, mensajeCaptura, onFin) {
+    const startX = 46;
+    const startY = 76;
+    const targetX = 110;
+    const targetY = 38;
+
+    const ball = this.add.image(startX, startY, 'pokeball').setDepth(15).setScale(0.5);
+    const enemy = this._spriteIlustracionCampo ?? null;
+
+    const proxy = { t: 0 };
+    this.tweens.add({
+      targets: proxy,
+      t: 1,
+      duration: 450,
+      ease: 'Sine.easeOut',
+      onUpdate: () => {
+        const t = proxy.t;
+        ball.x = Phaser.Math.Linear(startX, targetX, t);
+        ball.y = Phaser.Math.Linear(startY, targetY, t) - Math.sin(t * Math.PI) * 28;
+        ball.angle += 9;
+      },
+      onComplete: () => {
+        ball.angle = 0;
+        if (enemy) {
+          this.tweens.add({ targets: enemy, alpha: 0, duration: 120 });
+        }
+        this.tweens.add({
+          targets: ball,
+          scaleY: 0.15,
+          duration: 80,
+          yoyo: true,
+          onComplete: () => {
+            this.tweens.add({
+              targets: ball,
+              angle: -14,
+              duration: 100,
+              yoyo: true,
+              repeat: 1,
+              onComplete: () => {
+                if (capturado) {
+                  ball.setAngle(0);
+                  if (this._uiReact) {
+                    this._uiReact({
+                      ...this._datosHudReact(),
+                      mensaje: mensajeCaptura,
+                      menuVisible: false,
+                      movimientosPicker: null,
+                      mochilaPicker: null,
+                      equipoPicker: null,
+                      opciones: this._textosOpcionesMenuBatalla(),
+                      seleccion: 0,
+                      onSeleccion: () => {},
+                    });
+                  }
+                  this._onKeyCaptura = (e) => {
+                    if (e.code === 'KeyZ' || e.code === 'Enter' || e.code === 'Space') {
+                      window.removeEventListener('keydown', this._onKeyCaptura);
+                      this._onKeyCaptura = null;
+                      ball.destroy();
+                      onFin();
+                    }
+                  };
+                  window.addEventListener('keydown', this._onKeyCaptura);
+                } else {
+                  ball.setAngle(0);
+                  this.tweens.add({
+                    targets: ball,
+                    scaleX: 1.4,
+                    scaleY: 1.4,
+                    alpha: 0,
+                    duration: 220,
+                    ease: 'Power2',
+                    onComplete: () => {
+                      ball.destroy();
+                      if (enemy) {
+                        this.tweens.add({ targets: enemy, alpha: 1, duration: 150 });
+                      }
+                      onFin();
+                    },
+                  });
+                }
+              },
+            });
+          },
+        });
+      },
+    });
+  }
+
   // ── Paneles de información ────────────────────────────────────────────
 
   _crearInfoPaneles() {
@@ -687,24 +778,45 @@ export default class EscenaBatalla extends Phaser.Scene {
         this._mostrarTexto('No hay rival\npara capturar.', () => this._mostrarMenuAcciones());
         return;
       }
+      let capturado = false;
+      let mensajeFinal = '¡Falló la captura!';
       try {
         const res = await PuenteApi.intentarCaptura(defensorId, nombre);
-        const msg = res?.mensaje ?? '¡Falló la captura!';
-        const capturado = typeof msg === 'string' && msg.toLowerCase().includes('fue capturado');
-        this._salvajePokemonUsuarioId = capturado ? null : this._salvajePokemonUsuarioId;
-        this._encolarMensajesBatalla([msg], () => {
-          if (capturado) {
-            void PuenteApi.sincronizarEstadoDesdeServidor();
-            void this._terminarBatalla();
-          } else {
-            void this._turnoEnemigo();
-          }
-        });
+        mensajeFinal = res?.mensaje ?? '¡Falló la captura!';
+        capturado = typeof mensajeFinal === 'string' && mensajeFinal.toLowerCase().includes('fue capturado');
+        if (capturado) this._salvajePokemonUsuarioId = null;
+        const invActual = usarJuegoStore.getState().inventario ?? [];
+        const invActualizado = invActual
+          .map(it => {
+            const coincide = (it.nombre ?? '').toLowerCase() === nombre.toLowerCase();
+            return coincide ? { ...it, cantidad: Math.max(0, (it.cantidad || 1) - 1) } : it;
+          })
+          .filter(it => (it.cantidad ?? 0) > 0);
+        usarJuegoStore.getState().setInventarioYMonto(invActualizado, undefined);
       } catch (e) {
         console.warn('[EscenaBatalla] captura desde mochila', e);
-        const apiMsg = e?.response?.data?.error ?? e?.response?.data?.mensaje ?? '¡Falló la captura!';
-        this._encolarMensajesBatalla([apiMsg], () => this._turnoEnemigo());
+        mensajeFinal = e?.response?.data?.error ?? e?.response?.data?.mensaje ?? '¡Falló la captura!';
       }
+      if (this._uiReact) {
+        this._uiReact({
+          ...this._datosHudReact(),
+          mensaje: `¡${nombre}!`,
+          menuVisible: false,
+          movimientosPicker: null,
+          mochilaPicker: null,
+          equipoPicker: null,
+          opciones: this._textosOpcionesMenuBatalla(),
+          seleccion: 0,
+          onSeleccion: () => {},
+        });
+      }
+      this._animacionCaptura(capturado, mensajeFinal, () => {
+        if (capturado) {
+          void this._terminarBatalla();
+        } else {
+          this._encolarMensajesBatalla([mensajeFinal], () => void this._turnoEnemigo());
+        }
+      });
       return;
     }
 
@@ -1004,7 +1116,7 @@ export default class EscenaBatalla extends Phaser.Scene {
 
       const gen = (resultado.mensajeGeneral && String(resultado.mensajeGeneral).trim()) || '';
       const lineas = gen
-        ? [gen]
+        ? gen.split('\n').map(s => s.trim()).filter(Boolean)
         : [
             `${jugador.nombreApodo ?? jugador.nombre ?? jugador.name} usó ${mov.nombre}!`,
             ...(resultado.golpeCritico ? ['¡Golpe crítico!'] : []),
@@ -1129,7 +1241,7 @@ export default class EscenaBatalla extends Phaser.Scene {
 
       const gen = (resultado.mensajeGeneral && String(resultado.mensajeGeneral).trim()) || '';
       const lineas = gen
-        ? [gen]
+        ? gen.split('\n').map(s => s.trim()).filter(Boolean)
         : [`¡${enemigo.nombre} usó ${movEnemigo.nombre}!`,
             ...(resultado.golpeCritico ? ['¡Golpe crítico!'] : []),
             ...(resultado.mensajeEfectividad ? [resultado.mensajeEfectividad] : [])];
@@ -1304,6 +1416,10 @@ export default class EscenaBatalla extends Phaser.Scene {
     this.game.registry.get('callbacks')?.onCombateActivo?.(false);
     if (this._onOpcionesAudioBatalla) {
       window.removeEventListener('bytes-opciones-audio', this._onOpcionesAudioBatalla);
+    }
+    if (this._onKeyCaptura) {
+      window.removeEventListener('keydown', this._onKeyCaptura);
+      this._onKeyCaptura = null;
     }
     this._musica?.stop();
     this._menuMov?.ocultar();

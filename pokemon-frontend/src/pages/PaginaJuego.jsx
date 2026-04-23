@@ -151,13 +151,13 @@ const PaginaJuego = () => {
               if (!usarJuegoStore.getState().cargarPartidaLocal()) return;
               if (usarAutenticacionStore.getState().token) {
                 try {
-                  await PuenteApi.sincronizarEstadoDesdeServidor({
-                    preservarEstadoJugableLocal: true,
-                  });
                   await PuenteApi.guardarJuegoEnServidor(
                     usarJuegoStore.getState().construirPayloadGuardado(),
                     { skipSincronizarTrasGuardar: true },
                   );
+                  await PuenteApi.sincronizarEstadoDesdeServidor({
+                    preservarEstadoJugableLocal: true,
+                  });
                 } catch (e) {
                   console.warn("[continuar] sincronizar o guardar blob", e);
                 }

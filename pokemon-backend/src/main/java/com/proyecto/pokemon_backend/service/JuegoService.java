@@ -190,9 +190,17 @@ public class JuegoService {
             }
         }
 
+        if (ec instanceof Map<?, ?> ecMap) {
+            restaurarDineroDesdeCheckpoint(u, ecMap);
+        }
+
         userRepo.save(u);
 
         sincronizarHpPokemonConTeamClienteEnBlob(u);
+
+        if (ec instanceof Map<?, ?> ecMap) {
+            restaurarInventarioDesdeCheckpoint(u, ecMap);
+        }
 
         Map<String, Object> resp = new HashMap<>();
         resp.put("success", true);
@@ -201,6 +209,35 @@ public class JuegoService {
         resp.put("posY", u.getPosY());
         resp.put("mapaActual", u.getMapaActual());
         return resp;
+    }
+
+    private void restaurarInventarioDesdeCheckpoint(Usuario usuario, Map<?, ?> ecMap) {
+        Object raw = ecMap.get("inventarioCheckpoint");
+        if (!(raw instanceof List<?> lista)) return;
+        inventarioRepo.deleteAllByUsuarioId(usuario.getIdUsuario());
+        for (Object itemObj : lista) {
+            if (!(itemObj instanceof Map<?, ?> itemMap)) continue;
+            Object nombreRaw = itemMap.get("nombre");
+            Object cantRaw = itemMap.get("cantidad");
+            if (nombreRaw == null || cantRaw == null) continue;
+            String nombre = String.valueOf(nombreRaw).trim();
+            int cantidad;
+            try { cantidad = Integer.parseInt(String.valueOf(cantRaw)); } catch (Exception e) { continue; }
+            if (nombre.isEmpty() || cantidad <= 0) continue;
+            try {
+                Item item = resolverItem(null, nombre);
+                inventarioRepo.save(new InventarioUsuario(usuario, item, cantidad));
+            } catch (Exception ignored) { }
+        }
+    }
+
+    private void restaurarDineroDesdeCheckpoint(Usuario usuario, Map<?, ?> ecMap) {
+        Object raw = ecMap.get("moneyCheckpoint");
+        if (raw == null) return;
+        try {
+            int dinero = Integer.parseInt(String.valueOf(raw));
+            if (dinero >= 0) usuario.setDinero(dinero);
+        } catch (Exception ignored) { }
     }
 
     /**

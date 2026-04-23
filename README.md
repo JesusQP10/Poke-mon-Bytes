@@ -185,6 +185,7 @@ Opcional: copia `pokemon-frontend/.env.example` → `.env` y ajusta **`VITE_API_
 | Menú in-game React | ✅ Ficha entrenador, equipo (sprites B/W), mochila (tirar/usar), opciones, guardado |
 | Pantalla de título | ✅ Ho-Oh animado, música, Continuar / Nueva partida |
 | Tests backend | ✅ 32 tests, 0 fallos (`FlujoCableadoBatallaIT`, `JuegoServiceTest`, `CalculoServiceTest`) |
+| Tests frontend | ✅ ~204 casos · Vitest 4 + `happy-dom` · 9 archivos (config, phaser, services, store) |
 
 ### Alcance definitivo (descartado por tiempo)
 

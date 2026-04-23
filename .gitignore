@@ -10,7 +10,7 @@
 *.njsproj
 *.sln
 *.sw?
-.kiro
+
 pokemon-backend\.github
 
 # ========== Build & Dependencies ==========
@@ -70,6 +70,7 @@ tmp_*
 # ========== Project Specific ==========
 # Notas y guías personales 
 docs/personal/
+PENDIENTES.md
 
 .claude/
 JesusQP10 pokegold master gfx-tilesets/
@@ -115,10 +116,8 @@ docs/diagramas_generados/word_memoria/
 
 # Memoria / documentación con datos personales (mantener solo en local)
 PROYECTO.md
-PENDIENTES.md
 
-# ========== Archivos Entregables ==========
-docs/documentacion-proyecto.html
+
 
 # ========== PNGs accidentales en raíz (copias de assets items) ==========
 /*.png

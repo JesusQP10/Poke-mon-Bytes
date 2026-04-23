@@ -384,16 +384,11 @@ public class BatallaService {
         pokemonRepo.save(atacante);
 
         String msgEfectividad = tipoService.mensajeEfectividad(efectividad);
-        String ppInfo = movResuelto.fromMoveset()
-            ? "PP: " + movResuelto.ppRestante() + "/" + movResuelto.ppMax()
-            : "";
-
         String nombreAtacante = datosAtacante.getNombre() != null ? datosAtacante.getNombre() : "?";
         String mensajeFinal = unir(
             "¡" + nombreAtacante + " usó " + movimiento.getNombre() + "!",
             critico ? "¡Golpe crítico!" : "",
             msgEfectividad,
-            ppInfo,
             residualAtk,
             residualDef
         );
@@ -1184,13 +1179,13 @@ public class BatallaService {
     // UTILIDADES
     // =========================================================================
 
-    /** Concatena fragmentos no vacíos separados por un espacio. */
+    /** Concatena fragmentos no vacíos separados por salto de línea. */
     private String unir(String... partes) {
         StringBuilder sb = new StringBuilder();
         for (String parte : partes) {
             String v = str(parte).trim();
             if (!v.isEmpty()) {
-                if (sb.length() > 0) sb.append(' ');
+                if (sb.length() > 0) sb.append('\n');
                 sb.append(v);
             }
         }

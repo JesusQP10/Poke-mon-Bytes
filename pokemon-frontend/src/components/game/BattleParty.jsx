@@ -41,9 +41,16 @@ function esMismoPokemonQueStarter(p, starter) {
  *   onCancel: () => void,
  * }} props
  */
+const EQUIPO_VIS = 4;
+
 export default function BattleParty({ equipo = [], starter = null, onPick, onCancel }) {
   const lista = useMemo(() => (Array.isArray(equipo) ? equipo : []), [equipo]);
   const [sel, setSel] = useState(0);
+
+  const winStart = useMemo(() => {
+    if (lista.length <= EQUIPO_VIS) return 0;
+    return Math.max(0, Math.min(sel - EQUIPO_VIS + 1, lista.length - EQUIPO_VIS));
+  }, [sel, lista.length]);
 
   useEffect(() => {
     setSel(0);
@@ -82,7 +89,8 @@ export default function BattleParty({ equipo = [], starter = null, onPick, onCan
       <div className="menu-ingame-full menu-ingame-full--team">
         <div className="menu-ingame-full-title">POKÉMON</div>
         <div className="menu-ingame-team-list">
-          {lista.map((p, i) => {
+          {lista.slice(winStart, winStart + EQUIPO_VIS).map((p, sliceIdx) => {
+            const i = winStart + sliceIdx;
             const nombreEspecie = p.nombre || "???";
             const apodo = p.nombreApodo && p.nombreApodo !== nombreEspecie ? p.nombreApodo : null;
             const etiqueta = apodo || nombreEspecie;

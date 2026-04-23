@@ -248,11 +248,8 @@ export const usarJuegoStore = create((set, get) => ({
               esStarter: team[0].esStarter ?? true,
             }
           : null;
-        const inventario = Array.isArray(data?.inventario)
-          ? normalizarListaInventario(data.inventario)
-          : normalizarListaInventario(state.inventario);
-        const money = Number.isFinite(data?.money) ? Number(data.money)
-          : Number.isFinite(state.money) ? state.money : 3000;
+        const inventario = normalizarListaInventario(state.inventario);
+        const money = Number.isFinite(state.money) ? state.money : 3000;
         const tieneEquipo = team.length > 0;
         const pokedexRegistrados = fusionarPokedexRegistrados(state.pokedexRegistrados, team);
         return {
@@ -488,6 +485,8 @@ export const usarJuegoStore = create((set, get) => ({
       teamCliente: s.team,
       starterCliente: s.starter,
       money: s.money,
+      moneyCheckpoint: s.money,
+      inventarioCheckpoint: Array.isArray(s.inventario) ? s.inventario : [],
       idEntrenadorPublico: s.idEntrenadorPublico,
       tiempoJuegoSegundos: s.tiempoJuegoSegundos,
       pokedexRegistrados: s.pokedexRegistrados,
