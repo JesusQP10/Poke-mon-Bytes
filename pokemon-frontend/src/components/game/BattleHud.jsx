@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import "./BattleHud.css";
 import "./MenuIngameReact.css";
 
@@ -43,6 +44,44 @@ function EstadoBadge({ estado }) {
     }}>
       {info.texto}
     </span>
+  );
+}
+
+/** xpParaSiguienteNivel — misma fórmula que el backend: nivel² × 5 */
+function xpMax(nivel) {
+  const n = Number(nivel) || 5;
+  return n * n * 5;
+}
+
+function BarraXp({ xpActual, nivel }) {
+  const umbral = xpMax(nivel);
+  const ratio = Math.min(1, Math.max(0, (xpActual ?? 0) / umbral));
+
+  const prevNivelRef = useRef(nivel);
+  const prevXpRef   = useRef(xpActual ?? 0);
+  const [displayRatio, setDisplayRatio] = useState(ratio);
+
+  useEffect(() => {
+    const nivelCambio = nivel !== prevNivelRef.current;
+    prevNivelRef.current = nivel;
+    prevXpRef.current    = xpActual ?? 0;
+
+    if (nivelCambio) {
+      // Primero llena hasta el final, luego reinicia al nuevo ratio
+      setDisplayRatio(1);
+      const t = setTimeout(() => setDisplayRatio(ratio), 600);
+      return () => clearTimeout(t);
+    }
+    setDisplayRatio(ratio);
+  }, [xpActual, nivel, ratio]);
+
+  return (
+    <div className="battle-xp-track">
+      <div
+        className="battle-xp-fill"
+        style={{ width: `${Math.round(displayRatio * 100)}%` }}
+      />
+    </div>
   );
 }
 
@@ -104,6 +143,7 @@ export default function BattleHud({ jugador, enemigo }) {
             {jHpA ?? "??"}/{jHpM ?? "??"}
           </span>
         </div>
+        <BarraXp xpActual={j.xpActual} nivel={j.nivel} />
       </div>
     </div>
   );

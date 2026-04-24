@@ -77,6 +77,14 @@ public class CalculoService {
     }
 
     /**
+     * XP acumulada necesaria para subir DEL nivel actual AL siguiente.
+     * Fórmula: nivel² × 5  (5→6: 125 XP, 10→11: 500 XP, 20→21: 2000 XP).
+     */
+    public int xpParaSiguienteNivel(int nivelActual) {
+        return nivelActual * nivelActual * 5;
+    }
+
+    /**
      * Mecánica de captura Gen II.
      *
      * Valor a = ((3*HPmax - 2*HPactual) * rate * ball) / (3*HPmax) * bonusEstado

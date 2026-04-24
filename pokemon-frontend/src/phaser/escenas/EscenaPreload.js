@@ -1,8 +1,11 @@
 import Phaser from 'phaser';
 
-// Assets de audio que ya existen (importados como URL via Vite)
+// Assets de audio 
 import bgmOverworld from '../../assets/game/audio/bgm/an_adventure_begins.mp3';
-import bgmBatalla from '../../assets/game/audio/bgm/title_screen_gold_silver.mp3'; // placeholder
+import bgmBatallaSalvaje from '../../assets/game/audio/bgm/battle_salvaje.mp3';
+import bgmBatallaEntrenador from '../../assets/game/audio/bgm/battle_trainer.mp3';
+import sfxObtainedPokemon from '../../assets/game/audio/sfx/obtained_pokemon.mp3';
+import sfxLevelUp from '../../assets/game/audio/sfx/level_up.mp3';
 import fondoBatallaHierba from '../../assets/battle/batalla-fondo-hierba.jpg';
 
 /**
@@ -28,7 +31,10 @@ export default class EscenaPreload extends Phaser.Scene {
 
     // ── Audio ────────────────────────────────────────────────────────────
     this.load.audio('bgm-overworld', bgmOverworld);
-    this.load.audio('bgm-batalla-salvaje', bgmBatalla);
+    this.load.audio('bgm-batalla-salvaje', bgmBatallaSalvaje);
+    this.load.audio('bgm-batalla-entrenador', bgmBatallaEntrenador);
+    this.load.audio('sfx-obtained-pokemon', sfxObtainedPokemon);
+    this.load.audio('sfx-level-up', sfxLevelUp);
     this.load.audio('bgm-new-bark-town', '/assets/game/audio/new_bark_town.mp3');
     this.load.audio('bgm-elm-lab', '/assets/game/audio/elm_lab.mp3');
     this.load.audio('sfx-obtener-starter', '/assets/game/audio/obtener_starter.mp3');

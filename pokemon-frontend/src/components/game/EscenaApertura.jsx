@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import oakSprite from "../../assets/game/opening/frames/oak/opening_oak_idle_01.png";
 import marillSprite from "../../assets/game/opening/frames/marill/opening_marill_idle_01.png";
 import playerSprite from "../../assets/game/overworld/sprites/player/pixilart_drawing.png";
+import oakBgm from "../../assets/game/audio/bgm/oak_adventure_begins.mp3";
 import {
   esTeclaAceptar,
   esTeclaAtras,
@@ -10,6 +11,7 @@ import {
   esTeclaDerecha,
   esTeclaArriba,
 } from "../../config/controlesJuego";
+import { volumenBgmParaPhaser } from "../../config/opcionesCliente";
 import "./EscenaApertura.css";
 
 const OPENING_LINES = [
@@ -77,6 +79,19 @@ const EscenaApertura = ({ onContinue }) => {
   useEffect(() => {
     stateRef.current = { lineIndex, mode, nameIndex, customName, keyboardIndex };
   }, [lineIndex, mode, nameIndex, customName, keyboardIndex]);
+
+  const audioOakRef = useRef(null);
+  useEffect(() => {
+    const audio = new Audio(oakBgm);
+    audio.loop = true;
+    audio.volume = volumenBgmParaPhaser();
+    audio.play().catch(() => {});
+    audioOakRef.current = audio;
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+    };
+  }, []);
 
   const currentLine = OPENING_LINES[lineIndex];
   const showMarill = lineIndex >= 4;

@@ -396,10 +396,37 @@ public class BatallaService {
         int hpDefFinal = nvl(defensor.getHpActual(), 0);
         int hpAtkFinal = nvl(atacante.getHpActual(), 0);
 
+        // ── XP y subida de nivel cuando el defensor cae ─────────────────────
+        int xpGanada = 0;
+        int nivelAntes = nvl(atacante.getNivel(), 1);
+        int nivelDespues = nivelAntes;
+
+        if (hpDefFinal == 0 && Objects.equals(atacante.getUsuarioId(), usuario.getIdUsuario())) {
+            int xpBase = nvl(datosDefensor.getXp_base(), 50);
+            xpGanada = calculoService.calcularExperiencia(nvl(defensor.getNivel(), 1), xpBase);
+            int xpAcum = nvl(atacante.getExperiencia(), 0) + xpGanada;
+
+            if (nivelAntes < 100) {
+                int umbral = calculoService.xpParaSiguienteNivel(nivelAntes);
+                if (xpAcum >= umbral) {
+                    nivelDespues = nivelAntes + 1;
+                    xpAcum -= umbral;
+                    atacante.setNivel(nivelDespues);
+                    int hpExtra = nivelDespues;
+                    atacante.setHpMax(atacante.getHpMax() + hpExtra);
+                    atacante.setHpActual(atacante.getHpActual() + hpExtra);
+                }
+            }
+            atacante.setExperiencia(xpAcum);
+            pokemonRepo.save(atacante);
+            hpAtkFinal = nvl(atacante.getHpActual(), 0);
+        }
+
         return RespuestaTurno.builder()
             .danoInfligido(danio)
             .hpRestanteAtacante(hpAtkFinal)
             .hpRestanteDefensor(hpDefFinal)
+            .hpMaxAtacante(nvl(atacante.getHpMax(), hpAtkFinal))
             .multiplicadorFinal(multiplicadorFinal)
             .golpeCritico(critico)
             .mensajeEfectividad(msgEfectividad)
@@ -407,6 +434,10 @@ public class BatallaService {
             .mensajeGeneral(mensajeFinal)
             .estadoAtacante(estadoDisplay(atacante))
             .estadoDefensor(estadoDisplay(defensor))
+            .experienciaGanada(xpGanada > 0 ? xpGanada : null)
+            .nivelAnterior(xpGanada > 0 ? nivelAntes : null)
+            .nuevoNivel(xpGanada > 0 ? nivelDespues : null)
+            .xpActual(xpGanada > 0 ? nvl(atacante.getExperiencia(), 0) : null)
             .build();
     }
 

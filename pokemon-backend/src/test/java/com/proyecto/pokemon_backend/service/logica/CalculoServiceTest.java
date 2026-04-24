@@ -86,6 +86,16 @@ public class CalculoServiceTest {
     }
 
     @Test
+    void testXpParaSiguienteNivel() {
+        // nivel 5 → 6: 5² × 5 = 125 XP
+        assertEquals(125, calculoService.xpParaSiguienteNivel(5));
+        // nivel 10 → 11: 10² × 5 = 500 XP
+        assertEquals(500, calculoService.xpParaSiguienteNivel(10));
+        // nivel 1 → 2: 1² × 5 = 5 XP
+        assertEquals(5, calculoService.xpParaSiguienteNivel(1));
+    }
+
+    @Test
     void testFueGolpeCritico() {
         // No se necesitan parámetros, solo la probabilidad interna (6.25%)
     

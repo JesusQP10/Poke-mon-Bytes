@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   esTeclaAceptar,
   esTeclaAtras,
@@ -45,10 +45,15 @@ export default function BattleBag({
   }, [curas, bals]);
 
   const [sel, setSel] = useState(0);
+  const filaRefs = useRef([]);
 
   useEffect(() => {
     setSel(0);
   }, [entradas.length]);
+
+  useEffect(() => {
+    filaRefs.current[sel]?.scrollIntoView({ block: "nearest" });
+  }, [sel]);
 
   useEffect(() => {
     const manejar = (e) => {
@@ -83,6 +88,7 @@ export default function BattleBag({
   const renderFila = (linea, flatIdx, key) => (
     <div
       key={key}
+      ref={(el) => { filaRefs.current[flatIdx] = el; }}
       className={`battle-bag-fila${flatIdx === sel ? " battle-bag-fila--sel" : ""}`}
     >
       <span className="battle-bag-cur">{flatIdx === sel ? "▶" : ""}</span>

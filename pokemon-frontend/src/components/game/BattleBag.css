@@ -62,8 +62,14 @@
   top: 2px;
   right: 1px;
   bottom: 2px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
   pointer-events: auto;
+}
+
+.battle-bag-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .battle-bag-seccion-tit {

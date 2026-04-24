@@ -4,7 +4,7 @@ import MenuMovimientos from '../ui/MenuMovimientos';
 import PuenteApi from '../puentes/PuenteApi';
 import { usarJuegoStore } from '../../store/usarJuegoStore';
 import { usarAutenticacionStore } from '../../store/usarAutenticacionStore';
-import { volumenBgmParaPhaser } from '../../config/opcionesCliente';
+import { volumenBgmParaPhaser, sfxPermitido } from '../../config/opcionesCliente';
 import { clasificarLineaInventarioBatalla } from '../../components/game/battleInventario';
 import {
   battleCampoSpriteUrl,
@@ -248,9 +248,12 @@ export default class EscenaBatalla extends Phaser.Scene {
       this._crearEspaldaJugadorCampoPhaser();
     }
 
-    // Música
-    if (this.cache.audio.exists('bgm-batalla-salvaje')) {
-      this._musica = this.sound.add('bgm-batalla-salvaje', {
+    // Música — entrenador NPC o salvaje/captura
+    const _bgmKey = this._pokemonSalvaje?.esBatallaEntrenador === true
+      ? 'bgm-batalla-entrenador'
+      : 'bgm-batalla-salvaje';
+    if (this.cache.audio.exists(_bgmKey)) {
+      this._musica = this.sound.add(_bgmKey, {
         loop: true,
         volume: volumenBgmParaPhaser(),
       });
@@ -439,6 +442,10 @@ export default class EscenaBatalla extends Phaser.Scene {
               repeat: 1,
               onComplete: () => {
                 if (capturado) {
+                  this._musica?.stop();
+                  if (sfxPermitido() && this.cache.audio.exists('sfx-obtained-pokemon')) {
+                    this.sound.play('sfx-obtained-pokemon', { volume: volumenBgmParaPhaser() });
+                  }
                   ball.setAngle(0);
                   if (this._uiReact) {
                     this._uiReact({
@@ -578,6 +585,7 @@ export default class EscenaBatalla extends Phaser.Scene {
         hpActual: jug.hpActual ?? jug.hpMax ?? null,
         hpMax: jug.hpMax ?? null,
         estado: jug.estado ?? 'saludable',
+        xpActual: jug.xpActual ?? 0,
       },
       enemigo: {
         nombre: sal.nombre ?? sal.name ?? '???',
@@ -1158,7 +1166,7 @@ export default class EscenaBatalla extends Phaser.Scene {
             return;
           }
           if (defensorMuere) {
-            await this._victoria();
+            await this._victoria(resultado);
             return;
           }
           await this._refrescarMovimientosJugador();
@@ -1326,17 +1334,34 @@ export default class EscenaBatalla extends Phaser.Scene {
 
   // ── Victoria / Derrota ────────────────────────────────────────────────
 
-  async _victoria() {
-    const xpGanada = Math.floor((this._pokemonSalvaje.nivel ?? 5) * 30);
-    this._mostrarTexto(
-      `¡${
-        this._pokemonJugador?.nombreApodo
-        ?? this._pokemonJugador?.nombre
-        ?? this._pokemonJugador?.name
-        ?? 'Pokémon'
-      } ganó\n${xpGanada} Ptos. Exp.!`,
-      () => void this._terminarBatalla(),
-    );
+  async _victoria(resultadoTurno) {
+    const jugador = this._pokemonJugador;
+    const nombreJug = jugador?.nombreApodo ?? jugador?.nombre ?? jugador?.name ?? 'Pokémon';
+
+    const xpGanada = resultadoTurno?.experienciaGanada ?? Math.floor((this._pokemonSalvaje.nivel ?? 5) * 30);
+    const nivelAntes = resultadoTurno?.nivelAnterior ?? jugador?.nivel;
+    const nivelDespues = resultadoTurno?.nuevoNivel ?? nivelAntes;
+    const subioNivel = nivelDespues != null && nivelAntes != null && nivelDespues > nivelAntes;
+
+    // Sincronizar nivel, hpMax y xpActual localmente
+    if (jugador) {
+      if (subioNivel) {
+        jugador.nivel = nivelDespues;
+        if (resultadoTurno?.hpMaxAtacante) jugador.hpMax = resultadoTurno.hpMaxAtacante;
+      }
+      if (resultadoTurno?.xpActual != null) jugador.xpActual = resultadoTurno.xpActual;
+    }
+
+    const mensajes = [`¡${nombreJug} ganó\n${xpGanada} Ptos. Exp.!`];
+    if (subioNivel) {
+      mensajes.push(`¡${nombreJug} subió\nal nivel ${nivelDespues}!`);
+    }
+
+    if (sfxPermitido() && subioNivel && this.cache.audio.exists('sfx-level-up')) {
+      this.sound.play('sfx-level-up', { volume: volumenBgmParaPhaser() });
+    }
+
+    this._encolarMensajesBatalla(mensajes, () => void this._terminarBatalla());
   }
 
   _derrota() {
