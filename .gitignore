@@ -113,7 +113,7 @@ pokemon-frontend/public/assets/game/overworld/tiles/exports/*.json
 _memoria_merge.md
 docs/diagramas_generados/word_memoria/
 
-# Memoria / documentación con datos personales
+# Guiones y memorias personales (no van al repo)
 PROYECTO.md
 PROYECTO_ENTREGA.docx
 MEMORIA_RESUMEN*.md
@@ -121,6 +121,8 @@ MEMORIA_RESUMEN*.docx
 exportar_memoria_word.py
 insertar_capturas_anexoD.py
 tesManuales.md
+GUION_VIDEO.md
+GUION_POWERPOINT.md
 ~$*.docx
 
 

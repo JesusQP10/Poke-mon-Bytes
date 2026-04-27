@@ -22,7 +22,7 @@
 
 <br />
 
-[**Demo visual**](#galería-del-proyecto) · [**Arranque local**](#inicio-rápido) · [**Qué hay hecho**](#estado-actual-del-proyecto) · [**Arquitectura**](#arquitectura) · [**Docs**](#documentación) · [**Notas**](./docs/desarrollo/NOTAS.md) · [**Swagger**](./docs/referencia/backend/README.md)
+[**Demo visual**](#galería-del-proyecto) · [**Arranque local**](#inicio-rápido) · [**Qué hay hecho**](#estado-actual-del-proyecto) · [**Arquitectura**](#arquitectura) · [**Docs**](#documentación) · [**Swagger**](./docs/referencia/backend/README.md)
 
 </div>
 
@@ -93,6 +93,26 @@
 | ![Opciones](docs/screenshots/captura-opciones.png) | ![Guardado](docs/screenshots/captura-guardado.png) |
 | *Música, sonidos y ritmo del texto.* | *Confirmación de partida guardada (local y servidor).* |
 
+| Registro | Overworld |
+|:---:|:---:|
+| ![Registro](docs/screenshots/captura-registro.png) | ![Overworld](docs/screenshots/captura-overworld.png) |
+| *Formulario de alta de usuario con validación.* | *Mapa de Johto con NPCs, warps y encuentros aleatorios.* |
+
+| Combate (batalla activa) | Menú Pokémon en combate |
+|:---:|:---:|
+| ![Battle](docs/screenshots/Battle.png) | ![Menú Pokémon batalla](docs/screenshots/Menú_pokémon_battle.png) |
+| *HUD de batalla con barras de HP, nombre y nivel.* | *Selector de cambio de Pokémon durante el turno.* |
+
+| Objetos en combate | Objetos en overworld |
+|:---:|:---:|
+| ![Items batalla](docs/screenshots/Menú_Items_Battle.png) | ![Items overworld](docs/screenshots/Menú_Items.png) |
+| *Mochila accesible durante la batalla.* | *Menú de objetos desde el overworld.* |
+
+| Pokémon (overworld) | Tests unitarios |
+|:---:|:---:|
+| ![Menú Pokémon overworld](docs/screenshots/Menú_pokémon_over.png) | ![Tests Maven](docs/screenshots/mvn-test-results.png) |
+| *Gestión del equipo fuera de combate.* | *31 tests en verde — JuegoServiceTest + CalculoServiceTest.* |
+
 ---
 
 ## Destacados
@@ -162,7 +182,6 @@ Opcional: copia `pokemon-frontend/.env.example` → `.env` y ajusta **`VITE_API_
 | Recurso | Para qué sirve |
 |--------|----------------|
 | [docs/README.md](docs/README.md) | Índice de toda la carpeta `docs/`. |
-| [docs/desarrollo/NOTAS.md](docs/desarrollo/NOTAS.md) | Bugs, prioridades y registro por fecha. |
 | [docs/referencia/backend/README.md](docs/referencia/backend/README.md) | API, Maven, puertos. |
 | [docs/referencia/diagramas/README.md](docs/referencia/diagramas/README.md) | Diagramas **Mermaid**. |
 
@@ -170,7 +189,7 @@ Opcional: copia `pokemon-frontend/.env.example` → `.env` y ajusta **`VITE_API_
 
 ## Estado actual del proyecto
 
-> **Última revisión: 2026-04-27.** Estado general: **proyecto completo y funcional**. El detalle día a día está en [docs/desarrollo/NOTAS.md](docs/desarrollo/NOTAS.md).
+> **Última revisión: 2026-04-27.** Estado general: **proyecto completo y funcional**.
 
 ### Módulos completados
 
