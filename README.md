@@ -216,6 +216,7 @@ Opcional: copia `pokemon-frontend/.env.example` → `.env` y ajusta **`VITE_API_
 
 - Evolución de Pokémon
 - Pokédex expandida
+- Sistema de PC (Almacenamiento Pokémon)
 
 ### Backend
 
