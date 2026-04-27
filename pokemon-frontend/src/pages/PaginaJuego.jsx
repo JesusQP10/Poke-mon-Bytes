@@ -7,6 +7,7 @@ import BattleMenu from "../components/game/BattleMenu";
 import BattleMoves from "../components/game/BattleMoves";
 import BattleBag from "../components/game/BattleBag";
 import BattleParty from "../components/game/BattleParty";
+import BattleLearnMove from "../components/game/BattleLearnMove";
 import BattleHud from "../components/game/BattleHud";
 import BattleStatusSprite from "../components/game/BattleStatusSprite";
 import BattlePlayerBackSprite from "../components/game/BattlePlayerBackSprite";
@@ -233,6 +234,14 @@ const PaginaJuego = () => {
                     slots={battleUi.movimientosPicker.slots}
                     onPick={battleUi.movimientosPicker.onPick}
                     onCancel={battleUi.movimientosPicker.onCancel}
+                  />
+                ) : battleUi.aprenderMovimientoPicker ? (
+                  <BattleLearnMove
+                    pokemonNombre={battleUi.aprenderMovimientoPicker.pokemonNombre}
+                    movimientoNuevo={battleUi.aprenderMovimientoPicker.movimientoNuevo}
+                    movimientosActuales={battleUi.aprenderMovimientoPicker.movimientosActuales}
+                    onAprender={battleUi.aprenderMovimientoPicker.onAprender}
+                    onRechazar={battleUi.aprenderMovimientoPicker.onRechazar}
                   />
                 ) : (
                   <BattleMenu

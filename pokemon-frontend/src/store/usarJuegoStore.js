@@ -210,6 +210,95 @@ export const usarJuegoStore = create((set, get) => ({
    */
   setPlayerState: (data, opts = {}) => {
     set((state) => {
+      // Sync quirúrgica post-combate: actualiza stats de Pokémon existentes (XP, nivel…)
+      // y añade solo el Pokémon capturado en esta sesión, sin traer basura del servidor.
+      if (
+        opts.preservarComposicionEquipo === true
+        && data
+        && Array.isArray(state.team)
+        && state.team.length > 0
+      ) {
+        const ec = data?.estadoCliente && typeof data.estadoCliente === 'object'
+          ? data.estadoCliente
+          : {};
+        const serverTeam = Array.isArray(data?.team) ? data.team : [];
+        const serverMap = new Map();
+        for (const p of serverTeam) {
+          if (p?.pokemonUsuarioId != null) serverMap.set(Number(p.pokemonUsuarioId), p);
+        }
+        let team = state.team.map((p) => {
+          const sp = p?.pokemonUsuarioId != null ? serverMap.get(Number(p.pokemonUsuarioId)) : null;
+          if (!sp) return p;
+          return {
+            ...p,
+            nivel: sp.nivel ?? p.nivel ?? 5,
+            xpActual: sp.xpActual ?? p.xpActual ?? 0,
+            hpMax: sp.hpMax ?? p.hpMax,
+            hpActual: p.hpActual ?? sp.hpActual,
+            ataque: sp.ataque ?? p.ataque,
+            defensa: sp.defensa ?? p.defensa,
+            ataqueEspecial: sp.ataqueEspecial ?? p.ataqueEspecial,
+            defensaEspecial: sp.defensaEspecial ?? p.defensaEspecial,
+            velocidad: sp.velocidad ?? p.velocidad,
+            movimientos: Array.isArray(sp.movimientos) ? sp.movimientos : (Array.isArray(p.movimientos) ? p.movimientos : undefined),
+          };
+        });
+        const capId = opts.capturadoPokemonId != null ? Number(opts.capturadoPokemonId) : null;
+        if (capId != null) {
+          const spCap = serverMap.get(capId);
+          if (spCap && !team.some((p) => Number(p?.pokemonUsuarioId) === capId)) {
+            team = [...team, {
+              ...spCap,
+              nombre: spCap.nombre ?? spCap.name ?? '???',
+              nombreApodo: spCap.nombreApodo ?? spCap.nombre ?? spCap.name,
+              id: spCap.id ?? spCap.pokedexId,
+              pokemonUsuarioId: spCap.pokemonUsuarioId,
+              nivel: spCap.nivel ?? 5,
+              xpActual: spCap.xpActual ?? 0,
+              hpActual: spCap.hpActual ?? spCap.hpMax ?? 20,
+              hpMax: spCap.hpMax ?? 20,
+              tipo1: spCap.tipo1 ?? spCap.type,
+              tipo2: spCap.tipo2 ?? null,
+              movimientos: Array.isArray(spCap.movimientos) ? spCap.movimientos : undefined,
+            }];
+          }
+        }
+        const prevStarter = state.starter;
+        const starter = prevStarter
+          ? { ...prevStarter, ...(team.find((p) => Number(p?.pokemonUsuarioId) === Number(prevStarter?.pokemonUsuarioId)) ?? {}) }
+          : (team[0] ?? null);
+        const inventario = inventarioParaStore(data, state);
+        const moneyServidor = data != null && Object.prototype.hasOwnProperty.call(data, 'money');
+        const money = moneyServidor && Number.isFinite(Number(data.money)) ? Number(data.money) : state.money;
+        const prevDex = 'pokedexRegistrados' in ec ? ec.pokedexRegistrados : state.pokedexRegistrados;
+        const pokedexRegistrados = fusionarPokedexRegistrados(prevDex, team);
+        return {
+          playerState: data,
+          starter,
+          team,
+          money,
+          inventario,
+          pokedexRegistrados,
+          loading: false,
+          badges: state.badges,
+          idEntrenadorPublico: state.idEntrenadorPublico,
+          tiempoJuegoSegundos: state.tiempoJuegoSegundos,
+          mapaActual: state.mapaActual,
+          posX: state.posX,
+          posY: state.posY,
+          gameStep: state.gameStep,
+          hasStarter: team.length > 0 || state.hasStarter,
+          pcPocionRetirada: state.pcPocionRetirada,
+          nombreJugador: state.nombreJugador ?? '',
+          pokegearEntregado: state.pokegearEntregado,
+          starterElegido: team.length > 0 || state.starterElegido,
+          elmCharlaEleccionStarter: team.length > 0 || state.elmCharlaEleccionStarter,
+          pocionEntregada: state.pocionEntregada,
+          esNuevaPartida: state.esNuevaPartida,
+          reloj: state.reloj ?? { hora: 12, minutos: 0, diaSemana: 0 },
+        };
+      }
+
       if (
         opts.preservarEstadoJugableLocal === true
         && data
@@ -226,6 +315,7 @@ export const usarJuegoStore = create((set, get) => ({
           id: p.id ?? p.pokedexId,
           pokemonUsuarioId: p.pokemonUsuarioId,
           nivel: p.nivel ?? p.level ?? 5,
+          xpActual: p.xpActual ?? p.experiencia ?? 0,
           hpActual: p.hpActual ?? p.hp ?? 20,
           hpMax: p.hpMax ?? 20,
           ataque: p.ataque ?? p.attack ?? p.ataqueStat,
@@ -235,6 +325,7 @@ export const usarJuegoStore = create((set, get) => ({
           velocidad: p.velocidad ?? p.velocidadStat,
           tipo1: p.tipo1 ?? p.type,
           tipo2: p.tipo2 ?? null,
+          movimientos: Array.isArray(p.movimientos) ? p.movimientos : undefined,
         }));
         if (team.length > 0 && !team.some((p) => p.esStarter) && team[0].pokemonUsuarioId != null) {
           team = team.map((p, i) => (i === 0 ? { ...p, esStarter: true } : p));
@@ -311,6 +402,7 @@ export const usarJuegoStore = create((set, get) => ({
         id: p.id ?? p.pokedexId,
         pokemonUsuarioId: p.pokemonUsuarioId,
         nivel: p.nivel ?? p.level ?? 5,
+        xpActual: p.xpActual ?? p.experiencia ?? 0,
         hpActual: p.hpActual ?? p.hp ?? 20,
         hpMax: p.hpMax ?? 20,
         ataque: p.ataque ?? p.attack ?? p.ataqueStat,
@@ -320,6 +412,7 @@ export const usarJuegoStore = create((set, get) => ({
         velocidad: p.velocidad ?? p.velocidadStat,
         tipo1: p.tipo1 ?? p.type,
         tipo2: p.tipo2 ?? null,
+        movimientos: Array.isArray(p.movimientos) ? p.movimientos : undefined,
       }));
       if (team.length > 0 && !team.some((p) => p.esStarter) && team[0].pokemonUsuarioId != null) {
         team = team.map((p, i) => (i === 0 ? { ...p, esStarter: true } : p));
@@ -537,22 +630,36 @@ export const usarJuegoStore = create((set, get) => ({
    * Actualiza PS del Pokémon por `pokemonUsuarioId` (p. ej. combate con varios en equipo).
    * Mantiene `starter` alineado si coincide el id.
    */
-  /** Actualiza equipo e inventario tras usar un ítem fuera de combate (respuesta de /inventario/usar). */
+  /** Actualiza equipo e inventario tras usar un ítem fuera de combate (respuesta de /inventario/usar).
+   *  Solo parchea los Pokémon que ya existen en el equipo local por pokemonUsuarioId;
+   *  nunca importa Pokémon nuevos del servidor para evitar mezclar sesiones. */
   patchEquipoLocal: (teamRaw) => set((state) => {
     if (!Array.isArray(teamRaw) || teamRaw.length === 0) return {};
-    const team = teamRaw.map((p) => ({
-      ...p,
-      nombre: p.nombre ?? p.name ?? '???',
-      nombreApodo: p.nombreApodo ?? p.nombre ?? p.name,
-      id: p.id ?? p.pokedexId,
-      pokemonUsuarioId: p.pokemonUsuarioId,
-      nivel: p.nivel ?? 5,
-      hpActual: p.hpActual ?? 0,
-      hpMax: p.hpMax ?? 20,
-    }));
+    if (!Array.isArray(state.team) || state.team.length === 0) return {};
+    const serverMap = new Map();
+    for (const p of teamRaw) {
+      if (p?.pokemonUsuarioId != null) serverMap.set(Number(p.pokemonUsuarioId), p);
+    }
+    const team = state.team.map((p) => {
+      const sp = p?.pokemonUsuarioId != null ? serverMap.get(Number(p.pokemonUsuarioId)) : null;
+      if (!sp) return p;
+      return {
+        ...p,
+        hpActual: sp.hpActual ?? p.hpActual,
+        hpMax: sp.hpMax ?? p.hpMax,
+        nivel: sp.nivel ?? p.nivel,
+        xpActual: sp.xpActual ?? p.xpActual,
+        ataque: sp.ataque ?? p.ataque,
+        defensa: sp.defensa ?? p.defensa,
+        ataqueEspecial: sp.ataqueEspecial ?? p.ataqueEspecial,
+        defensaEspecial: sp.defensaEspecial ?? p.defensaEspecial,
+        velocidad: sp.velocidad ?? p.velocidad,
+        estado: sp.estado ?? p.estado,
+      };
+    });
     const prevStarter = state.starter;
     const starter = prevStarter
-      ? { ...prevStarter, ...(team.find((p) => p.pokemonUsuarioId === prevStarter?.pokemonUsuarioId) ?? {}) }
+      ? { ...prevStarter, ...(team.find((p) => Number(p?.pokemonUsuarioId) === Number(prevStarter?.pokemonUsuarioId)) ?? {}) }
       : (team[0] ?? null);
     return { team, starter };
   }),

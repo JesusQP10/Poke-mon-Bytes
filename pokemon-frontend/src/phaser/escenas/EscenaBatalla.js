@@ -123,6 +123,8 @@ export default class EscenaBatalla extends Phaser.Scene {
     this._pokemonSalvaje = data?.pokemonSalvaje ?? { id: 1, nombre: 'Bulbasaur', nivel: 5 };
     /** Si existe, se libera en BD al salir del combate. */
     this._salvajePokemonUsuarioId = null;
+    /** pokemonUsuarioId del Pokémon capturado en esta sesión (null si no hubo captura). */
+    this._capturadoPokemonId = null;
     /** Texto extra al inicio (sala debug) */
     this._estadoSalvajeDebug = this._pokemonSalvaje?.estadoSalvajeDebug ?? null;
     /** Estado de prueba mostrado sobre el Pokémon activo del jugador (por defecto en combates debug). */
@@ -224,7 +226,6 @@ export default class EscenaBatalla extends Phaser.Scene {
         }
         const pid = this._pokemonJugador?.pokemonUsuarioId;
         if (pid != null) {
-          await PuenteApi.resetearPpPokemon(pid);
           this._movimientosJugador = await PuenteApi.getMovimientos(pid);
           EscenaBatalla._logMovimientosCargados('jugador', this._movimientosJugador);
         }
@@ -281,7 +282,6 @@ export default class EscenaBatalla extends Phaser.Scene {
       this._mostrarTexto(mensajes[i], () => encadenarMensajes(mensajes, i + 1, alTerminar));
     };
 
-    // En todos los combates: al entrar solo "¡Adelante, X!" (sin estados ni mensajes debug).
     const mensajesInicio = [lineaAdelante];
 
     encadenarMensajes(mensajesInicio, 0, () => this._mostrarMenuAcciones());
@@ -792,7 +792,10 @@ export default class EscenaBatalla extends Phaser.Scene {
         const res = await PuenteApi.intentarCaptura(defensorId, nombre);
         mensajeFinal = res?.mensaje ?? '¡Falló la captura!';
         capturado = typeof mensajeFinal === 'string' && mensajeFinal.toLowerCase().includes('fue capturado');
-        if (capturado) this._salvajePokemonUsuarioId = null;
+        if (capturado) {
+          this._capturadoPokemonId = defensorId;
+          this._salvajePokemonUsuarioId = null;
+        }
         const invActual = usarJuegoStore.getState().inventario ?? [];
         const invActualizado = invActual
           .map(it => {
@@ -1361,7 +1364,62 @@ export default class EscenaBatalla extends Phaser.Scene {
       this.sound.play('sfx-level-up', { volume: volumenBgmParaPhaser() });
     }
 
-    this._encolarMensajesBatalla(mensajes, () => void this._terminarBatalla());
+    const movNuevos = resultadoTurno?.movimientosNuevos ?? [];
+    const movActuales = resultadoTurno?.movimientosActuales ?? this._movimientosJugador ?? [];
+    const autoAprendidos = resultadoTurno?.movimientosAutoAprendidos ?? [];
+
+    const pokNombre = jugador?.nombreApodo ?? jugador?.nombre ?? 'Pokémon';
+    for (const m of autoAprendidos) {
+      mensajes.push(`¡${pokNombre}\naprendió\n${m.nombre}!`);
+    }
+
+    if (movNuevos.length > 0) {
+      this._encolarMensajesBatalla(mensajes, () => {
+        this._procesarMovimientosNuevos(movNuevos, movActuales, jugador, () => void this._terminarBatalla());
+      });
+    } else {
+      this._encolarMensajesBatalla(mensajes, () => void this._terminarBatalla());
+    }
+  }
+
+  _procesarMovimientosNuevos(cola, movActuales, jugador, onFin) {
+    if (!cola || cola.length === 0) { onFin?.(); return; }
+    const [primero, ...resto] = cola;
+    const pokemonNombre = jugador?.nombreApodo ?? jugador?.nombre ?? 'Pokémon';
+    const pokemonUsuarioId = jugador?.pokemonUsuarioId;
+
+    if (!this._uiReact) { onFin?.(); return; }
+
+    this._uiReact({
+      ...this._datosHudReact(),
+      mensaje: `¡${pokemonNombre} quiere\naprender\n${primero.nombre}!`,
+      menuVisible: false,
+      movimientosPicker: null,
+      mochilaPicker: null,
+      equipoPicker: null,
+      aprenderMovimientoPicker: {
+        pokemonNombre,
+        movimientoNuevo: primero,
+        movimientosActuales: movActuales,
+        onAprender: async (moveIdAOlvidar) => {
+          this._uiReact({ ...this._datosHudReact(), aprenderMovimientoPicker: null, menuVisible: false });
+          try {
+            await PuenteApi.aprenderMovimiento({ pokemonId: pokemonUsuarioId, moveIdNuevo: primero.moveId, moveIdAOlvidar });
+            const nuevosActuales = moveIdAOlvidar != null
+              ? movActuales.filter((m) => m.moveId !== moveIdAOlvidar).concat([primero])
+              : movActuales.concat([primero]);
+            this._procesarMovimientosNuevos(resto, nuevosActuales, jugador, onFin);
+          } catch (e) {
+            console.warn('[aprender]', e);
+            this._procesarMovimientosNuevos(resto, movActuales, jugador, onFin);
+          }
+        },
+        onRechazar: () => {
+          this._uiReact({ ...this._datosHudReact(), aprenderMovimientoPicker: null, menuVisible: false });
+          this._procesarMovimientosNuevos(resto, movActuales, jugador, onFin);
+        },
+      },
+    });
   }
 
   _derrota() {

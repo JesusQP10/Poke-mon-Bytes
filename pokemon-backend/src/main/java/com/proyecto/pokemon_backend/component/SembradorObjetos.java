@@ -26,7 +26,8 @@ public class SembradorObjetos implements CommandLineRunner {
         "potion", "super-potion", "hyper-potion", "max-potion", "full-restore",
         "antidote", "burn-heal", "ice-heal", "awakening", "paralyze-heal", "full-heal",
         "poke-ball", "great-ball", "ultra-ball", "master-ball",
-        "escape-rope", "repel"
+        "escape-rope", "repel",
+        "rare-candy"
     );
 
     private final RepositorioObjeto itemRepo;
@@ -92,6 +93,7 @@ public class SembradorObjetos implements CommandLineRunner {
             case "awakening"     -> "CURE_SLP";
             case "paralyze-heal" -> "CURE_PAR";
             case "full-heal"     -> "CURE_ALL";
+            case "rare-candy"    -> "LEVEL_UP";
             default              -> "NONE";
         };
     }

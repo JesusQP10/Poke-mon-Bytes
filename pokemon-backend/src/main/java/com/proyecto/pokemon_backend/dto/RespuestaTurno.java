@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+import java.util.Map;
+
 /** Resultado de un turno de combate devuelto al cliente. */
 @Data
 @Builder
@@ -40,4 +43,10 @@ public class RespuestaTurno {
     private Integer hpMaxAtacante;
     /** XP acumulada del atacante después de aplicar la ganancia (para la barra de experiencia). */
     private Integer xpActual;
+    /** Movimientos que el Pokémon quiere aprender pero el moveset ya está lleno (se necesita decisión). */
+    private List<Map<String, Object>> movimientosNuevos;
+    /** Moveset actual del Pokémon atacante (para mostrar "¿cuál olvidar?" en el frontend). */
+    private List<Map<String, Object>> movimientosActuales;
+    /** Movimientos que se aprendieron automáticamente (había hueco libre) — solo para notificar al jugador. */
+    private List<Map<String, Object>> movimientosAutoAprendidos;
 }

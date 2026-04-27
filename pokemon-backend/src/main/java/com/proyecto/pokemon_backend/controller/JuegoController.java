@@ -198,4 +198,20 @@ public class JuegoController {
     public ResponseEntity<Map<String, Object>> curarCentroPokemon(Authentication auth) {
         return ResponseEntity.ok(juegoService.curarEquipoEnCentro(auth.getName()));
     }
+
+    /**
+     * El jugador decide qué movimiento olvidar para aprender uno nuevo.
+     * Cuerpo: {@code moveIdNuevo} (obligatorio) + {@code moveIdAOlvidar} (obligatorio si moveset lleno).
+     */
+    @PostMapping("/pokemon/{pokemonId}/aprender-movimiento")
+    public ResponseEntity<Map<String, Object>> aprenderMovimiento(
+        @PathVariable Long pokemonId,
+        @RequestBody Map<String, Object> body,
+        Authentication auth
+    ) {
+        Integer moveIdNuevo = body.get("moveIdNuevo") instanceof Number n ? n.intValue() : null;
+        Integer moveIdAOlvidar = body.get("moveIdAOlvidar") instanceof Number n ? n.intValue() : null;
+        if (moveIdNuevo == null) throw new com.proyecto.pokemon_backend.exception.ErrorNegocio("moveIdNuevo es obligatorio.");
+        return ResponseEntity.ok(juegoService.aprenderMovimiento(auth.getName(), pokemonId, moveIdNuevo, moveIdAOlvidar));
+    }
 }

@@ -202,6 +202,15 @@ const PuenteApi = {
     return res.data;
   },
 
+  /** POST /juego/pokemon/{id}/aprender-movimiento — el jugador elige qué movimiento olvidar. */
+  async aprenderMovimiento({ pokemonId, moveIdNuevo, moveIdAOlvidar = null } = {}) {
+    const res = await api.post(`/api/v1/juego/pokemon/${pokemonId}/aprender-movimiento`, {
+      moveIdNuevo,
+      moveIdAOlvidar,
+    });
+    return res.data;
+  },
+
   /** POST /juego/inventario/usar — usa un ítem sobre un Pokémon del equipo fuera de combate. */
   async usarItemInventario({ itemId, nombreItem, pokemonObjetivoId } = {}) {
     const body = {};

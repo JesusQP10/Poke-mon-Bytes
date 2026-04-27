@@ -119,6 +119,9 @@ export default class EscenaOverworld extends Phaser.Scene {
       const v = volumenBgmParaPhaser();
       if (this._musica) {
         this._musica.setVolume(v);
+        if (!this._musica.isPlaying) {
+          this._musica.play();
+        }
       }
     };
     this._onOpcionesAudio = () => this._aplicarVolumenBgmDesdeOpciones();

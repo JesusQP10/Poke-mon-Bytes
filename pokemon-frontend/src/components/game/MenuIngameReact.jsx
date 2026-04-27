@@ -30,6 +30,7 @@ import {
 import { urlMiniMenuInicialPorPokedexId } from "../../assets/pokemon/starters/portraitUrls";
 import { statCombateMenu } from "../../config/statsCombateMenuFallback";
 import { urlIconoItemPorNombre } from "../../config/iconosItems";
+import BattleLearnMove from "./BattleLearnMove";
 
 /** @param {number} totalSeg */
 function formatearTiempoJuegoGen3(totalSeg) {
@@ -115,9 +116,11 @@ const MenuIngameReact = ({ onClose }) => {
   const [cantidadTirar, setCantidadTirar] = useState(1);
   const [confirmCallback, setConfirmCallback] = useState(null);
   const [cargandoItem, setCargandoItem] = useState(false);
+  const [pendienteAprender, setPendienteAprender] = useState(null);
   const enOperacionRef = useRef(false);
   const [prefs, setPrefs] = useState(() => leerOpcionesCliente());
   const [dialogo, setDialogo] = useState(null);
+  const [dialogoCola, setDialogoCola] = useState([]);
   const [guardando, setGuardando] = useState(false);
   const [detalleApi, setDetalleApi] = useState({ status: "idle" });
   const [fichaMuestraMovimientos, setFichaMuestraMovimientos] = useState(false);
@@ -239,16 +242,25 @@ const MenuIngameReact = ({ onClose }) => {
   const volverPrincipal = useCallback(() => {
     setVista("principal");
     setDialogo(null);
+    setDialogoCola([]);
     setSelOpciones(0);
   }, []);
 
-  const abrirDialogo = useCallback((texto) => {
-    setDialogo(texto);
+  const abrirDialogo = useCallback((textoOArray) => {
+    if (Array.isArray(textoOArray) && textoOArray.length > 0) {
+      const [primera, ...resto] = textoOArray;
+      setDialogo(primera);
+      setDialogoCola(resto);
+    } else {
+      setDialogo(Array.isArray(textoOArray) ? null : textoOArray);
+      setDialogoCola([]);
+    }
   }, []);
 
   const ejecutarGuardar = useCallback(async () => {
     setGuardando(true);
     setDialogo(null);
+    setDialogoCola([]);
     try {
       usarJuegoStore.getState().guardarPartidaLocal({ desdeGuardadoMenu: true });
     } catch {
@@ -322,11 +334,16 @@ const MenuIngameReact = ({ onClose }) => {
   useEffect(() => {
     const manejar = (e) => {
       if (guardando || cargandoItem || enOperacionRef.current) return;
+      if (pendienteAprender) return;
 
       if (dialogo) {
         if (esTeclaAceptar(e.code)) {
           e.preventDefault();
-          if (confirmCallback) {
+          if (dialogoCola.length > 0) {
+            const [siguiente, ...resto] = dialogoCola;
+            setDialogo(siguiente);
+            setDialogoCola(resto);
+          } else if (confirmCallback) {
             const fn = confirmCallback;
             enOperacionRef.current = true;
             setConfirmCallback(null);
@@ -338,6 +355,7 @@ const MenuIngameReact = ({ onClose }) => {
         } else if (esTeclaAtras(e.code)) {
           e.preventDefault();
           setConfirmCallback(null);
+          setDialogoCola([]);
           setDialogo(null);
         }
         return;
@@ -476,8 +494,26 @@ const MenuIngameReact = ({ onClose }) => {
             pokemonObjetivoId: p.pokemonUsuarioId,
           })
             .then((res) => {
-              abrirDialogo(res?.mensaje ?? `¡Usaste\n${nombre}!`);
+              const movNuevos = res?.movimientosNuevos;
+              const movActuales = res?.movimientosActuales ?? [];
+              const autoAprendidos = Array.isArray(res?.movimientosAutoAprendidos) ? res.movimientosAutoAprendidos : [];
+              const pokNombre = p.nombreApodo ?? p.nombre ?? 'Pokémon';
+              const pokId = p.pokemonUsuarioId;
               setVista("mochila");
+
+              // Construir cola de mensajes: mensaje principal + "aprendió X" por cada auto-aprendido
+              const mensajesExtra = autoAprendidos.map((m) => `¡${pokNombre}\naprendió\n${m.nombre}!`);
+              const todosLosMensajes = [res?.mensaje ?? `¡Usaste\n${nombre}!`, ...mensajesExtra];
+
+              if (Array.isArray(movNuevos) && movNuevos.length > 0) {
+                abrirDialogo(todosLosMensajes);
+                setConfirmCallback(() => () => {
+                  const [primero, ...cola] = movNuevos;
+                  setPendienteAprender({ movimientoActual: primero, cola, movimientosActuales: movActuales, pokemonId: pokId, pokemonNombre: pokNombre });
+                });
+              } else {
+                abrirDialogo(todosLosMensajes);
+              }
             })
             .catch((err) => {
               const msg = err?.response?.data?.error ?? "No se pudo\nusar el ítem.";
@@ -602,6 +638,7 @@ const MenuIngameReact = ({ onClose }) => {
     cargandoItem,
     confirmCallback,
     dialogo,
+    dialogoCola,
     equipo,
     guardando,
     itemAccionActual,
@@ -620,6 +657,7 @@ const MenuIngameReact = ({ onClose }) => {
     detalleApi,
     pokemonSeleccionado,
     fichaMuestraMovimientos,
+    pendienteAprender,
   ]);
 
   const hint = (() => {
@@ -658,13 +696,22 @@ const MenuIngameReact = ({ onClose }) => {
             .join(" / ") || "—"
         : "";
 
-  const slotsMovimientosUi = useMemo(
-    () =>
-      detalleApiUi.status === "ok" && Array.isArray(detalleApiUi.data?.movimientosPorNivel)
-        ? slotsCuatroMovimientos(detalleApiUi.data.movimientosPorNivel)
-        : slotsCuatroMovimientos([]),
-    [detalleApiUi],
-  );
+  const slotsMovimientosUi = useMemo(() => {
+    // Preferir movimientos reales del backend (POKEMON_MOVIMIENTOS_USUARIO)
+    const movsBD = pSel?.movimientos;
+    if (Array.isArray(movsBD) && movsBD.length > 0) {
+      return slotsCuatroMovimientos(movsBD.map((m) => ({
+        nombre: m.nombre,
+        tipoCodigo: m.tipo,
+        pp: m.pp,
+      })));
+    }
+    // Fallback: PokéAPI (solo si aún no hay datos de BD)
+    if (detalleApiUi.status === "ok" && Array.isArray(detalleApiUi.data?.movimientosPorNivel)) {
+      return slotsCuatroMovimientos(detalleApiUi.data.movimientosPorNivel);
+    }
+    return slotsCuatroMovimientos([]);
+  }, [pSel?.movimientos, detalleApiUi]);
 
   const etiquetaNombrePokemonFicha =
     (pSel?.nombreApodo && pSel.nombreApodo !== pSel.nombre
@@ -1185,6 +1232,48 @@ const MenuIngameReact = ({ onClose }) => {
         <div className="dialogo-retro-caja dialogo-retro-caja--flotante dialogo-retro-caja--menuOverlay">
           {dialogo}
         </div>
+      )}
+
+      {pendienteAprender && (
+        <BattleLearnMove
+          pokemonNombre={pendienteAprender.pokemonNombre}
+          movimientoNuevo={pendienteAprender.movimientoActual}
+          movimientosActuales={pendienteAprender.movimientosActuales}
+          onAprender={async (moveIdAOlvidar) => {
+            const { movimientoActual, cola, movimientosActuales, pokemonId, pokemonNombre } = pendienteAprender;
+            setPendienteAprender(null);
+            try {
+              await PuenteApi.aprenderMovimiento({ pokemonId, moveIdNuevo: movimientoActual.moveId, moveIdAOlvidar });
+              const nuevosActuales = moveIdAOlvidar != null
+                ? movimientosActuales.filter((m) => m.moveId !== moveIdAOlvidar).concat([movimientoActual])
+                : movimientosActuales.concat([movimientoActual]);
+              if (cola.length > 0) {
+                const [siguiente, ...resto] = cola;
+                setPendienteAprender({ movimientoActual: siguiente, cola: resto, movimientosActuales: nuevosActuales, pokemonId, pokemonNombre });
+              } else {
+                enOperacionRef.current = false;
+              }
+            } catch (e) {
+              console.warn('[aprender]', e);
+              if (cola.length > 0) {
+                const [siguiente, ...resto] = cola;
+                setPendienteAprender({ movimientoActual: siguiente, cola: resto, movimientosActuales, pokemonId, pokemonNombre });
+              } else {
+                enOperacionRef.current = false;
+              }
+            }
+          }}
+          onRechazar={() => {
+            const { cola, movimientosActuales, pokemonId, pokemonNombre } = pendienteAprender;
+            setPendienteAprender(null);
+            if (cola.length > 0) {
+              const [siguiente, ...resto] = cola;
+              setPendienteAprender({ movimientoActual: siguiente, cola: resto, movimientosActuales, pokemonId, pokemonNombre });
+            } else {
+              enOperacionRef.current = false;
+            }
+          }}
+        />
       )}
 
       <div className="menu-ingame-hint">{hint}</div>

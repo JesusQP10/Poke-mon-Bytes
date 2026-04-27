@@ -377,6 +377,12 @@ public class BatallaService {
         int hpRestante = Math.max(0, nvl(defensor.getHpActual(), 0) - danio);
         defensor.setHpActual(hpRestante);
 
+        // --- Efecto secundario del movimiento ---
+        String msgEfSecundario = "";
+        if (hpRestante > 0 && defensor.getEstado() == Estado.SALUDABLE) {
+            msgEfSecundario = aplicarEfectoSecundarioDano(movimiento.getNombre(), defensor);
+        }
+
         // --- Post-turno: daño residual ---
         String residualDef = procesarEfectosFinTurno(defensor);
         String residualAtk = procesarEfectosFinTurno(atacante);
@@ -389,6 +395,7 @@ public class BatallaService {
             "¡" + nombreAtacante + " usó " + movimiento.getNombre() + "!",
             critico ? "¡Golpe crítico!" : "",
             msgEfectividad,
+            msgEfSecundario,
             residualAtk,
             residualDef
         );
@@ -422,6 +429,10 @@ public class BatallaService {
             hpAtkFinal = nvl(atacante.getHpActual(), 0);
         }
 
+        ResultadoSincMovimientos sincMov = nivelDespues > nivelAntes
+            ? sincronizarMovimientosNuevos(atacante, nivelAntes, nivelDespues)
+            : new ResultadoSincMovimientos(List.of(), List.of(), List.of());
+
         return RespuestaTurno.builder()
             .danoInfligido(danio)
             .hpRestanteAtacante(hpAtkFinal)
@@ -438,6 +449,9 @@ public class BatallaService {
             .nivelAnterior(xpGanada > 0 ? nivelAntes : null)
             .nuevoNivel(xpGanada > 0 ? nivelDespues : null)
             .xpActual(xpGanada > 0 ? nvl(atacante.getExperiencia(), 0) : null)
+            .movimientosNuevos(sincMov.pendientes().isEmpty() ? null : sincMov.pendientes())
+            .movimientosActuales(sincMov.pendientes().isEmpty() ? null : sincMov.movimientosActuales())
+            .movimientosAutoAprendidos(sincMov.autoAprendidos().isEmpty() ? null : sincMov.autoAprendidos())
             .build();
     }
 
@@ -568,16 +582,35 @@ public class BatallaService {
      * Materializa hasta 4 movimientos con PP persistido, inserta/actualiza filas auxiliares y purga obsoletos.
      */
     private List<HuecoMovimiento> construirSlots(PokemonUsuario pokemon) {
-        List<Ataques> movimientos = resolverMovimientosParaPokemon(pokemon);
+        List<RepositorioEstadoMovimientoPokemon.EstadoPpMovimiento> persistidos =
+            moveStateRepo.buscarPorPokemonId(pokemon.getId());
+        boolean tieneMovsetPersonalizado = movesetPersonalizadoPorPokemonId.containsKey(pokemon.getId());
 
-        Map<Integer, RepositorioEstadoMovimientoPokemon.EstadoPpMovimiento> ppPersistido =
-            moveStateRepo.buscarPorPokemonId(pokemon.getId()).stream()
-                .collect(Collectors.toMap(
-                    RepositorioEstadoMovimientoPokemon.EstadoPpMovimiento::moveId,
-                    r -> r,
-                    (a, b) -> a,
-                    HashMap::new
-                ));
+        
+        // Solo calculamos desde el learnset cuando la tabla está vacía .
+        boolean usarPersistido = !persistidos.isEmpty() && !tieneMovsetPersonalizado;
+
+        List<Ataques> movimientos;
+        if (usarPersistido) {
+            movimientos = persistidos.stream()
+                .sorted(Comparator.comparingInt(RepositorioEstadoMovimientoPokemon.EstadoPpMovimiento::slotIndex))
+                .map(e -> ataquesRepo.findById(e.moveId()).orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+            if (movimientos.isEmpty()) {
+                usarPersistido = false;
+                movimientos = resolverMovimientosParaPokemon(pokemon);
+            }
+        } else {
+            movimientos = resolverMovimientosParaPokemon(pokemon);
+        }
+
+        Map<Integer, Integer> ppMap = persistidos.stream()
+            .collect(Collectors.toMap(
+                RepositorioEstadoMovimientoPokemon.EstadoPpMovimiento::moveId,
+                RepositorioEstadoMovimientoPokemon.EstadoPpMovimiento::ppActual,
+                (a, b) -> a
+            ));
 
         List<HuecoMovimiento> slots = new ArrayList<>();
         Set<Integer> idsValidos = new HashSet<>();
@@ -587,12 +620,7 @@ public class BatallaService {
             if (mov == null || mov.getIdAtaque() == null) continue;
 
             int ppMax = Math.max(1, nvl(mov.getPpBase(), 1));
-            int ppActual = ppMax;
-
-            RepositorioEstadoMovimientoPokemon.EstadoPpMovimiento fila = ppPersistido.get(mov.getIdAtaque());
-            if (fila != null) {
-                ppActual = Math.max(0, Math.min(fila.ppActual(), ppMax));
-            }
+            int ppActual = Math.max(0, Math.min(ppMap.getOrDefault(mov.getIdAtaque(), ppMax), ppMax));
 
             idsValidos.add(mov.getIdAtaque());
             moveStateRepo.insertarOActualizar(pokemon.getId(), mov.getIdAtaque(), slotIndex, ppActual);
@@ -600,7 +628,12 @@ public class BatallaService {
             slotIndex++;
         }
 
-        moveStateRepo.eliminarPorPokemonIdYNoEn(pokemon.getId(), idsValidos);
+        
+        // Cuando usamos el moveset persistido, NO tocamos la tabla para no borrar decisiones del jugador.
+        if (!usarPersistido) {
+            moveStateRepo.eliminarPorPokemonIdYNoEn(pokemon.getId(), idsValidos);
+        }
+
         return slots;
     }
 
@@ -1189,6 +1222,36 @@ public class BatallaService {
             .build();
     }
 
+    /** Efectos de estado secundarios de movimientos de daño (Gen II). */
+    private String aplicarEfectoSecundarioDano(String nombreMov, PokemonUsuario defensor) {
+        String nom = String.valueOf(nombreMov).toLowerCase(Locale.ROOT).trim();
+        String nomDef = nombreDisplay(defensor);
+        int roll = ThreadLocalRandom.current().nextInt(100);
+        return switch (nom) {
+            case "ice-beam", "blizzard", "ice-punch" -> {
+                if (roll < 10) { defensor.setEstado(Estado.CONGELADO); yield "¡" + nomDef + " se congeló!"; }
+                yield "";
+            }
+            case "sludge", "sludge-bomb" -> {
+                if (roll < 30) { defensor.setEstado(Estado.ENVENENADO); yield "¡" + nomDef + " fue envenenado!"; }
+                yield "";
+            }
+            case "poison-sting", "poison-tail", "smog" -> {
+                if (roll < 30) { defensor.setEstado(Estado.ENVENENADO); yield "¡" + nomDef + " fue envenenado!"; }
+                yield "";
+            }
+            case "ember", "flamethrower", "fire-blast", "fire-punch", "flame-wheel" -> {
+                if (roll < 10) { defensor.setEstado(Estado.QUEMADO); yield "¡" + nomDef + " fue quemado!"; }
+                yield "";
+            }
+            case "thunderbolt", "thunder", "thunder-punch" -> {
+                if (roll < 10) { defensor.setEstado(Estado.PARALIZADO); yield "¡" + nomDef + " quedó paralizado!"; }
+                yield "";
+            }
+            default -> "";
+        };
+    }
+
     /** Estado visible del Pokémon: estado persistente, "confuso" si aplica, o "saludable". */
     private String estadoDisplay(PokemonUsuario pkm) {
         if (pkm == null) return "saludable";
@@ -1247,6 +1310,110 @@ public class BatallaService {
     private String str(String value) {
         return value == null ? "" : value;
     }
+
+    // =========================================================================
+    // APRENDIZAJE DE MOVIMIENTOS
+    // =========================================================================
+
+    /**
+     * Comprueba si el Pokémon aprende nuevos movimientos al subir de {@code nivelAntes} a {@code nivelNuevo}.
+     * Auto-aprende los que caben en huecos libres. Devuelve los que requieren decisión del jugador
+     * (moveset lleno) junto con el moveset actual en ese momento.
+     */
+    public ResultadoSincMovimientos sincronizarMovimientosNuevos(
+            PokemonUsuario pokemon, int nivelAntes, int nivelNuevo) {
+        if (pokemon == null || pokemon.getId() == null || nivelAntes >= nivelNuevo) {
+            return new ResultadoSincMovimientos(List.of(), List.of(), List.of());
+        }
+
+        List<EntradaLearnset> learnset = obtenerLearnset(nvl(pokemon.getPokedexId(), 0));
+        List<EntradaLearnset> aprendibles = learnset.stream()
+            .filter(e -> e.nivel() > nivelAntes && e.nivel() <= nivelNuevo)
+            .toList();
+
+        if (aprendibles.isEmpty()) {
+            return new ResultadoSincMovimientos(List.of(), List.of(), List.of());
+        }
+
+        List<Map<String, Object>> pendientes = new ArrayList<>();
+        List<Map<String, Object>> autoAprendidos = new ArrayList<>();
+
+        for (EntradaLearnset entrada : aprendibles) {
+            if (entrada.moveId() == null) continue;
+            Optional<Ataques> ataqueOpt = ataquesRepo.findById(entrada.moveId());
+            if (ataqueOpt.isEmpty()) continue;
+            Ataques ataque = ataqueOpt.get();
+
+            List<RepositorioEstadoMovimientoPokemon.EstadoPpMovimiento> actuales =
+                moveStateRepo.buscarPorPokemonId(pokemon.getId());
+
+            boolean yaLoSabe = actuales.stream()
+                .anyMatch(e -> Objects.equals(e.moveId(), ataque.getIdAtaque()));
+            if (yaLoSabe) continue;
+
+            if (actuales.size() < MAX_MOVIMIENTOS_ACTIVOS) {
+                int slot = actuales.stream()
+                    .mapToInt(RepositorioEstadoMovimientoPokemon.EstadoPpMovimiento::slotIndex)
+                    .max().orElse(-1) + 1;
+                moveStateRepo.insertarOActualizar(
+                    pokemon.getId(), ataque.getIdAtaque(), slot, nvl(ataque.getPpBase(), 20));
+                autoAprendidos.add(infoMovimiento(ataque));
+            } else {
+                pendientes.add(infoMovimiento(ataque));
+            }
+        }
+
+        List<Map<String, Object>> movActuales = moveStateRepo.buscarPorPokemonId(pokemon.getId())
+            .stream()
+            .map(e -> ataquesRepo.findById(e.moveId()).map(this::infoMovimiento).orElse(null))
+            .filter(Objects::nonNull)
+            .toList();
+
+        return new ResultadoSincMovimientos(pendientes, movActuales, autoAprendidos);
+    }
+
+    /** Sustituye (o añade) un movimiento en el moveset del Pokémon del jugador. */
+    public String aprenderMovimientoJugador(Long pokemonId, Integer moveIdNuevo, Integer moveIdAOlvidar) {
+        Ataques nuevoAtaque = ataquesRepo.findById(moveIdNuevo)
+            .orElseThrow(() -> new ErrorNegocio("Movimiento no encontrado."));
+
+        List<RepositorioEstadoMovimientoPokemon.EstadoPpMovimiento> actuales =
+            moveStateRepo.buscarPorPokemonId(pokemonId);
+
+        if (moveIdAOlvidar != null) {
+            int slot = actuales.stream()
+                .filter(e -> Objects.equals(e.moveId(), moveIdAOlvidar))
+                .mapToInt(RepositorioEstadoMovimientoPokemon.EstadoPpMovimiento::slotIndex)
+                .findFirst()
+                .orElseThrow(() -> new ErrorNegocio("El movimiento a olvidar no se encontró."));
+            moveStateRepo.eliminarMovimiento(pokemonId, moveIdAOlvidar);
+            moveStateRepo.insertarOActualizar(pokemonId, nuevoAtaque.getIdAtaque(), slot, nvl(nuevoAtaque.getPpBase(), 20));
+        } else {
+            int slot = actuales.stream()
+                .mapToInt(RepositorioEstadoMovimientoPokemon.EstadoPpMovimiento::slotIndex)
+                .max().orElse(-1) + 1;
+            moveStateRepo.insertarOActualizar(pokemonId, nuevoAtaque.getIdAtaque(), slot, nvl(nuevoAtaque.getPpBase(), 20));
+        }
+
+        return nuevoAtaque.getNombre();
+    }
+
+    private Map<String, Object> infoMovimiento(Ataques ataque) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("moveId", ataque.getIdAtaque());
+        m.put("nombre", ataque.getNombre());
+        m.put("tipo", ataque.getTipo());
+        m.put("pp", nvl(ataque.getPpBase(), 20));
+        m.put("potencia", ataque.getPotencia());
+        return m;
+    }
+
+    /** Contenedor para el resultado de sincronización de movimientos. */
+    public record ResultadoSincMovimientos(
+        List<Map<String, Object>> pendientes,
+        List<Map<String, Object>> movimientosActuales,
+        List<Map<String, Object>> autoAprendidos
+    ) {}
 
     // =========================================================================
     // RECORDS INTERNOS

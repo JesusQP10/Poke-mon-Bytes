@@ -85,6 +85,12 @@ public class RepositorioEstadoMovimientoPokemon {
         jdbcTemplate.update(sql, pokemonId);
     }
 
+    /** Borra un movimiento concreto de un Pokémon (para sustituirlo al aprender uno nuevo). */
+    public void eliminarMovimiento(Long pokemonId, Integer moveId) {
+        String sql = "DELETE FROM " + TABLE_NAME + " WHERE id_pokemon_usuario = ? AND id_ataque = ?";
+        jdbcTemplate.update(sql, pokemonId, moveId);
+    }
+
     /**
      * Fila mínima para hidratar slots: id de ataque en catálogo, orden visual y PP restante.
      */

@@ -8,6 +8,7 @@ import com.proyecto.pokemon_backend.model.PokedexMaestra;
 import com.proyecto.pokemon_backend.model.PokemonUsuario;
 import com.proyecto.pokemon_backend.model.Usuario;
 import com.proyecto.pokemon_backend.model.enums.Estado;
+import com.proyecto.pokemon_backend.repository.RepositorioAtaques;
 import com.proyecto.pokemon_backend.repository.RepositorioEstadoMovimientoPokemon;
 import com.proyecto.pokemon_backend.repository.RepositorioInventarioUsuario;
 import com.proyecto.pokemon_backend.repository.RepositorioObjeto;
@@ -48,12 +49,16 @@ class JuegoServiceTest {
     private RepositorioObjeto itemRepo;
     @Mock
     private RepositorioEstadoMovimientoPokemon estadoMovimientoRepo;
+    @Mock
+    private RepositorioAtaques ataquesRepo;
+    @Mock
+    private BatallaService batallaService;
 
     private JuegoService juegoService;
 
     @BeforeEach
     void setUp() {
-        juegoService = new JuegoService(userRepo, pokemonRepo, pokedexRepo, inventarioRepo, itemRepo, estadoMovimientoRepo);
+        juegoService = new JuegoService(userRepo, pokemonRepo, pokedexRepo, inventarioRepo, itemRepo, estadoMovimientoRepo, ataquesRepo, batallaService);
     }
 
     @Test
@@ -255,7 +260,7 @@ class JuegoServiceTest {
         when(inventarioRepo.findByUsuarioAndItem(u, pocion))
             .thenReturn(Optional.of(new InventarioUsuario(u, pocion, 3)));
         when(pokemonRepo.findById(10L)).thenReturn(Optional.of(pkm));
-        when(pokedexRepo.findById(any())).thenReturn(Optional.empty());
+        when(pokedexRepo.findById(152)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> juegoService.usarItemFueraCombate("ash", null, "Potion", 10L))
             .isInstanceOf(ErrorNegocio.class)

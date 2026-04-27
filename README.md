@@ -102,9 +102,11 @@
 | **Mundo** | Varios mapas **Tiled** (habitación, casa, New Bark Town, laboratorio Elm, **sala debugger** con NPCs de tienda, centro y combate). |
 | **Navegación** | **`WarpSystem`**: puertas y rutas con `destino`, spawn y offsets; sincronización de zonas para no activar warps al aparecer encima de una salida. |
 | **Combate** | Turnos en **Spring Boot** (daño Gen II, STAB, crítico, estados alterados, PP, captura); **cambio de Pokémon** voluntario con coste de turno y forzado por KO; sprites dinámicos por `pokedexId`. |
-| **Economía** | **Tienda** con NPC + selector de cantidad; **inventario** completo (tirar / usar fuera de combate); **Centro Pokémon** con NPC enfermera — todo conectado a la API. |
+| **XP y nivel** | XP real aplicado tras victoria; subida de nivel automática (nivel²×5); **barra XP animada** en el HUD con reinicio visual al subir; diálogo `BattleLearnMove` para aprender movimientos. |
+| **Economía** | **Tienda** con NPC + selector de cantidad; **inventario** completo (tirar / usar fuera de combate); **Centro Pokémon** con NPC enfermera; **Rare Candy** con efecto `LEVEL_UP`. |
 | **Estado** | **Zustand**: hidrata desde `GET /estado`, guarda en servidor y en **localStorage**; sync completo post-batalla; Axios con **JWT** y manejo de **401**. |
 | **UI** | **React**: menú in-game (equipo, mochila USAR/TIRAR, opciones, guardado); **`BattleBag`** y **`BattleParty`** en combate; HUD con etiqueta de estado alterado. |
+| **Audio** | BGM diferenciada para combate salvaje y entrenador; SFX de captura y subida de nivel; música en pantalla de título e intro Oak. |
 
 ---
 
@@ -168,7 +170,7 @@ Opcional: copia `pokemon-frontend/.env.example` → `.env` y ajusta **`VITE_API_
 
 ## Estado actual del proyecto
 
-> **Última revisión: 2026-04-22.** Estado general: **proyecto completo y funcional**. El detalle día a día está en [docs/desarrollo/NOTAS.md](docs/desarrollo/NOTAS.md).
+> **Última revisión: 2026-04-27.** Estado general: **proyecto completo y funcional**. El detalle día a día está en [docs/desarrollo/NOTAS.md](docs/desarrollo/NOTAS.md).
 
 ### Módulos completados
 
@@ -184,13 +186,16 @@ Opcional: copia `pokemon-frontend/.env.example` → `.env` y ajusta **`VITE_API_
 | Escena batalla | ✅ HUD React, sprites, estados en UI, sync post-batalla, PP reset, cambio de Pokémon |
 | Menú in-game React | ✅ Ficha entrenador, equipo (sprites B/W), mochila (tirar/usar), opciones, guardado |
 | Pantalla de título | ✅ Ho-Oh animado, música, Continuar / Nueva partida |
-| Tests backend | ✅ 32 tests, 0 fallos (`FlujoCableadoBatallaIT`, `JuegoServiceTest`, `CalculoServiceTest`) |
-| Tests frontend | ✅ ~204 casos · Vitest 4 + `happy-dom` · 9 archivos (config, phaser, services, store) |
+| XP y nivelación | ✅ XP real post-victoria, subida de nivel automática (nivel²×5), barra XP animada con reinicio al subir |
+| Rare Candy | ✅ Ítem funcional con efecto `LEVEL_UP` — SQL Flyway V2, semillador, flujo genérico de ítem |
+| Aprender movimientos | ✅ `BattleLearnMove` — diálogo al subir nivel para aprender o reemplazar movimientos |
+| Audio | ✅ BGM diferenciada (combate salvaje / entrenador), SFX captura y subida de nivel |
+| Tests backend | ✅ 31 tests unitarios, 0 fallos (`JuegoServiceTest` × 25, `CalculoServiceTest` × 6) |
+| Tests frontend | ✅ Vitest 4 + `happy-dom` · suite en `src/__tests__/` (config, phaser, services, store) |
 
 ### Alcance definitivo (descartado por tiempo)
 
-- XP / nivelación visual
-- Evolución
+- Evolución de Pokémon
 - Pokédex expandida
 
 ### Backend

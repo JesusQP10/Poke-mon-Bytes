@@ -1,7 +1,7 @@
 
 # ========== IDE ==========
 .vscode/
-.idea/
+
 *.iws
 *.iml
 *.ipr
@@ -71,7 +71,6 @@ tmp_*
 # Notas y guías personales 
 docs/personal/
 PENDIENTES.md
-
 .claude/
 JesusQP10 pokegold master gfx-tilesets/
 Pokemon-gen-2-style-tilemap-main/
@@ -79,7 +78,7 @@ pokemon-frontend/node_modules/
 pokemon-frontend/dist/
 
 # ========== Secrets & Environment ==========
-# NUNCA credenciales reales
+
 pokemon-backend/src/main/resources/application-local.properties
 *.env
 .env
@@ -110,14 +109,21 @@ pokemon-frontend/public/assets/game/overworld/tiles/exports/*.json
 # pokemon-frontend/src/store/usarJuegoStoreRefactorizado.js
 # pokemon-frontend/src/utils/
 
-# ========== Exportación memoria Word (Pandoc) ==========
+# ========== Exportación memoria Word  ==========
 _memoria_merge.md
 docs/diagramas_generados/word_memoria/
 
-# Memoria / documentación con datos personales (mantener solo en local)
+# Memoria / documentación con datos personales
 PROYECTO.md
+PROYECTO_ENTREGA.docx
+MEMORIA_RESUMEN*.md
+MEMORIA_RESUMEN*.docx
+exportar_memoria_word.py
+insertar_capturas_anexoD.py
+tesManuales.md
+~$*.docx
 
 
 
-# ========== PNGs accidentales en raíz (copias de assets items) ==========
+# ========== PNGs accidentales en raíz  ==========
 /*.png

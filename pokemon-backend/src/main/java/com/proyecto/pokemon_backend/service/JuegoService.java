@@ -11,12 +11,14 @@ import com.proyecto.pokemon_backend.model.PokemonUsuario;
 import com.proyecto.pokemon_backend.model.Usuario;
 import com.proyecto.pokemon_backend.model.enums.Estado;
 import java.util.Locale;
+import com.proyecto.pokemon_backend.repository.RepositorioAtaques;
 import com.proyecto.pokemon_backend.repository.RepositorioEstadoMovimientoPokemon;
 import com.proyecto.pokemon_backend.repository.RepositorioInventarioUsuario;
 import com.proyecto.pokemon_backend.repository.RepositorioObjeto;
 import com.proyecto.pokemon_backend.repository.RepositorioPokedexMaestra;
 import com.proyecto.pokemon_backend.repository.RepositorioPokemonUsuario;
 import com.proyecto.pokemon_backend.repository.RepositorioUsuario;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,17 +50,18 @@ public class JuegoService {
     private final RepositorioInventarioUsuario inventarioRepo;
     private final RepositorioObjeto itemRepo;
     private final RepositorioEstadoMovimientoPokemon estadoMovimientoRepo;
+    private final RepositorioAtaques ataquesRepo;
+    private final BatallaService batallaService;
 
-    /**
-     * Inyecta repositorios de usuario, equipo, catálogo, mochila, ítems y PP por movimiento.
-     */
     public JuegoService(
         RepositorioUsuario userRepo,
         RepositorioPokemonUsuario pokemonRepo,
         RepositorioPokedexMaestra pokedexRepo,
         RepositorioInventarioUsuario inventarioRepo,
         RepositorioObjeto itemRepo,
-        RepositorioEstadoMovimientoPokemon estadoMovimientoRepo
+        RepositorioEstadoMovimientoPokemon estadoMovimientoRepo,
+        RepositorioAtaques ataquesRepo,
+        @Lazy BatallaService batallaService
     ) {
         this.userRepo = userRepo;
         this.pokemonRepo = pokemonRepo;
@@ -66,6 +69,8 @@ public class JuegoService {
         this.inventarioRepo = inventarioRepo;
         this.itemRepo = itemRepo;
         this.estadoMovimientoRepo = estadoMovimientoRepo;
+        this.ataquesRepo = ataquesRepo;
+        this.batallaService = batallaService;
     }
 
     /**
@@ -358,6 +363,7 @@ public class JuegoService {
             .ifPresent(t2 -> dto.put("tipo2", normalizarTipoParaFrontend(t2)));
         dto.put("sprite",           String.format(SPRITE_URL, p.getPokedexId()));
         dto.put("nivel",            p.getNivel());
+        dto.put("xpActual",         nvl(p.getExperiencia(), 0));
         dto.put("hpActual",         p.getHpActual());
         dto.put("hpMax",            p.getHpMax());
         dto.put("posicionEquipo",   p.getPosicionEquipo());
@@ -366,6 +372,25 @@ public class JuegoService {
         dto.put("ataqueEspecial",   p.getAtaqueEspecialStat());
         dto.put("defensaEspecial",  p.getDefensaEspecialStat());
         dto.put("velocidad",        p.getVelocidadStat());
+
+        if (p.getId() != null) {
+            List<Map<String, Object>> movs = estadoMovimientoRepo.buscarPorPokemonId(p.getId()).stream()
+                .sorted(Comparator.comparingInt(RepositorioEstadoMovimientoPokemon.EstadoPpMovimiento::slotIndex))
+                .map(e -> ataquesRepo.findById(e.moveId()).map(a -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("moveId",  a.getIdAtaque());
+                    m.put("nombre",  a.getNombre());
+                    m.put("tipo",    a.getTipo());
+                    m.put("pp",      nvl(a.getPpBase(), 20));
+                    m.put("ppActual", e.ppActual());
+                    m.put("potencia", a.getPotencia());
+                    return m;
+                }).orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+            if (!movs.isEmpty()) dto.put("movimientos", movs);
+        }
+
         return dto;
     }
 
@@ -490,8 +515,10 @@ public class JuegoService {
             throw new ErrorNegocio("Ese Pokémon no es tuyo.");
         }
 
+        int nivelAntes = nvl(pokemon.getNivel(), 1);
         String mensaje = aplicarEfectoItem(item.getEfecto(), pokemon);
         pokemonRepo.save(pokemon);
+        int nivelNuevo = nvl(pokemon.getNivel(), 1);
 
         int restante = entrada.getCantidad() - 1;
         if (restante == 0) {
@@ -505,6 +532,19 @@ public class JuegoService {
         res.put("mensaje", mensaje);
         res.put("team", obtenerEquipo(username));
         res.put("inventario", inventarioADtos(usuario));
+
+        if (nivelNuevo > nivelAntes) {
+            BatallaService.ResultadoSincMovimientos sinc =
+                batallaService.sincronizarMovimientosNuevos(pokemon, nivelAntes, nivelNuevo);
+            if (!sinc.pendientes().isEmpty()) {
+                res.put("movimientosNuevos", sinc.pendientes());
+                res.put("movimientosActuales", sinc.movimientosActuales());
+            }
+            if (!sinc.autoAprendidos().isEmpty()) {
+                res.put("movimientosAutoAprendidos", sinc.autoAprendidos());
+            }
+        }
+
         return res;
     }
 
@@ -520,6 +560,23 @@ public class JuegoService {
 
         if (ef.startsWith("CAPTURE_") || ef.equals("NONE")) {
             throw new ErrorNegocio("Este ítem no se puede usar fuera de combate.");
+        }
+
+        if (ef.equals("LEVEL_UP")) {
+            if (nvl(pokemon.getHpActual(), 0) <= 0) {
+                throw new ErrorNegocio("No puedes usar este ítem en un Pokémon debilitado.");
+            }
+            int nivelActual = nvl(pokemon.getNivel(), 1);
+            if (nivelActual >= 100) {
+                throw new ErrorNegocio(nombrePokemon(pokemon) + " ya está en el nivel máximo.");
+            }
+            int nivelNuevo = nivelActual + 1;
+            int hpExtra = nivelNuevo;
+            pokemon.setNivel(nivelNuevo);
+            pokemon.setHpMax(nvl(pokemon.getHpMax(), 1) + hpExtra);
+            pokemon.setHpActual(nvl(pokemon.getHpActual(), 0) + hpExtra);
+            pokemon.setExperiencia(0);
+            return nombrePokemon(pokemon) + " subió al nivel " + nivelNuevo + "!";
         }
 
         int hpActual = nvl(pokemon.getHpActual(), 0);
@@ -588,6 +645,21 @@ public class JuegoService {
         pokemon.setContadorToxico(0);
         pokemon.setTurnosSueno(0);
         return nom + " fue curado de su estado alterado.";
+    }
+
+    /** El jugador decide qué movimiento olvidar para aprender uno nuevo. */
+    @Transactional
+    public Map<String, Object> aprenderMovimiento(
+            String username, Long pokemonId, Integer moveIdNuevo, Integer moveIdAOlvidar) {
+        Usuario usuario = cargarUsuario(username);
+        PokemonUsuario pokemon = pokemonRepo.findById(pokemonId)
+            .orElseThrow(() -> new RecursoNoEncontrado("Pokémon no encontrado."));
+        if (!Objects.equals(pokemon.getUsuarioId(), usuario.getIdUsuario())) {
+            throw new ErrorNegocio("Ese Pokémon no es tuyo.");
+        }
+        String nombreMov = batallaService.aprenderMovimientoJugador(pokemonId, moveIdNuevo, moveIdAOlvidar);
+        String nom = nombrePokemon(pokemon);
+        return Map.of("ok", true, "mensaje", "¡" + nom + " aprendió " + nombreMov + "!");
     }
 
     /** Nombre de especie para mensajes, sin lanzar excepción si falta la fila. */
