@@ -585,7 +585,10 @@ export default class EscenaOverworld extends Phaser.Scene {
 
     try {
       await PuenteApi.elegirStarterServidor(starter.id);
+      const stAntes = usarJuegoStore.getState();
+      const posAntes = { posX: stAntes.posX, posY: stAntes.posY, mapaActual: stAntes.mapaActual };
       await PuenteApi.sincronizarEstadoDesdeServidor();
+      usarJuegoStore.getState().setPosition(posAntes.posX, posAntes.posY, posAntes.mapaActual);
     } catch (e) {
       console.error('[starter]', e);
       this._restaurarPokeballsTrasFalloStarter();

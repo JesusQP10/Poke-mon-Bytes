@@ -39,6 +39,7 @@ export const CONFIG_MAPAS = {
  * @param {{ esInterior: boolean }} configMapa
  */
 export function dibujarPlaceholderPorMapa(scene, mapaKey, configMapa) {
+  if (debuggerRoom.esMapaDebuggerRoom(mapaKey)) return;
   if (configMapa.esInterior) {
     if (casaJugador.esMapaCasaJugador(mapaKey)) {
       casaJugador.dibujarPlaceholderCasa(scene, mapaKey);

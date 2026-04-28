@@ -54,26 +54,17 @@ export function ejecutarSecuenciaMadre(scene) {
   const store = usarJuegoStore.getState();
   const nombre = store.nombreJugador || 'Tú';
 
-  const madrePx = { x: 5 * 16 + 8, y: 3 * 16 + 8 };
-  const spriteMadre = scene.add.rectangle(madrePx.x, madrePx.y, 12, 16, 0xff88aa).setDepth(5);
-
   const lineas = [
     `¡${nombre}!`,
     'Nuestro vecino, el PROF. ELM,\nte estaba buscando.',
     'Dijo que quería pedirte\nun favor.',
-    '¡Ah! Casi lo olvido.',
-    'Tu POKÉGEAR ha vuelto\ndel taller de reparaciones.',
-    '¡Aquí tienes!',
   ];
 
   scene._secuencias.ejecutar(
     [
-      scene._secuencias.pasoTween(spriteMadre, { x: scene._jugador.x, y: scene._jugador.y - 16 }, 800),
       scene._secuencias.pasoDialogo(scene._dialogo, lineas, { hablante: 'MAMÁ' }),
       scene._secuencias.pasoStore(() => usarJuegoStore.getState().setPokegearEntregado()),
     ],
-    () => {
-      spriteMadre.destroy();
-    }
+    () => {}
   );
 }

@@ -1448,7 +1448,6 @@ export default class EscenaBatalla extends Phaser.Scene {
         await PuenteApi.guardarJuegoEnServidor(
           usarJuegoStore.getState().construirPayloadGuardado(),
         );
-        await PuenteApi.sincronizarEstadoDesdeServidor();
       }
     } catch (e) {
       console.warn('[EscenaBatalla] guardar al salir del combate', e);
