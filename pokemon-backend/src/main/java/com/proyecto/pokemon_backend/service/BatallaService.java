@@ -528,6 +528,7 @@ public class BatallaService {
             movesetPersonalizadoPorPokemonId.remove(salvaje.getId());
             salvaje.setUsuarioId(usuario.getIdUsuario());
             salvaje.setPosicionEquipo(siguientePosicionEquipo(usuario.getIdUsuario()));
+            salvaje.setHpActual(salvaje.getHpMax());
             pokemonRepo.save(salvaje);
             return "¡" + especie.getNombre() + " fue capturado!";
         }
